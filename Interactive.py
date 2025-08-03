@@ -4,6 +4,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 
+
 class analysis:
     def __init__(self):
         self.folderpath = ''
