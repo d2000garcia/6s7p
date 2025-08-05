@@ -24,9 +24,11 @@ def process_beatnote(data,run_avg_num):
     print(corrected.shape)
     plt.plot(piezoV,corrected)
     plt.ylim(-2,5)
-    plt.savefig(r"C:\Users\wolfw\Downloads\BeatnoteProcess7-321-25\456beattest.png")
+    # plt.savefig(r"C:\Users\wolfw\Downloads\BeatnoteProcess7-321-25\456beattest.png")
+    plt.savefig(r"D:\Diego\git\6s7p\894beattest.png")
     # plt.show()
     
 
-data=simple_dat_get(r"C:\Users\wolfw\Downloads\BeatnoteProcess7-321-25\456Scan.csv", 0)
+# data=simple_dat_get(r"C:\Users\wolfw\Downloads\BeatnoteProcess7-321-25\456Scan.csv", 0)
+data = simple_dat_get(r"D:\Diego\git\6s7p\894Scan.csv", 0)
 process_beatnote(data,100)
