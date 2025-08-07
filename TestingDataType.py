@@ -106,14 +106,6 @@ class data:
         
         # print(freq)
         beatnotefit = poly.fit(cleared_indices, freq,[0,1,2,3])
-        temp = np.array(freq) - beatnotefit(np.array(cleared_indices))
-        plt.scatter(cleared_indices,temp)
-        plt.show()
-        plt.plot(beatnotefit.linspace(1000)[0],beatnotefit.linspace(1000)[1],'-r')
-        plt.scatter(cleared_indices,freq)
-        plt.show()
-
-
 
         #894 clean
         scan894 = True
@@ -140,9 +132,17 @@ class data:
         plt.axvspan(0,1000,alpha=0.2,color='grey')
         plt.plot([0,len(self.indices)],[temp, temp], '-r')
         plt.show()
+        temp = np.array(freq) - beatnotefit(np.array(cleared_indices))
+        plt.scatter(cleared_indices,temp)
+        plt.show()
+        plt.plot(beatnotefit.linspace(1000)[0],beatnotefit.linspace(1000)[1],'-r')
+        plt.scatter(cleared_indices,freq)
+        plt.show()
+
         
 
-data(r"D:\Diego\git\6s7p\456Scan.csv", 100)
+# data(r"D:\Diego\git\6s7p\456Scan.csv", 100)
+data(r"C:\Users\wolfw\Downloads\BeatnoteProcess7-321-25\894Scan.csv", beatnote_det_f=50 )
         
 
 
