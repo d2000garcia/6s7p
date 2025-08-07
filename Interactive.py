@@ -22,6 +22,21 @@ class analysis:
             else:
                 print('Analysis does not exist ')
                 os.mkdir(self.folderpath+r'\Analysis')
+                os.mkdir(self.folderpath+r'\Analysis\456')
+                os.mkdir(self.folderpath+r'\Analysis\456\beatnote')
+                os.mkdir(self.folderpath+r'\Analysis\456\beatnote\original')
+                os.mkdir(self.folderpath+r'\Analysis\456\beatnote\processed')
+                os.mkdir(self.folderpath+r'\Analysis\456\fitting')
+                os.mkdir(self.folderpath+r'\Analysis\456\fitting\original')
+                os.mkdir(self.folderpath+r'\Analysis\456\fitting\processed')
+                os.mkdir(self.folderpath+r'\Analysis')
+                os.mkdir(self.folderpath+r'\Analysis\894')
+                os.mkdir(self.folderpath+r'\Analysis\894\beatnote')
+                os.mkdir(self.folderpath+r'\Analysis\894\beatnote\original')
+                os.mkdir(self.folderpath+r'\Analysis\894\beatnote\processed')
+                os.mkdir(self.folderpath+r'\Analysis\894\fitting')
+                os.mkdir(self.folderpath+r'\Analysis\894\fitting\original')
+                os.mkdir(self.folderpath+r'\Analysis\894\fitting\processed')
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
 
@@ -35,7 +50,7 @@ def open_file_dialog(test):
     )
     test.folderpath = temporary
     if test.folderpath:
-        print(f"Selected file: {test.folderpath}")
+        print(f"Selected folder: {test.folderpath}")
         test.checkforanalysis()
 
 def update_path_label(text):
