@@ -28,8 +28,6 @@ def process_beatnote(indices,ogBeat,run_avg_num):
     peak_indices2 = find_peaks(filteredBeat, height=standard_peak_min,distance=50)
     peak_indices = peak_indices.tolist()
     peak_val = peak_val.tolist()
-    #filter out peaks from og data at ends to make comparable
-    cutoff_ends(peak_indices, peak_val, run_avg_num, len(indices)-run_avg_num)
     peak_val2 = peak_indices2[1]['peak_heights']
     peak_indices2 = peak_indices2[0]
     (peak_indices2, peak_val2) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
@@ -82,68 +80,133 @@ def LinFit(data_bounds, indices, data):
     return poly.fit(new_indices,new_data,1)
 
 class data:
-    def __init__(self, filename, BeatRunAvgN=100, beatnote_det_f=80, file_skip_lines=0):
-        pure_dat = simple_dat_get(filename, file_skip_lines)
-        Tavg = pure_dat[:,0:int(pure_dat.shape[1]/2)-1].mean(1)
-        Pavg = pure_dat[:,int(pure_dat.shape[1]/2)-1:pure_dat.shape[1]-2].mean(1)
-        ogbeat = pure_dat[:,pure_dat.shape[1]-2]
-        self.indices = pure_dat[:,pure_dat.shape[1]-1]
-        self.indices = self.indices - self.indices.min()
-        self.scaledT = Tavg/Pavg
-        
-
-        #beatnoteClean
-        (peak_indices,peak_val,peak_indices2,peak_val2, filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
-        (cleared_indices, cleared_peaks) = cutoff_ends(peak_indices2.copy(), peak_val2.copy(), 2340, len(self.indices))
-        differences = list(map(lambda x1,x2:x1-x2, cleared_indices[1:], cleared_indices[:len(cleared_indices)-1]))
-        avg_diff = np.mean(differences)
-        freq = [0]
-        for diff in differences:
-            if diff < avg_diff:
-                freq.append(freq[-1] + beatnote_det_f)
+    def __init__(self, par_folder, BeatRunAvgN=100, beatnote_det_f=80, file_skip_lines=0, scan='456', exists = False):
+        if not exists:
+            if scan == '456':
+                filename = par_folder + r"\456Scan.csv"
             else:
-                freq.append(freq[-1] + 250 - beatnote_det_f)
+                filename = par_folder + r"\894Scan.csv"
+            pure_dat = simple_dat_get(filename, file_skip_lines)
+            Tavg = pure_dat[:,0:int(pure_dat.shape[1]/2)-1].mean(1)
+            Pavg = pure_dat[:,int(pure_dat.shape[1]/2)-1:pure_dat.shape[1]-2].mean(1)
+            ogbeat = pure_dat[:,pure_dat.shape[1]-2]
+            self.indices = pure_dat[:,pure_dat.shape[1]-1]
+            self.indices = self.indices - self.indices.min()
+            self.scaledT = Tavg/Pavg
+            self.scan = scan
+            
+            if scan == '456':
+                folder = par_folder + r'\Analysis\456'
+            else:
+                folder = par_folder + r'\Analysis\894'
+
+            #beatnoteClean
+            (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
+            
+            np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
+            np.savetxt(folder+r'\fitting\original\Tavg.csv', Tavg, delimiter=',')
+            np.savetxt(folder+r'\fitting\original\Pavg.csv', Pavg, delimiter=',')
+            np.savetxt(folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
+            np.savetxt(folder+r'\beatnote\original\ogbeat.csv', ogbeat, delimiter=',')
+            np.savetxt(folder+r'\beatnote\original\peak_indices.csv', peak_indices, fmt='%i', delimiter=',')
+            np.savetxt(folder+r'\beatnote\original\peak_val.csv', peak_val,  delimiter=',')
+            np.savetxt(folder+r'\beatnote\processed\filteredBeat.csv', self.filteredBeat, delimiter=',')
+            np.savetxt(folder+r'\beatnote\processed\peak_indices.csv', self.peak_indices2, fmt='%i', delimiter=',')
+            np.savetxt(folder+r'\beatnote\processed\peak_val.csv', self.peak_val2, delimiter=',')
+
+            #filter out peaks from og data at ends to make comparable
+            (peak_indices, peak_val) = cutoff_ends(peak_indices, peak_val, BeatRunAvgN, len(self.indices)-BeatRunAvgN)
+            
+            
+            (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), 2340, len(self.indices))
+            self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
+            avg_diff = np.mean(self.differences)
+            self.freq = [0]
+            for diff in self.differences:
+                if diff < avg_diff:
+                    self.freq.append(self.freq[-1] + beatnote_det_f)
+                else:
+                    self.freq.append(self.freq[-1] + 250 - beatnote_det_f)
+            
+            
+            # print(self.freq)
+            self.beatnotefit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
+            
+            #456 clean 
+            if scan == '456':
+                data_bounds = [[6300,len(self.indices)]]
+                self.backgoundFit = LinFit(data_bounds, self.indices, self.scaledT)
+            #894 clean
+            if not scan == '456':
+                data_bounds = [[6300,len(self.indices)]]
+                self.backgoundFit = LinFit(data_bounds, self.indices, self.scaledT)
+                # print(self.backgoundFit(self.indices))
+
+            self.beatselect_good = set(self.peak_indices2).issuperset(set(peak_indices))               
+            plt.plot(self.indices,Tavg)
+            plt.savefig(folder+r'\fitting\original\Tavg.png')
+            plt.clf()
+            # plt.show()
+            plt.plot(self.indices,Pavg)
+            plt.savefig(folder+r'\fitting\original\Pavg.png')
+            plt.clf()
+            # plt.show()
+            plt.plot(self.indices,self.scaledT)
+            plt.plot(self.indices,self.backgoundFit(self.indices),'-r')
+            plt.savefig(folder+r'\fitting\original\scaledT_and_fit.png')
+            plt.clf()
+            # plt.show()
+            self.correctedT = self.scaledT - self.backgoundFit(self.indices)
+            plt.plot(self.indices, self.correctedT)
+            plt.savefig(folder+r'\fitting\original\correctedT.png')
+            plt.clf()
+            # plt.show()
+            plt.scatter(self.indices, ogbeat)
+            plt.scatter(peak_indices,peak_val, color='red', marker='x')
+            plt.savefig(folder+r'\beatnote\original\ogbeat.png')
+            plt.clf()
+            # plt.show()
+            plt.plot(self.indices, self.filteredBeat,linewidth=0.5,marker='.', mew='0.05')
+            plt.scatter(self.peak_indices2,self.peak_val2,color='red', marker='x')
+            plt.xlim(0,len(self.indices))
+            plt.ylim(0, max(self.peak_val2)+0.1)
+            temp = np.std(self.filteredBeat[BeatRunAvgN+1:len(self.indices)-BeatRunAvgN-1])*2
+            plt.axvspan(0,1000,alpha=0.2,color='grey')
+            plt.plot([0,len(self.indices)],[temp, temp], '-r')
+            plt.savefig(folder+r'\beatnote\processed\beat.png')
+            plt.clf()
+            # plt.show()
+            plt.plot(self.beatnotefit.linspace(1000)[0],self.beatnotefit.linspace(1000)[1],'-r')
+            plt.scatter(self.cleared_indices,self.freq)
+            plt.savefig(folder+r'\beatnote\processed\fitted_beat.png')
+            plt.clf()
+            # plt.show()
+            temp = np.array(self.freq) - self.beatnotefit(np.array(self.cleared_indices))
+            plt.scatter(self.cleared_indices,temp)
+            plt.savefig(folder+r'\beatnote\processed\residuals.png')
+            plt.clf()
+            # plt.show()
+
+        else:
+            self.scan = scan
+            if scan == '456':
+                folder = par_folder + r'\Analysis\456'
+            else:
+                folder = par_folder + r'\Analysis\894'
+            self.indices = np.loadtxt(folder+r'\indices.csv', dtype=int, delimiter=',')
+            self.scaledT = np.loadtxt(folder+r'\fitting\processed\scaledT.csv', delimiter=',')
+            self.filteredBeat = np.loadtxt(folder+r'\beatnote\processed\filteredBeat.csv', delimiter=',')
+            self.peak_indices2 = np.loadtxt(folder+r'\beatnote\processed\peak_indices.csv', dtype=int, delimiter=',').tolist()
+            self.peak_val2 = np.loadtxt(folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
+            (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), 2340, len(self.indices))
+            
         
-        # print(freq)
-        beatnotefit = poly.fit(cleared_indices, freq,[0,1,2,3])
-        temp = np.array(freq) - beatnotefit(np.array(cleared_indices))
-        plt.scatter(cleared_indices,temp)
-        plt.show()
-        plt.plot(beatnotefit.linspace(1000)[0],beatnotefit.linspace(1000)[1],'-r')
-        plt.scatter(cleared_indices,freq)
-        plt.show()
+
+dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=True)
+print(dat.indices)
+print(dat.scaledT)
 
 
-
-        #894 clean
-        scan894 = True
-        if scan894:
-            data_bounds = [[0,2600],[6000,len(self.indices)]]
-            coeff = LinFit(data_bounds, self.indices, self.scaledT)
-            # print(coeff(self.indices))
-        
-
-        print(set(peak_indices2).issuperset(set(peak_indices)))
-        plt.plot(self.indices,self.scaledT)
-        plt.plot(self.indices,coeff(self.indices),'-r')
-        plt.show()
-        plt.plot(self.indices, coeff(self.indices)-self.scaledT)
-        plt.show()
-        plt.scatter(self.indices, ogbeat)
-        plt.scatter(peak_indices,peak_val, color='red', marker='x')
-        plt.show()
-        plt.plot(self.indices, filteredBeat,linewidth=0.5,marker='.', mew='0.05')
-        plt.scatter(peak_indices2,peak_val2,color='red', marker='x')
-        plt.xlim(0,len(self.indices))
-        plt.ylim(0, max(peak_val2)+0.1)
-        temp = np.std(filteredBeat[BeatRunAvgN+1:len(self.indices)-BeatRunAvgN-1])*2
-        plt.axvspan(0,1000,alpha=0.2,color='grey')
-        plt.plot([0,len(self.indices)],[temp, temp], '-r')
-        plt.show()
-        
-
-data(r"D:\Diego\git\6s7p\456Scan.csv", 100)
-        
 
 
         

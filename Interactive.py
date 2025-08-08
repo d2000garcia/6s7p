@@ -1,10 +1,14 @@
 import os as os
 import numpy as np
+from numpy.polynomial import Polynomial as poly
+from scipy.signal import find_peaks
 from matplotlib import pyplot as plt
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk
+
+
 
 class analysis:
     def __init__(self):
@@ -29,7 +33,6 @@ class analysis:
                 os.mkdir(self.folderpath+r'\Analysis\456\fitting')
                 os.mkdir(self.folderpath+r'\Analysis\456\fitting\original')
                 os.mkdir(self.folderpath+r'\Analysis\456\fitting\processed')
-                os.mkdir(self.folderpath+r'\Analysis')
                 os.mkdir(self.folderpath+r'\Analysis\894')
                 os.mkdir(self.folderpath+r'\Analysis\894\beatnote')
                 os.mkdir(self.folderpath+r'\Analysis\894\beatnote\original')
