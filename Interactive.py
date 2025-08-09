@@ -10,6 +10,7 @@ from PIL import Image, ImageTk
 
 
 
+
 class analysis:
     def __init__(self):
         self.folderpath = ''
@@ -59,10 +60,21 @@ def open_file_dialog(test):
 def update_path_label(text):
     workingdir_txt.set(value=text)
 
+first = True
+template_image = r"D:\Diego\git\6s7p\Picture_template.png"
 if __name__ == '__main__':
     root = tk.Tk()
-    folder = analysis()
+    if first:
+        first = False
+        folder = analysis()
+        
     root.title("Geometry Calculation")
+    notebook = ttk.Notebook(root)
+    notebook.pack(expand=True, fill="both")
+    tab456 = ttk.Frame(notebook)
+    tab894 = ttk.Frame(notebook)
+    notebook.add(tab456, text="456 Scan")
+    notebook.add(tab894, text="894 Scan")
     open_button = ttk.Button(root, text="Open Folder", command= lambda: open_file_dialog(folder))
     open_button.pack(pady=20)
     workingdir_txt = tk.StringVar()

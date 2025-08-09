@@ -130,8 +130,21 @@ class data:
             
             
             # print(self.freq)
-            self.beatnotefit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
-            
+            self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
+            beat_fit_param = self.beatfit.domain.tolist()
+            beat_fit_param.extend(self.beatfit.window.tolist())
+            beat_fit_param.extend(self.beatfit.coef.tolist())
+            np.savetxt(folder+r'\beatnote\processed\beat_fit_param.csv', beat_fit_param, delimiter=',')
+            self.resid = self.freq-self.beatfit(np.array(self.cleared_indices))
+            self.scaled_residuals = self.resid**2
+            self.scaled_residuals[1:] = self.scaled_residuals[1:]/self.freq[1:]
+            np.savetxt(folder+r'\beatnote\processed\scaled_residuals.csv', self.scaled_residuals, delimiter=',')
+            print(self.scaled_residuals[1:].mean())
+            plt.scatter(self.cleared_indices[1:],self.scaled_residuals[1:])
+            plt.title(scan + 'Scaled Residuals, Mean='+str(np.mean(self.scaled_residuals[1:])))
+            # plt.show()
+            plt.savefig(folder+r'\beatnote\processed\ScaledResiduals.png')
+            plt.clf()
             #456 clean 
             if scan == '456':
                 data_bounds = [[6300,len(self.indices)]]
@@ -144,28 +157,34 @@ class data:
 
             self.beatselect_good = set(self.peak_indices2).issuperset(set(peak_indices))               
             plt.plot(self.indices,Tavg)
+            plt.title('Averaged Transmission Measurements')
             plt.savefig(folder+r'\fitting\original\Tavg.png')
             plt.clf()
             # plt.show()
             plt.plot(self.indices,Pavg)
+            plt.title(r'Averaged Laser Power Measurements')
             plt.savefig(folder+r'\fitting\original\Pavg.png')
             plt.clf()
             # plt.show()
             plt.plot(self.indices,self.scaledT)
             plt.plot(self.indices,self.backgoundFit(self.indices),'-r')
+            plt.title(r'\frac{Transmission}{Laser Power}')
             plt.savefig(folder+r'\fitting\original\scaledT_and_fit.png')
             plt.clf()
             # plt.show()
             self.correctedT = self.scaledT - self.backgoundFit(self.indices)
             plt.plot(self.indices, self.correctedT)
+            plt.title('Background Corrected Transmission')
             plt.savefig(folder+r'\fitting\original\correctedT.png')
             plt.clf()
             # plt.show()
             plt.scatter(self.indices, ogbeat)
+            plt.title('Original Beanote')
             plt.scatter(peak_indices,peak_val, color='red', marker='x')
             plt.savefig(folder+r'\beatnote\original\ogbeat.png')
             plt.clf()
             # plt.show()
+            plt.title('Filtered Beatnote with identified Peaks')
             plt.plot(self.indices, self.filteredBeat,linewidth=0.5,marker='.', mew='0.05')
             plt.scatter(self.peak_indices2,self.peak_val2,color='red', marker='x')
             plt.xlim(0,len(self.indices))
@@ -176,14 +195,16 @@ class data:
             plt.savefig(folder+r'\beatnote\processed\beat.png')
             plt.clf()
             # plt.show()
-            plt.plot(self.beatnotefit.linspace(1000)[0],self.beatnotefit.linspace(1000)[1],'-r')
+            plt.title('Beatnote Fitting')
+            plt.plot(self.beatfit.linspace(1000)[0],self.beatfit.linspace(1000)[1],'-r')
             plt.scatter(self.cleared_indices,self.freq)
             plt.savefig(folder+r'\beatnote\processed\fitted_beat.png')
             plt.clf()
             # plt.show()
-            temp = np.array(self.freq) - self.beatnotefit(np.array(self.cleared_indices))
+            temp = np.array(self.freq) - self.beatfit(np.array(self.cleared_indices))
             plt.scatter(self.cleared_indices,temp)
-            plt.savefig(folder+r'\beatnote\processed\residuals.png')
+            plt.title('Beat Unscaled Residuals')
+            plt.savefig(folder+r'\beatnote\processed\unscaledresiduals.png')
             plt.clf()
             # plt.show()
 
@@ -199,12 +220,16 @@ class data:
             self.peak_indices2 = np.loadtxt(folder+r'\beatnote\processed\peak_indices.csv', dtype=int, delimiter=',').tolist()
             self.peak_val2 = np.loadtxt(folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
             (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), 2340, len(self.indices))
+            temp = np.loadtxt(folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',')
+            self.beatfit = poly(temp[4:], temp[0:2], temp[2:4])
+            self.scaled_residuals = np.loadtxt(folder+r'\beatnote\processed\scaled_residuals.csv', delimiter=',')
+
             
         
 
-dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=True)
-print(dat.indices)
-print(dat.scaledT)
+dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=False)
+# print(dat.indices)
+# print(dat.scaledT)
 
 
 
