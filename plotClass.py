@@ -2,47 +2,52 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
 class plots:
-    def __init__(self,default_path = r".\Picture_template.png", plot_w = 500, plot_h = 300):
+    def __init__(self,default_path = r".\Picture_template.png", scan = '456', plot_w = 500, plot_h = 300):
         default_img = Image.open(default_path)
         resized_default = default_img.resize((plot_w, plot_h), Image.LANCZOS)
+        self.par_fold = ''
+        self.scan = scan
         self.plot_w = plot_w
         self.plot_h = plot_h
-        self.Tavg = resized_default.copy()
-        self.Pavg = resized_default.copy()
-        self.scaledT_and_fit = resized_default.copy()
-        self.correctedT = resized_default.copy()
-        self.ogbeat = resized_default.copy()
-        self.filteredbeat = resized_default.copy()
-        self.fitted_beat = resized_default.copy()
-        self.unscaledresiduals = resized_default.copy()
-        self.ScaledResiduals = resized_default.copy()
+        self.Tavg = ImageTk.PhotoImage(resized_default.copy())
+        self.Pavg = ImageTk.PhotoImage(resized_default.copy())
+        self.scaledT_and_fit = ImageTk.PhotoImage(resized_default.copy())
+        self.correctedT = ImageTk.PhotoImage(resized_default.copy())
+        self.ogbeat = ImageTk.PhotoImage(resized_default.copy())
+        self.filteredbeat = ImageTk.PhotoImage(resized_default.copy())
+        self.fitted_beat = ImageTk.PhotoImage(resized_default.copy())
+        self.unscaledresiduals = ImageTk.PhotoImage(resized_default.copy())
+        self.ScaledResiduals = ImageTk.PhotoImage(resized_default.copy())
+        if scan == '456':
+            self.fold = self.par_fold + r'\Analysis\456'
+        else:
+            self.fold = self.par_fold + r'\Analysis\894'
     
-    def create_image(self):
-        self.imagetk = ImageTk.PhotoImage(self.Tavg)
-        self.imagetk2 = ImageTk.PhotoImage(self.Pavg)
-    
-    def update_image(self, whichone = '', plot_path ='',):
+    def update_working_dir(self, new_par_fold):
+        self.par_fold = new_par_fold
+
+    def update_image(self, whichone = ''):
+        plot_path = self.fold + whichone + '.png'
         temp = Image.open(plot_path)
         resized_temp = temp.resize((self.plot_w, self.plot_h), Image.LANCZOS)
         if whichone == 'Tavg':
-            self.Tavg = resized_temp.copy()
+            self.Tavg = ImageTk.PhotoImage(resized_temp)
         elif whichone == 'Pavg':
-            self.Pavg = resized_temp.copy()
-            self.imagetk2 = ImageTk.PhotoImage(self.Pavg)
+            self.Pavg = ImageTk.PhotoImage(resized_temp)
         elif whichone == 'scaledT_and_fit':
-            self.scaledT_and_fit = resized_temp.copy()
+            self.scaledT_and_fit = ImageTk.PhotoImage(resized_temp)
         elif whichone == 'correctedT':
-            self.correctedT = resized_temp.copy()
+            self.correctedT = ImageTk.PhotoImage(resized_temp)
         elif whichone == 'ogbeat':
-            self.ogbeat = resized_temp.copy()
-        elif whichone == 'filteredbea':
-            self.filteredbeat = resized_temp.copy()
+            self.ogbeat = ImageTk.PhotoImage(resized_temp)
+        elif whichone == 'filteredbeat':
+            self.filteredbeat = ImageTk.PhotoImage(resized_temp)
         elif whichone == 'fitted_beat':
-            self.fitted_beat = resized_temp.copy()
+            self.fitted_beat = ImageTk.PhotoImage(resized_temp)
         elif whichone == 'unscaledresiduals':
-            self.unscaledresiduals = resized_temp.copy()
+            self.unscaledresiduals = ImageTk.PhotoImage(resized_temp)
         elif whichone == 'ScaledResiduals':
-            self.ScaledResiduals = resized_temp.copy()
+            self.ScaledResiduals = ImageTk.PhotoImage(resized_temp)
 
 def change_image(old,new):
     old.configure(image=new)

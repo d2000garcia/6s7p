@@ -8,7 +8,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 
-
+from plotClass import plots
 
 
 class analysis:
