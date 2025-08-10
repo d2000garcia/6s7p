@@ -18,40 +18,44 @@ class plots:
         self.fitted_beat = ImageTk.PhotoImage(resized_default.copy())
         self.unscaledresiduals = ImageTk.PhotoImage(resized_default.copy())
         self.ScaledResiduals = ImageTk.PhotoImage(resized_default.copy())
+        self.plots=['Tavg','Pavg','scaledT_and_fit','correctedT','ogbeat','filteredbeat','unscaledresiduals','ScaledResiduals']
         if scan == '456':
-            self.fold = self.par_fold + r'\Analysis\456'
+            self.fold = self.par_fold + r'\Analysis\456\plots'
         else:
-            self.fold = self.par_fold + r'\Analysis\894'
+            self.fold = self.par_fold + r'\Analysis\894\plots'
     
     def update_working_dir(self, new_par_fold):
         self.par_fold = new_par_fold
 
-    def update_image(self, whichone = ''):
-        plot_path = self.fold + whichone + '.png'
-        temp = Image.open(plot_path)
-        resized_temp = temp.resize((self.plot_w, self.plot_h), Image.LANCZOS)
-        if whichone == 'Tavg':
-            self.Tavg = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'Pavg':
-            self.Pavg = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'scaledT_and_fit':
-            self.scaledT_and_fit = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'correctedT':
-            self.correctedT = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'ogbeat':
-            self.ogbeat = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'filteredbeat':
-            self.filteredbeat = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'fitted_beat':
-            self.fitted_beat = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'unscaledresiduals':
-            self.unscaledresiduals = ImageTk.PhotoImage(resized_temp)
-        elif whichone == 'ScaledResiduals':
-            self.ScaledResiduals = ImageTk.PhotoImage(resized_temp)
+    def update_image(self, tochange):
+        for whichone in tochange:
+            plot_path = self.fold + '\\' +whichone + '.png'
+            temp = Image.open(plot_path)
+            resized_temp = temp.resize((self.plot_w, self.plot_h), Image.LANCZOS)
+            if whichone == 'Tavg':
+                self.Tavg = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'Pavg':
+                self.Pavg = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'scaledT_and_fit':
+                self.scaledT_and_fit = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'correctedT':
+                self.correctedT = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'ogbeat':
+                self.ogbeat = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'filteredbeat':
+                self.filteredbeat = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'fitted_beat':
+                self.fitted_beat = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'unscaledresiduals':
+                self.unscaledresiduals = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'ScaledResiduals':
+                self.ScaledResiduals = ImageTk.PhotoImage(resized_temp)
 
-def change_image(old,new):
-    old.configure(image=new)
-    old.image = new
+def change_image(oldlabel,new):
+    #oldlabel is the label you want to change and
+    #new is new Tkimage to exchange
+    oldlabel.configure(image=new)
+    oldlabel.image = new
 
 
 # pil_image = Image.open(r"C:\Users\wolfw\Downloads\BeatnoteProcess7-321-25\456beattest.png")
@@ -64,31 +68,31 @@ def change_image(old,new):
 # resized_image1 = pil_image1.resize((plot_w, plot_h), Image.LANCZOS)
 # resized_image2 = pil_image2.resize((plot_w, plot_h), Image.LANCZOS)
 # resized_image3 = pil_image3.resize((plot_w, plot_h), Image.LANCZOS)
-first = True
-temp = plots()
-if __name__ == '__main__':
-    root = tk.Tk()
-    if first:
-        temp.create_image()
-        first = False
-    notebook = ttk.Notebook(root)
-    notebook.pack(expand=True, fill="both")
-    tab1_frame = ttk.Frame(notebook)
-    tab2_frame = ttk.Frame(notebook)
-    notebook.add(tab1_frame, text="Tab 1")
-    notebook.add(tab2_frame, text="Tab 2")
-    # tk_image1 = ImageTk.PhotoImage(resized_image1)
-    # tk_image2 = ImageTk.PhotoImage(resized_image2)
-    # tk_image3 = ImageTk.PhotoImage(resized_image3)
-    temp.update_image('Pavg',r"D:\Diego\git\6s7p\456beattest.png")
-    label1 = tk.Label(tab1_frame, text = 'hello', image=temp.imagetk, compound=tk.TOP)
-    label2 = tk.Label(tab1_frame, image=temp.imagetk)
-    # label1.image = tk_image1
-    open_button = ttk.Button(tab1_frame, text="Open Folder", command= lambda: change_image(label1, temp.imagetk2))
+# first = True
+# temp = plots()
+# if __name__ == '__main__':
+#     root = tk.Tk()
+#     if first:
+#         temp.create_image()
+#         first = False
+#     notebook = ttk.Notebook(root)
+#     notebook.pack(expand=True, fill="both")
+#     tab1_frame = ttk.Frame(notebook)
+#     tab2_frame = ttk.Frame(notebook)
+#     notebook.add(tab1_frame, text="Tab 1")
+#     notebook.add(tab2_frame, text="Tab 2")
+#     # tk_image1 = ImageTk.PhotoImage(resized_image1)
+#     # tk_image2 = ImageTk.PhotoImage(resized_image2)
+#     # tk_image3 = ImageTk.PhotoImage(resized_image3)
+#     temp.update_image('Pavg',r"D:\Diego\git\6s7p\456beattest.png")
+#     label1 = tk.Label(tab1_frame, text = 'hello', image=temp.imagetk, compound=tk.TOP)
+#     label2 = tk.Label(tab1_frame, image=temp.imagetk)
+#     # label1.image = tk_image1
+#     open_button = ttk.Button(tab1_frame, text="Open Folder", command= lambda: change_image(label1, temp.imagetk2))
 
-    # label1.pack()
-    # label2.pack()
-    label1.grid(column=0,row=0)
-    label2.grid(column=2, row=0)
-    open_button.grid(column=2, row=1)
-    root.mainloop()
+#     # label1.pack()
+#     # label2.pack()
+#     label1.grid(column=0,row=0)
+#     label2.grid(column=2, row=0)
+#     open_button.grid(column=2, row=1)
+#     root.mainloop()

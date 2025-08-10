@@ -34,6 +34,7 @@ class analysis:
                 os.mkdir(self.folderpath+r'\Analysis\456\fitting')
                 os.mkdir(self.folderpath+r'\Analysis\456\fitting\original')
                 os.mkdir(self.folderpath+r'\Analysis\456\fitting\processed')
+                os.mkdir(self.folderpath+r'\Analysis\456\plots')
                 os.mkdir(self.folderpath+r'\Analysis\894')
                 os.mkdir(self.folderpath+r'\Analysis\894\beatnote')
                 os.mkdir(self.folderpath+r'\Analysis\894\beatnote\original')
@@ -41,6 +42,7 @@ class analysis:
                 os.mkdir(self.folderpath+r'\Analysis\894\fitting')
                 os.mkdir(self.folderpath+r'\Analysis\894\fitting\original')
                 os.mkdir(self.folderpath+r'\Analysis\894\fitting\processed')
+                os.mkdir(self.folderpath+r'\Analysis\894\plots')
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
 
@@ -61,26 +63,54 @@ def update_path_label(text):
     workingdir_txt.set(value=text)
 
 first = True
-template_image = r"D:\Diego\git\6s7p\Picture_template.png"
+template_image = r".\Picture_template.png"
 if __name__ == '__main__':
     root = tk.Tk()
     if first:
         first = False
         folder = analysis()
+        plots456 = plots(scan='456')
+        plots894 = plots(scan='894')
+        root.title("Geometry Calculation")
+        notebook456T = ttk.Notebook(root)
+        notebook456T.grid(column=0,row=0)
+        Tavg456 = ttk.Frame(notebook456T)
+        Pavg456 = ttk.Frame(notebook456T)
+        scaledTnFit456 = ttk.Frame(notebook456T)
+        correctedT = ttk.Frame(notebook456T)
+        notebook456T.add(Tavg456, text="Tavg456")
+        notebook456T.add(Pavg456, text="Pavg456")
+        notebook456T.add(scaledTnFit456, text="scaled T Fit456")
+        notebook456T.add(correctedT, text="Corrected T")
+
+
+        label_Tavg_456 = tk.Label(Tavg456, image=plots456.Tavg)
+        label_Tavg_456.image = plots456.Tavg
+        label_Tavg_456.pack()
         
-    root.title("Geometry Calculation")
-    notebook = ttk.Notebook(root)
-    notebook.pack(expand=True, fill="both")
-    tab456 = ttk.Frame(notebook)
-    tab894 = ttk.Frame(notebook)
-    notebook.add(tab456, text="456 Scan")
-    notebook.add(tab894, text="894 Scan")
-    open_button = ttk.Button(root, text="Open Folder", command= lambda: open_file_dialog(folder))
-    open_button.pack(pady=20)
-    workingdir_txt = tk.StringVar()
-    workingdir_txt.set('hello')
+        # label_Tavg_456 = tk.Label(notebook456T, image=plots456.Tavg)
+        # label_Tavg_456.image = plots456.Tavg
+        # label_Tavg_456.pack()
+        # notebook456T.add(Tavg456, text="Tavg456")
+        
+        notebook456Beat = ttk.Notebook(root)
+        notebook456Beat.grid(column=2,row=0)
+        ogbeat = ttk.Frame(notebook456Beat)
+        filteredBeat = ttk.Frame(notebook456Beat)
+        fittedBeat = ttk.Frame(notebook456Beat)
+        unscaled_resid = ttk.Frame(notebook456Beat)
+        scaled_resid = ttk.Frame(notebook456Beat)
+        notebook456Beat.add(ogbeat, text="ogbeat")
+        notebook456Beat.add(filteredBeat, text="filteredBeat")
+        notebook456Beat.add(fittedBeat, text="fittedBeat")
+        notebook456Beat.add(unscaled_resid, text="unscaled_resid")
+        notebook456Beat.add(scaled_resid, text="scaled_resid")
+        open_button = ttk.Button(root, text="Open Folder", command= lambda: open_file_dialog(folder))
+        open_button.grid(column=1,row=0)
+        workingdir_txt = tk.StringVar()
+        workingdir_txt.set('hello')
     workingdir = ttk.Label(root, textvariable=workingdir_txt)
-    workingdir.pack(pady=20)
+    workingdir.grid(column=1, row=1)
     print(folder.folderpath)
     root.mainloop()
 	
