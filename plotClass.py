@@ -9,17 +9,6 @@ class plots:
         self.scan = scan
         self.plot_w = plot_w
         self.plot_h = plot_h
-        # self.Tavg = ImageTk.PhotoImage(resized_default.copy())
-        # self.Pavg = ImageTk.PhotoImage(resized_default.copy())
-        # self.scaledT_and_fit = ImageTk.PhotoImage(resized_default.copy())
-        # self.correctedT = ImageTk.PhotoImage(resized_default.copy())
-        # self.ogbeat = ImageTk.PhotoImage(resized_default.copy())
-        # self.filteredbeat = ImageTk.PhotoImage(resized_default.copy())
-        # self.fitted_beat = ImageTk.PhotoImage(resized_default.copy())
-        # self.unscaledresiduals = ImageTk.PhotoImage(resized_default.copy())
-        # self.ScaledResiduals = ImageTk.PhotoImage(resized_default.copy())
-
-        
         self.plotslabs=['Tavg','Pavg','scaledT_and_fit','correctedT','ogbeat','filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals']
         self.plots = []
         for i in self.plotslabs:
