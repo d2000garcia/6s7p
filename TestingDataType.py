@@ -80,12 +80,19 @@ def LinFit(data_bounds, indices, data):
     return poly.fit(new_indices,new_data,1)
 
 class data:
-    def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=80, beat_rng=[2340,8000], back_fit=[[6300,8000]], file_skip_lines=0, scan='456', exists = False):
+    def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[2340,8000], back_fit=[[6300,8000]], file_skip_lines=0, scan='456', exists = False):
         if not exists:
             if scan == '456':
                 filename = par_folder + r"\456Scan.csv"
             else:
                 filename = par_folder + r"\894Scan.csv"
+
+            if beatnote_det_f == 0:
+                if scan == '456':
+                    beatnote_det_f = 40
+                else:
+                    beatnote_det_f = 20
+            self.beatnote_det_f = beatnote_det_f
             pure_dat = simple_dat_get(filename, file_skip_lines)
             Tavg = pure_dat[:,0:int(pure_dat.shape[1]/2)-1].mean(1)
             Pavg = pure_dat[:,int(pure_dat.shape[1]/2)-1:pure_dat.shape[1]-2].mean(1)
@@ -126,9 +133,9 @@ class data:
             self.freq = [0]
             for diff in self.differences:
                 if diff < avg_diff:
-                    self.freq.append(self.freq[-1] + beatnote_det_f)
+                    self.freq.append(self.freq[-1] + beatnote_det_f*2)
                 else:
-                    self.freq.append(self.freq[-1] + 250 - beatnote_det_f)
+                    self.freq.append(self.freq[-1] + 250 - beatnote_det_f*2)
             
             
             # print(self.freq)
@@ -186,7 +193,7 @@ class data:
             temp = np.std(self.filteredBeat[BeatRunAvgN+1:len(self.indices)-BeatRunAvgN-1])*2
             plt.axvspan(0,1000,alpha=0.2,color='grey')
             plt.plot([0,len(self.indices)],[temp, temp], '-r')
-            plt.savefig(folder+r'\plots\beat.png')
+            plt.savefig(folder+r'\plots\filteredbeat.png')
             plt.clf()
             # plt.show()
             plt.title('Beatnote Fitting')
@@ -221,7 +228,7 @@ class data:
             
         
 
-dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=False)
+# dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=False)
 # print(dat.indices)
 # print(dat.scaledT)
 

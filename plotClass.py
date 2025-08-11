@@ -2,7 +2,7 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
 class plots:
-    def __init__(self,default_path = r".\Picture_template.png", scan = '456', plot_w = 500, plot_h = 300):
+    def __init__(self,default_path = r".\Picture_template.png", scan = '456', plot_w = 750, plot_h = 450):
         default_img = Image.open(default_path)
         resized_default = default_img.resize((plot_w, plot_h), Image.LANCZOS)
         self.par_fold = ''
@@ -20,7 +20,7 @@ class plots:
         # self.ScaledResiduals = ImageTk.PhotoImage(resized_default.copy())
 
         
-        self.plotslabs=['Tavg','Pavg','scaledT_and_fit','correctedT','ogbeat','filteredbeat','unscaledresiduals','ScaledResiduals']
+        self.plotslabs=['Tavg','Pavg','scaledT_and_fit','correctedT','ogbeat','filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals']
         self.plots = []
         for i in self.plotslabs:
             self.plots.append(ImageTk.PhotoImage(resized_default.copy()))
@@ -38,7 +38,7 @@ class plots:
 
     def update_image(self, tochange):
         for whichone in tochange:
-            plot_path = self.fold + '\\' +whichone + '.png'
+            plot_path = self.fold + '\\' + whichone + '.png'
             temp = Image.open(plot_path)
             resized_temp = temp.resize((self.plot_w, self.plot_h), Image.LANCZOS)
             if whichone == 'Tavg':
