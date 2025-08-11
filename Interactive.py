@@ -48,19 +48,40 @@ class analysis:
 
         
 
-def open_file_dialog(test):
+def open_file_dialog(analysis_dat,labels,plots456,plots894, switchlabelsat=4):
     temporary = filedialog.askdirectory(
         initialdir="/",  # Optional: set initial directory
         title="Select a folder",
         # filetypes=(("Text files", "*.txt"), ("All files", "*.*")) # Optional: filter file types
     )
-    test.folderpath = temporary
-    if test.folderpath:
-        print(f"Selected folder: {test.folderpath}")
-        test.checkforanalysis()
+    analysis_dat.folderpath = temporary
+    if analysis_dat.folderpath:
+        print(f"Selected folder: {analysis_dat.folderpath}")
+        analysis_dat.checkforanalysis()
+        plots456.update_working_dir(analysis_dat.folderpath)
+        plots894.update_working_dir(analysis_dat.folderpath)
+        for i, lab in enumerate(plots456.plotslabs):
+            plots456.update_image(lab)
+            plots894.update_image(lab)
+            if i < 5:
+                change_Label_image(labels[0], plots456.plots[i])
+                change_Label_image(labels[2], plots894.plots[i])
+            else:
+                change_Label_image(labels[1], plots456.plots[i])
+                change_Label_image(labels[3], plots894.plots[i])
+        
+
+            
+
 
 def update_path_label(text):
     workingdir_txt.set(value=text)
+
+def change_Label_image(oldlabel,new):
+    #oldlabel is the label you want to change and
+    #new is new Tkimage to exchange
+    oldlabel.configure(image=new)
+    oldlabel.image = new
 
 first = True
 template_image = r".\Picture_template.png"
@@ -72,40 +93,44 @@ if __name__ == '__main__':
         plots456 = plots(scan='456')
         plots894 = plots(scan='894')
         root.title("Geometry Calculation")
+
         notebook456T = ttk.Notebook(root)
         notebook456T.grid(column=0,row=0)
-        Tavg456 = ttk.Frame(notebook456T)
-        Pavg456 = ttk.Frame(notebook456T)
-        scaledTnFit456 = ttk.Frame(notebook456T)
-        correctedT = ttk.Frame(notebook456T)
-        notebook456T.add(Tavg456, text="Tavg456")
-        notebook456T.add(Pavg456, text="Pavg456")
-        notebook456T.add(scaledTnFit456, text="scaled T Fit456")
-        notebook456T.add(correctedT, text="Corrected T")
-
-
-        label_Tavg_456 = tk.Label(Tavg456, image=plots456.Tavg)
-        label_Tavg_456.image = plots456.Tavg
-        label_Tavg_456.pack()
+        labels = [[],[],[],[]]
+        #labels = [labels456T,labels456Beat, labels894T,labels894Beat]
         
-        # label_Tavg_456 = tk.Label(notebook456T, image=plots456.Tavg)
-        # label_Tavg_456.image = plots456.Tavg
-        # label_Tavg_456.pack()
-        # notebook456T.add(Tavg456, text="Tavg456")
-        
+        for i, lab in enumerate(plots456.plotslabs[:4]):
+            labels[0].append(tk.Label(notebook456T,image=plots456.plots[i]))
+            labels[0][-1].image = plots456.plots[i]
+            labels[0][-1].pack()
+            notebook456T.add(labels[0][-1],text=lab)
+
         notebook456Beat = ttk.Notebook(root)
         notebook456Beat.grid(column=2,row=0)
-        ogbeat = ttk.Frame(notebook456Beat)
-        filteredBeat = ttk.Frame(notebook456Beat)
-        fittedBeat = ttk.Frame(notebook456Beat)
-        unscaled_resid = ttk.Frame(notebook456Beat)
-        scaled_resid = ttk.Frame(notebook456Beat)
-        notebook456Beat.add(ogbeat, text="ogbeat")
-        notebook456Beat.add(filteredBeat, text="filteredBeat")
-        notebook456Beat.add(fittedBeat, text="fittedBeat")
-        notebook456Beat.add(unscaled_resid, text="unscaled_resid")
-        notebook456Beat.add(scaled_resid, text="scaled_resid")
-        open_button = ttk.Button(root, text="Open Folder", command= lambda: open_file_dialog(folder))
+        for i, lab in enumerate(plots456.plotslabs[4:],start=4):
+            labels[1].append(tk.Label(notebook456Beat,image=plots456.plots[i]))
+            labels[1][-1].image = plots456.plots[i]
+            labels[1][-1].pack()
+            notebook456Beat.add(labels[1][-1],text=lab)
+        
+
+        notebook894T = ttk.Notebook(root)
+        notebook894T.grid(column=0,row=2)
+        for i, lab in enumerate(plots894.plotslabs[:4]):
+            labels[2].append(tk.Label(notebook894T,image=plots894.plots[i]))
+            labels[2][-1].image = plots894.plots[i]
+            labels[2][-1].pack()
+            notebook894T.add(labels[2][-1],text=lab)
+
+        notebook894Beat = ttk.Notebook(root)
+        notebook894Beat.grid(column=2,row=2)
+        for i, lab in enumerate(plots894.plotslabs[4:],start=4):
+            labels[3].append(tk.Label(notebook894Beat,image=plots894.plots[i]))
+            labels[3][-1].image = plots894.plots[i]
+            labels[3][-1].pack()
+            notebook894Beat.add(labels[3][-1],text=lab)
+
+        open_button = ttk.Button(root, text="Open Folder", command= lambda: open_file_dialog(folder,labels,plots456,plots894))
         open_button.grid(column=1,row=0)
         workingdir_txt = tk.StringVar()
         workingdir_txt.set('hello')

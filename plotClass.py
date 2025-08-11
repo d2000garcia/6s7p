@@ -9,16 +9,21 @@ class plots:
         self.scan = scan
         self.plot_w = plot_w
         self.plot_h = plot_h
-        self.Tavg = ImageTk.PhotoImage(resized_default.copy())
-        self.Pavg = ImageTk.PhotoImage(resized_default.copy())
-        self.scaledT_and_fit = ImageTk.PhotoImage(resized_default.copy())
-        self.correctedT = ImageTk.PhotoImage(resized_default.copy())
-        self.ogbeat = ImageTk.PhotoImage(resized_default.copy())
-        self.filteredbeat = ImageTk.PhotoImage(resized_default.copy())
-        self.fitted_beat = ImageTk.PhotoImage(resized_default.copy())
-        self.unscaledresiduals = ImageTk.PhotoImage(resized_default.copy())
-        self.ScaledResiduals = ImageTk.PhotoImage(resized_default.copy())
-        self.plots=['Tavg','Pavg','scaledT_and_fit','correctedT','ogbeat','filteredbeat','unscaledresiduals','ScaledResiduals']
+        # self.Tavg = ImageTk.PhotoImage(resized_default.copy())
+        # self.Pavg = ImageTk.PhotoImage(resized_default.copy())
+        # self.scaledT_and_fit = ImageTk.PhotoImage(resized_default.copy())
+        # self.correctedT = ImageTk.PhotoImage(resized_default.copy())
+        # self.ogbeat = ImageTk.PhotoImage(resized_default.copy())
+        # self.filteredbeat = ImageTk.PhotoImage(resized_default.copy())
+        # self.fitted_beat = ImageTk.PhotoImage(resized_default.copy())
+        # self.unscaledresiduals = ImageTk.PhotoImage(resized_default.copy())
+        # self.ScaledResiduals = ImageTk.PhotoImage(resized_default.copy())
+
+        
+        self.plotslabs=['Tavg','Pavg','scaledT_and_fit','correctedT','ogbeat','filteredbeat','unscaledresiduals','ScaledResiduals']
+        self.plots = []
+        for i in self.plotslabs:
+            self.plots.append(ImageTk.PhotoImage(resized_default.copy()))
         if scan == '456':
             self.fold = self.par_fold + r'\Analysis\456\plots'
         else:
@@ -26,6 +31,10 @@ class plots:
     
     def update_working_dir(self, new_par_fold):
         self.par_fold = new_par_fold
+        if self.scan == '456':
+            self.fold = self.par_fold + r'\Analysis\456\plots'
+        else:
+            self.fold = self.par_fold + r'\Analysis\894\plots'
 
     def update_image(self, tochange):
         for whichone in tochange:
@@ -33,25 +42,25 @@ class plots:
             temp = Image.open(plot_path)
             resized_temp = temp.resize((self.plot_w, self.plot_h), Image.LANCZOS)
             if whichone == 'Tavg':
-                self.Tavg = ImageTk.PhotoImage(resized_temp)
+                self.plots[0] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'Pavg':
-                self.Pavg = ImageTk.PhotoImage(resized_temp)
+                self.plots[1] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'scaledT_and_fit':
-                self.scaledT_and_fit = ImageTk.PhotoImage(resized_temp)
+                self.plots[2] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'correctedT':
-                self.correctedT = ImageTk.PhotoImage(resized_temp)
+                self.plots[3] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'ogbeat':
-                self.ogbeat = ImageTk.PhotoImage(resized_temp)
+                self.plots[4] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'filteredbeat':
-                self.filteredbeat = ImageTk.PhotoImage(resized_temp)
+                self.plots[5] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'fitted_beat':
-                self.fitted_beat = ImageTk.PhotoImage(resized_temp)
+                self.plots[6] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'unscaledresiduals':
-                self.unscaledresiduals = ImageTk.PhotoImage(resized_temp)
+                self.plots[7] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'ScaledResiduals':
-                self.ScaledResiduals = ImageTk.PhotoImage(resized_temp)
+                self.plots[8] = ImageTk.PhotoImage(resized_temp)
 
-def change_image(oldlabel,new):
+def change_Label_image(oldlabel,new):
     #oldlabel is the label you want to change and
     #new is new Tkimage to exchange
     oldlabel.configure(image=new)
