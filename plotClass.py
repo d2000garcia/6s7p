@@ -2,7 +2,7 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
 class plots:
-    def __init__(self,default_path = r".\Picture_template.png", scan = '456', plot_w = 750, plot_h = 450):
+    def __init__(self,default_path = r".\Picture_template.png", scan = '456', plot_w = 500, plot_h = 300):
         default_img = Image.open(default_path)
         resized_default = default_img.resize((plot_w, plot_h), Image.LANCZOS)
         self.par_fold = ''
