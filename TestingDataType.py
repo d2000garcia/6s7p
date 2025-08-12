@@ -89,7 +89,7 @@ class data:
 
             if beatnote_det_f == 0:
                 if scan == '456':
-                    beatnote_det_f = 40
+                    beatnote_det_f = 45
                 else:
                     beatnote_det_f = 20
             self.beatnote_det_f = beatnote_det_f
@@ -157,7 +157,7 @@ class data:
                 folder = par_folder + r'\Analysis\894'
             if beatnote_det_f == 0:
                 if scan == '456':
-                    beatnote_det_f = 40
+                    beatnote_det_f = 45
                 else:
                     beatnote_det_f = 20
             self.beatnote_det_f = beatnote_det_f

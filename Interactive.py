@@ -122,8 +122,8 @@ def recalculate456beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=4
 
 def recalculate894T(analysis_dat, labels, entries, plots_grp,switchlabelsat=4):
     for i in [0,1]:
-            analysis_dat.analysis894.back_rngs[0][i] = int(entries[1][0][i].get())
-            analysis_dat.analysis894.back_rngs[1][i] = int(entries[1][0][2+i].get())
+            analysis_dat.analysis894.back_rngs[0][i] = int(entries[1][2][i].get())
+            analysis_dat.analysis894.back_rngs[1][i] = int(entries[1][2][2+i].get())
     analysis_dat.analysis894.calculate_T_shift()
     plots_grp.update_image(['scaledT_and_fit','correctedT'])
     tochange = [2,3]
@@ -131,8 +131,8 @@ def recalculate894T(analysis_dat, labels, entries, plots_grp,switchlabelsat=4):
         change_Label_image(labels[2][i], plots_grp.plots[i])
 
 def recalculate894beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=4):
-    analysis_dat.analysis894.beat_rng[0] = int(entries[1][1][0].get())
-    analysis_dat.analysis894.beat_rng[1] = int(entries[1][1][1].get())
+    analysis_dat.analysis894.beat_rng[0] = int(entries[1][3][0].get())
+    analysis_dat.analysis894.beat_rng[1] = int(entries[1][3][1].get())
     analysis_dat.analysis894.calculate_beat_fit()
     plots_grp.update_image(['filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals'])
     tochange = [5,6,7,8]
