@@ -2,7 +2,10 @@ import numpy as np
 from numpy.polynomial import Polynomial as poly
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
+from scipy.special import voigt_profile as voigt
+from scipy.optimize import curve_fit
 from matplotlib import lines as lines
+from numpy import pi as pi
 def simple_dat_get(filename, skip_lines=0):
     file = open(filename, 'r')
     data = []
@@ -78,6 +81,15 @@ def LinFit(data_bounds, indices, data):
         new_data.extend(data[bound[0]:bound[1]])
         new_indices.extend(indices[bound[0]:bound[1]])
     return poly.fit(new_indices,new_data,1)
+
+def cvt_abs_wav_to_diff(abs_wav):
+    #assume units of wavnum are 1/cm
+    c=299792458
+    x = [0]
+    for i in len(abs_wav-1):
+        x.append((abs_wav[i+1]-abs_wav[i])*c/10000)
+    return x #returns MHz freq diff
+
 
 class data:
     def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[2340,8000], back_rngs=[[0,0],[6300,8000]], file_skip_lines=0, scan='456', exists = False):
@@ -181,6 +193,7 @@ class data:
             temp = np.loadtxt(folder+r'\entries\back_rngs.csv', dtype=int, delimiter=',').tolist()
             self.back_rngs = [temp[:2],temp[2:]]
             (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
+            self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
     
     def calculate_T_shift(self):
         self.backgoundFit = LinFit(self.back_rngs, self.indices, self.scaledT)
@@ -204,6 +217,7 @@ class data:
         plt.title('Background Corrected Transmission')
         plt.savefig(self.folder+r'\plots\correctedT.png')
         plt.clf()
+        self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
             # plt.show()
     
     def calculate_beat_fit(self):
@@ -260,9 +274,39 @@ class data:
         plt.title(self.scan+' Beat Unscaled Residuals')
         plt.savefig(self.folder+r'\plots\unscaledresiduals.png')
         plt.clf()
+        self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
 
+    def set_transition(self, F1):
+        #Can be used to verify i some fashion if need be of the coefficient
+        # fine_structure = 0.00729735256
+        # Lcell = 29.09 #cm
+        # denom = (7+1) * (1+2) #(2I+1)(2J+1) #I=7/2, J=1/2 6s starting ground state
 
-            
+        #Voigt(x,s,g)= Re(w(z))/s \rad(2pi) , z = (x + i g)/(s\rad(2)) ; w = Faddeeva function
+        if self.scan == '456':
+            if F1 == 3:
+                absolute_wavenum = [21946.56347,21946.56514,21946.56736]
+                #from W. Williams, M. Herd, and W. Hawkins, Laser Phys. Lett. 15,095702 (2018).
+                self.hypsplit = cvt_abs_wav_to_diff(absolute_wavenum)
+                self.hyp_weights = [5/12,7/26,5/16]
+                self.hypsplit = cvt_abs_wav_to_diff
+                #Higher frequency because its closer ie. F=3->F=2,3,4
+            else:
+                #F1 == 4
+                absolute_wavenum = [21946.25850,21946.26072,21946.26349]
+                self.hypsplit = cvt_abs_wav_to_diff(absolute_wavenum)
+                self.hyp_weights = [7/48,7/16,5/16]
+                #Lower frequency because father F=4->F=3,4,5
+        elif self.scan == '894':
+            if F1 == 3:
+                self.hyp_weights = [7/24,7/8]
+                self.hypsplit = [0,1167.680]
+                #Higher frequency because its closer ie. F=3->F=3,4
+            else:
+                #F1 == 4
+                self.hyp_weights = [7/8,5/8]
+                self.hypsplit = [0,1167.680]
+                #Lower frequency because father F=4->F=3,4 
         
 
 # dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=False)
