@@ -3,9 +3,11 @@ from numpy.polynomial import Polynomial as poly
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 from scipy.special import voigt_profile as voigt
+from scipy.special import wofz as wofz
 from scipy.optimize import curve_fit
 from matplotlib import lines as lines
 from numpy import pi as pi
+import os as os
 def simple_dat_get(filename, skip_lines=0):
     file = open(filename, 'r')
     data = []
@@ -86,13 +88,13 @@ def cvt_abs_wav_to_diff(abs_wav):
     #assume units of wavnum are 1/cm
     c=299792458
     x = [0]
-    for i in len(abs_wav-1):
-        x.append((abs_wav[i+1]-abs_wav[i])*c/10000)
-    return x #returns MHz freq diff
+    for i in range(len(abs_wav)-1):
+        x.append((abs_wav[i+1]-abs_wav[i])*c/10000000)
+    return x #returns GHz freq diff
 
 
 class data:
-    def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[2340,8000], back_rngs=[[0,0],[6300,8000]], file_skip_lines=0, scan='456', exists = False):
+    def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[2340,8000], back_rngs=[[0,0],[6300,8000]], file_skip_lines=0, scan='456', F =0, exists = False):
         if not exists:
             if scan == '456':
                 filename = par_folder + r"\456Scan.csv"
@@ -101,28 +103,46 @@ class data:
 
             if beatnote_det_f == 0:
                 if scan == '456':
-                    beatnote_det_f = 45
+                    beatnote_det_f = 0.045
                 else:
-                    beatnote_det_f = 20
+                    beatnote_det_f = 0.020
+            self.par_folder = par_folder
             self.beatnote_det_f = beatnote_det_f
             self.BeatRunAvgN = BeatRunAvgN
             pure_dat = simple_dat_get(filename, file_skip_lines)
             Tavg = pure_dat[:,0:int(pure_dat.shape[1]/2)-1].mean(1)
             Pavg = pure_dat[:,int(pure_dat.shape[1]/2)-1:pure_dat.shape[1]-2].mean(1)
             ogbeat = pure_dat[:,pure_dat.shape[1]-2]
+            if scan == '894':
+                Tavg =Tavg.tolist()
+                Pavg = Pavg.tolist()
+                ogbeat = ogbeat.tolist()
+
+                Tavg.reverse()
+                Pavg.reverse()
+                ogbeat.reverse()
+                Tavg = np.array(Tavg)
+                Pavg = np.array(Pavg)
+                ogbeat = np.array(ogbeat)
             self.indices = pure_dat[:,pure_dat.shape[1]-1]
             self.indices = self.indices - self.indices.min()
             self.scaledT = Tavg/Pavg
             self.scan = scan
             self.back_rngs = back_rngs
             self.beat_rng = beat_rng
-            
+            if F == 0:
+                if scan == '456':
+                    self.set_transition(F1=3)
+                else:
+                    self.set_transition(F1=4)
+
             if scan == '456':
                 folder = par_folder + r'\Analysis\456'
             else:
                 folder = par_folder + r'\Analysis\894'
             self.folder = folder
             #Transition clean up 
+
             self.calculate_T_shift() 
             (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
             #beatnoteClean
@@ -131,7 +151,6 @@ class data:
             np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
             np.savetxt(folder+r'\fitting\original\Tavg.csv', Tavg, delimiter=',')
             np.savetxt(folder+r'\fitting\original\Pavg.csv', Pavg, delimiter=',')
-            np.savetxt(folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
             np.savetxt(folder+r'\beatnote\original\ogbeat.csv', ogbeat, delimiter=',')
             np.savetxt(folder+r'\beatnote\original\peak_indices.csv', peak_indices, fmt='%i', delimiter=',')
             np.savetxt(folder+r'\beatnote\original\peak_val.csv', peak_val,  delimiter=',')
@@ -160,6 +179,9 @@ class data:
             plt.savefig(folder+r'\plots\ogbeat.png')
             plt.clf()
             # plt.show()
+            
+
+
 
         else:
             self.scan = scan
@@ -169,17 +191,25 @@ class data:
                 folder = par_folder + r'\Analysis\894'
             if beatnote_det_f == 0:
                 if scan == '456':
-                    beatnote_det_f = 45
+                    beatnote_det_f = 0.045
                 else:
-                    beatnote_det_f = 20
+                    beatnote_det_f = 0.020
+            if F == 0:
+                if scan == '456':
+                    self.set_transition(F1=3)
+                else:
+                    self.set_transition(F1=4)
+
             self.beatnote_det_f = beatnote_det_f
             self.folder = folder
             self.indices = np.loadtxt(folder+r'\indices.csv', dtype=int, delimiter=',')
             self.scaledT = np.loadtxt(folder+r'\fitting\processed\scaledT.csv', delimiter=',')
+            self.correctedT = np.loadtxt(folder+r'\fitting\processed\correctedT.csv', delimiter=',')
             self.filteredBeat = np.loadtxt(folder+r'\beatnote\processed\filteredBeat.csv', delimiter=',')
             self.peak_indices2 = np.loadtxt(folder+r'\beatnote\processed\peak_indices.csv', dtype=int, delimiter=',').tolist()
             self.peak_val2 = np.loadtxt(folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
             self.BeatRunAvgN = BeatRunAvgN
+            self.par_folder = par_folder
 
             temp = np.loadtxt(folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',') 
             #Save as domain, window, coef
@@ -193,17 +223,19 @@ class data:
             temp = np.loadtxt(folder+r'\entries\back_rngs.csv', dtype=int, delimiter=',').tolist()
             self.back_rngs = [temp[:2],temp[2:]]
             (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
-            self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
+            # self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
     
     def calculate_T_shift(self):
+
         self.backgoundFit = LinFit(self.back_rngs, self.indices, self.scaledT)
         back_fit_param = self.backgoundFit.domain.tolist()
         back_fit_param.extend(self.backgoundFit.window.tolist())
         back_fit_param.extend(self.backgoundFit.coef.tolist())
+
         np.savetxt(self.folder+r'\fitting\processed\back_fit_param.csv', back_fit_param, delimiter=',')
 
+            
         temp = [self.back_rngs[0][0],self.back_rngs[0][1], self.back_rngs[1][0],self.back_rngs[1][1]]
-
         np.savetxt(self.folder+r'\entries\back_rngs.csv', temp, fmt='%i', delimiter=',')
 
         plt.plot(self.indices,self.scaledT)
@@ -212,13 +244,34 @@ class data:
         plt.savefig(self.folder+r'\plots\scaledT_and_fit.png')
         plt.clf()
         # plt.show()
-        self.correctedT = self.scaledT - self.backgoundFit(self.indices)
+        if self.par_folder.find('BaselineMeas')!=-1:
+            #is baseline measurement
+            self.PwrWings = 0
+        else:
+            #not baseline measurement
+            if self.par_folder+r'\PwrWings'+self.scan+'.csv' in os.listdir(self.par_folder):
+                temp = np.loadtxt(self.par_folder+r'\PwrWings'+self.scan+'.csv', delimiter=',').tolist()
+                self.PwrWings = np.mean(temp)
+            else:
+                self.PwrWings = 0
+        self.correctedT = self.scaledT / self.backgoundFit(self.indices) - self.PwrWings
+        
         plt.plot(self.indices, self.correctedT)
         plt.title('Background Corrected Transmission')
         plt.savefig(self.folder+r'\plots\correctedT.png')
         plt.clf()
-        self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
+        # self.voigt_rng = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
             # plt.show()
+        if self.par_folder.find('BaselineMeas')!=-1:
+            #If this is the baseline measurement folder
+            temp  = find_peaks(-np.array(self.correctedT), width=500)
+            print(self.scan+ ' Pwr in wings mean: ' +str(np.mean(self.correctedT[temp[0][0]-250:temp[0][0]+250])))
+            print(poly.fit(self.indices[temp[0][0]-250:temp[0][0]+250],self.correctedT[temp[0][0]-250:temp[0][0]+250],1))
+            # np.savetxt(self.par_folder+r'\PwrWings'+self.scan+'.csv',self.correctedT[temp[0][0]-250:temp[0][0]+250])
+            for i in os.listdir(self.par_folder.replace(r'/BaselineMeas','')):
+                np.savetxt(self.par_folder.replace('BaselineMeas',i) + '/PwrWings'+self.scan+'.csv', self.correctedT[temp[0][0]-250:temp[0][0]+250], delimiter=',')
+            
+            
     
     def calculate_beat_fit(self):
         (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
@@ -229,7 +282,7 @@ class data:
             if diff < avg_diff:
                 self.freq.append(self.freq[-1] + self.beatnote_det_f*2)
             else:
-                self.freq.append(self.freq[-1] + 250 - self.beatnote_det_f*2)
+                self.freq.append(self.freq[-1] + 0.250 - self.beatnote_det_f*2)
         # print(self.freq)
 
         
@@ -274,7 +327,18 @@ class data:
         plt.title(self.scan+' Beat Unscaled Residuals')
         plt.savefig(self.folder+r'\plots\unscaledresiduals.png')
         plt.clf()
-        self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
+
+        plt.plot(self.beatfit(self.indices[self.beat_rng[0]:self.beat_rng[1]]),self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
+        plt.title(self.scan+' beat fit scaledT')
+        plt.savefig(self.folder+r'\plots\beatScaledT.png')
+        plt.clf()
+        plt.plot(self.beatfit(self.indices[self.beat_rng[0]:self.beat_rng[1]]),self.correctedT[self.beat_rng[0]:self.beat_rng[1]])
+        plt.title(self.scan+' beat fit correctedT')
+        plt.savefig(self.folder+r'\plots\beatCorrectedT.png')
+        plt.clf()
+        np.savetxt(self.folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
+        np.savetxt(self.folder+r'\fitting\processed\correctedT.csv', self.scaledT, delimiter=',')
+        # self.voigt_rng = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
 
     def set_transition(self, F1):
         #Can be used to verify i some fashion if need be of the coefficient
@@ -284,30 +348,93 @@ class data:
 
         #Voigt(x,s,g)= Re(w(z))/s \rad(2pi) , z = (x + i g)/(s\rad(2)) ; w = Faddeeva function
         if self.scan == '456':
+            #In GHz
             if F1 == 3:
-                absolute_wavenum = [21946.56347,21946.56514,21946.56736]
+                self.abs_wavenum = [21946.56347,21946.56514,21946.56736]
                 #from W. Williams, M. Herd, and W. Hawkins, Laser Phys. Lett. 15,095702 (2018).
-                self.hypsplit = cvt_abs_wav_to_diff(absolute_wavenum)
+                self.hypsplit = cvt_abs_wav_to_diff(self.abs_wavenum)
                 self.hyp_weights = [5/12,7/26,5/16]
-                self.hypsplit = cvt_abs_wav_to_diff
                 #Higher frequency because its closer ie. F=3->F=2,3,4
             else:
                 #F1 == 4
-                absolute_wavenum = [21946.25850,21946.26072,21946.26349]
-                self.hypsplit = cvt_abs_wav_to_diff(absolute_wavenum)
+                self.abs_wavenum = [21946.25850,21946.26072,21946.26349]
+                self.hypsplit = cvt_abs_wav_to_diff(self.abs_wavenum)
                 self.hyp_weights = [7/48,7/16,5/16]
                 #Lower frequency because father F=4->F=3,4,5
         elif self.scan == '894':
+            main_tran = 335116.048807
+            center_to6PF3 = 0.656820
+            center_to6PF4 = 0.510860
+            center_to6SF3 = 5.170855370625
+            center_to6SF4 = 4.021776399375
             if F1 == 3:
-                self.hyp_weights = [7/24,7/8]
-                self.hypsplit = [0,1167.680]
+                self.abs_wavenum = [main_tran+center_to6SF3-center_to6PF3,main_tran+center_to6SF3+center_to6PF4]
+                # self.hyp_weights = [7/24,7/8]
+                self.hypsplit = [0,1.167680]
                 #Higher frequency because its closer ie. F=3->F=3,4
             else:
                 #F1 == 4
+                self.abs_wavenum = [main_tran-center_to6SF4-center_to6PF3,main_tran-center_to6SF4+center_to6PF4]
                 self.hyp_weights = [7/8,5/8]
-                self.hypsplit = [0,1167.680]
+                # self.hyp_weights = [5/8,7/8]
+                self.hypsplit = [0,1.167680]
                 #Lower frequency because father F=4->F=3,4 
         
+    
+    def set_fitting_function(self):
+        mini = find_peaks(-np.array(self.correctedT), width=250)
+        guess = self.beatfit(mini[0][0])
+        shift = self.abs_wavenum[0]*299792458/10000000
+        coeff = self.hyp_weights
+        param_guess = [1,0.4,1/10,1/100,0.7]
+        sqrtlog2 = np.sqrt(np.log(2))
+        temp = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
+        # self.voit_eqn = 
+                #x1 = coeff
+                #x2 = freq shifts from peak 1
+                #-mv shifts to right considering out scan starts below peak 1 freq
+                #+shift moves entire profile peak 1 freq to left so that the actual fitting is around 0 freq
+                #so w + shift - mv ideally moves peaks to relative frequency from start of scan
+                #wD is the temperature dependentr part of the Dopler full width half max, since it has frequency portion include small shiftings
+        # self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * (w+shift -mv) * np.sum(np.real(np.array(list(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD,coeff,self.hypsplit))))))
+        test = lambda w,p0,a,wD,L,mv: np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real
+
+        # self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * (w+shift-mv) * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real)
+
+        self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real)
+
+
+        # self.fitting_eqn = lambda w,p0,a,wD,L,mv: np.sum(np.real(list(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD,coeff,self.hypsplit))))
+        
+        plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+        # plt.plot(plotting_freq, self.fitting_eqn(plotting_freq,1,1/100000,1,1,0))
+        # plt.show()
+        test2 = lambda w,p0,a,wD,L,mv: coeff[0]*wofz(temp(w-self.hypsplit[0]-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD) + coeff[1]*wofz(temp(w-self.hypsplit[1]-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD)
+        test3 = lambda w,p0,a,wD,L,mv: coeff[0]*voigt(w-self.hypsplit[0]-mv,wD,L) + coeff[1] *voigt(w-self.hypsplit[1]-mv, wD, L)
+        pass
+
+            # def eqn(w,p0,a,wD,L,mv):
+                # np.sum(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD))
+                # return p0 * np.exp(-a * (w+shift -mv) * np.real(np.sum(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD))))
+        # temp = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+
+        if self.scan == '894':
+            absorb_reverse = self.correctedT[self.beat_rng[0]:self.beat_rng[1]].tolist()
+            absorb_reverse.reverse()
+        # plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+        self.fitted_param, pcov = curve_fit(self.fitting_eqn, plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]],param_guess)
+        
+        plt.scatter(plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]])
+        plt.plot(plotting_freq,self.fitting_eqn(plotting_freq,*self.fitted_param), '-r',linewidth=0.5,marker='.')#, mew='0.05')
+        plt.title(self.scan+ 'Fitted plot')
+        plt.show()
+        plt.savefig(self.folder+r'\plots\FittedScan.png')
+        plt.clf()
+        
+
+
+        
+
 
 # dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=False)
 # print(dat.indices)

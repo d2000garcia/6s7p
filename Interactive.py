@@ -139,6 +139,11 @@ def recalculate894beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=4
     for i in tochange:
         change_Label_image(labels[3][i-switchlabelsat], plots_grp.plots[i])
 
+def calculate_abs_fit_456(analysis_dat):
+    analysis_dat.analysis456.set_fitting_function()
+def calculate_abs_fit_894(analysis_dat):
+    analysis_dat.analysis894.set_fitting_function()
+
 first = True
 template_image = r".\Picture_template.png"
 switchlabelsat=4
@@ -229,6 +234,12 @@ if __name__ == '__main__':
 
         open_button4 = ttk.Button(root, text="Recalculate 894 Beat", command= lambda: recalculate894beat(folder,labels,entries,plot_sets[1]))
         open_button4.grid(column=4,row=5)
+
+        open_button4 = ttk.Button(root, text="Calculate 456 Abs Fit", command= lambda: calculate_abs_fit_456(folder))
+        open_button4.grid(column=3,row=1)
+
+        open_button4 = ttk.Button(root, text="Calculate 894 Abs Fit", command= lambda: calculate_abs_fit_894(folder,))
+        open_button4.grid(column=3,row=5)
         
         open_button5 = ttk.Button(root, text="Close", command= exit)
         open_button5.grid(column=3,row=9)
