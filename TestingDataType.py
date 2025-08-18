@@ -5,6 +5,8 @@ from scipy.signal import find_peaks
 from scipy.special import voigt_profile as voigt
 from scipy.special import wofz as wofz
 from scipy.optimize import curve_fit
+from scipy.integrate import quad
+import scipy as sci
 from matplotlib import lines as lines
 from numpy import pi as pi
 import os as os
@@ -113,17 +115,17 @@ class data:
             Tavg = pure_dat[:,0:int(pure_dat.shape[1]/2)-1].mean(1)
             Pavg = pure_dat[:,int(pure_dat.shape[1]/2)-1:pure_dat.shape[1]-2].mean(1)
             ogbeat = pure_dat[:,pure_dat.shape[1]-2]
-            if scan == '894':
-                Tavg =Tavg.tolist()
-                Pavg = Pavg.tolist()
-                ogbeat = ogbeat.tolist()
+            # if scan == '894':
+            #     Tavg =Tavg.tolist()
+            #     Pavg = Pavg.tolist()
+            #     ogbeat = ogbeat.tolist()
 
-                Tavg.reverse()
-                Pavg.reverse()
-                ogbeat.reverse()
-                Tavg = np.array(Tavg)
-                Pavg = np.array(Pavg)
-                ogbeat = np.array(ogbeat)
+            #     Tavg.reverse()
+            #     Pavg.reverse()
+            #     ogbeat.reverse()
+            #     Tavg = np.array(Tavg)
+            #     Pavg = np.array(Pavg)
+            #     ogbeat = np.array(ogbeat)
             self.indices = pure_dat[:,pure_dat.shape[1]-1]
             self.indices = self.indices - self.indices.min()
             self.scaledT = Tavg/Pavg
@@ -132,9 +134,9 @@ class data:
             self.beat_rng = beat_rng
             if F == 0:
                 if scan == '456':
-                    self.set_transition(F1=3)
-                else:
                     self.set_transition(F1=4)
+                else:
+                    self.set_transition(F1=3)
 
             if scan == '456':
                 folder = par_folder + r'\Analysis\456'
@@ -196,9 +198,9 @@ class data:
                     beatnote_det_f = 0.020
             if F == 0:
                 if scan == '456':
-                    self.set_transition(F1=3)
-                else:
                     self.set_transition(F1=4)
+                else:
+                    self.set_transition(F1=3)
 
             self.beatnote_det_f = beatnote_det_f
             self.folder = folder
@@ -369,7 +371,7 @@ class data:
             center_to6SF4 = 4.021776399375
             if F1 == 3:
                 self.abs_wavenum = [main_tran+center_to6SF3-center_to6PF3,main_tran+center_to6SF3+center_to6PF4]
-                # self.hyp_weights = [7/24,7/8]
+                self.hyp_weights = [7/24,7/8]
                 self.hypsplit = [0,1.167680]
                 #Higher frequency because its closer ie. F=3->F=3,4
             else:
@@ -418,15 +420,16 @@ class data:
                 # return p0 * np.exp(-a * (w+shift -mv) * np.real(np.sum(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD))))
         # temp = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
 
-        if self.scan == '894':
-            absorb_reverse = self.correctedT[self.beat_rng[0]:self.beat_rng[1]].tolist()
-            absorb_reverse.reverse()
+        # if self.scan == '894':
+        #     absorb_reverse = self.correctedT[self.beat_rng[0]:self.beat_rng[1]].tolist()
+        #     absorb_reverse.reverse()
         # plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
         self.fitted_param, pcov = curve_fit(self.fitting_eqn, plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]],param_guess)
         
         plt.scatter(plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]])
         plt.plot(plotting_freq,self.fitting_eqn(plotting_freq,*self.fitted_param), '-r',linewidth=0.5,marker='.')#, mew='0.05')
         plt.title(self.scan+ 'Fitted plot')
+        plt.xlabel('Freq [GHz]')
         plt.show()
         plt.savefig(self.folder+r'\plots\FittedScan.png')
         plt.clf()
