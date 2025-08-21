@@ -48,6 +48,11 @@ class analysis:
                 os.mkdir(self.folderpath+r'\Analysis\894\fitting\processed')
                 os.mkdir(self.folderpath+r'\Analysis\894\plots')
                 os.mkdir(self.folderpath+r'\Analysis\894\entries')
+                temp = Image.open(r".\Picture_template.png")
+                temp.save(self.folderpath+r'\Analysis\456\plots\FittedScan.png')
+                temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
+                temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
+                temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=False)
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False)
 
@@ -56,7 +61,7 @@ class analysis:
 
         
 
-def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,switchlabelsat=4):
+def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,switchlabelsat=5):
     temporary = filedialog.askdirectory(
         initialdir="/",  # Optional: set initial directory
         title="Select a folder",
@@ -101,52 +106,62 @@ def change_Label_image(oldlabel,new):
     oldlabel.configure(image=new)
     oldlabel.image = new
 
-def recalculate456T(analysis_dat, labels, entries, plots_grp,switchlabelsat=4):
+def recalculate456T(analysis_dat, labels, entries, plots_grp,switchlabelsat=5):
     for i in [0,1]:
             analysis_dat.analysis456.back_rngs[0][i] = int(entries[1][0][i].get())
             analysis_dat.analysis456.back_rngs[1][i] = int(entries[1][0][2+i].get())
     analysis_dat.analysis456.calculate_T_shift()
-    plots_grp.update_image(['scaledT_and_fit','correctedT'])
-    tochange = [2,3]
+    plots_grp.update_image(['scaledT'])
+    tochange = [2]
     for i in tochange:
         change_Label_image(labels[0][i], plots_grp.plots[i])
 
-def recalculate456beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=4):
+def recalculate456beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=5):
     analysis_dat.analysis456.beat_rng[0] = int(entries[1][1][0].get())
     analysis_dat.analysis456.beat_rng[1] = int(entries[1][1][1].get())
     analysis_dat.analysis456.calculate_beat_fit()
     plots_grp.update_image(['filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals'])
-    tochange = [5,6,7,8]
+    tochange = [6,7,8,9]
     for i in tochange:
         change_Label_image(labels[1][i-switchlabelsat], plots_grp.plots[i])
 
-def recalculate894T(analysis_dat, labels, entries, plots_grp,switchlabelsat=4):
+def recalculate894T(analysis_dat, labels, entries, plots_grp,switchlabelsat=5):
     for i in [0,1]:
             analysis_dat.analysis894.back_rngs[0][i] = int(entries[1][2][i].get())
             analysis_dat.analysis894.back_rngs[1][i] = int(entries[1][2][2+i].get())
     analysis_dat.analysis894.calculate_T_shift()
-    plots_grp.update_image(['scaledT_and_fit','correctedT'])
-    tochange = [2,3]
+    plots_grp.update_image(['scaledT'])
+    tochange = [2]
     for i in tochange:
         change_Label_image(labels[2][i], plots_grp.plots[i])
 
-def recalculate894beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=4):
+def recalculate894beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=5):
     analysis_dat.analysis894.beat_rng[0] = int(entries[1][3][0].get())
     analysis_dat.analysis894.beat_rng[1] = int(entries[1][3][1].get())
     analysis_dat.analysis894.calculate_beat_fit()
     plots_grp.update_image(['filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals'])
-    tochange = [5,6,7,8]
+    tochange = [6,7,8,9]
     for i in tochange:
         change_Label_image(labels[3][i-switchlabelsat], plots_grp.plots[i])
 
-def calculate_abs_fit_456(analysis_dat):
+def calculate_abs_fit_456(analysis_dat,labels,plots_grp):
     analysis_dat.analysis456.set_fitting_function()
-def calculate_abs_fit_894(analysis_dat):
+    tochange = [3,4]
+    for i in tochange:
+        change_Label_image(labels[0][i], plots_grp.plots[i])
+def calculate_abs_fit_894(analysis_dat,labels,plots_grp):
     analysis_dat.analysis894.set_fitting_function()
+    tochange = [3,4]
+    for i in tochange:
+        change_Label_image(labels[0][i], plots_grp.plots[i])
+
+def calculate_ratio(analysis_dat):
+    if analysis_dat.analysis894.fitted and analysis_dat.analysis456.fitted:
+        print(analysis_dat.analysis456.alpha/analysis_dat.analysis894.fitted)
 
 first = True
 template_image = r".\Picture_template.png"
-switchlabelsat=4
+switchlabelsat=5
 if __name__ == '__main__':
     root = tk.Tk()
     if first:
@@ -163,6 +178,7 @@ if __name__ == '__main__':
         notebooks[1].grid(column=4,row=0,columnspan=3, sticky="nsew")
         notebooks[2].grid(column=0,row=4,columnspan=3, sticky="nsew")
         notebooks[3].grid(column=4,row=4,columnspan=3, sticky="nsew")
+
 
         entry_lbl = [ttk.Label(root, text='456  Background Linear Fit Ranges'), ttk.Label(root, text='456 Beatnote Range')]
         entry_lbl.append(ttk.Label(root, text='Left data group'))
@@ -221,7 +237,7 @@ if __name__ == '__main__':
                 notebooks[j+k].add(labels[j+k][-1],text=plot_sets[temp].scan+' '+lab)
         entry = ttk.Entry(root,width=ent_wdth)
         open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1]))
-        open_button.grid(column=3,row=0)
+        open_button.grid(column=3,row=8)
 
         open_button1 = ttk.Button(root, text="Recalculate 456 Scan", command= lambda: recalculate456T(folder,labels,entries,plot_sets[0]))
         open_button1.grid(column=0,row=1)
@@ -235,21 +251,21 @@ if __name__ == '__main__':
         open_button4 = ttk.Button(root, text="Recalculate 894 Beat", command= lambda: recalculate894beat(folder,labels,entries,plot_sets[1]))
         open_button4.grid(column=4,row=5)
 
-        open_button4 = ttk.Button(root, text="Calculate 456 Abs Fit", command= lambda: calculate_abs_fit_456(folder))
+        open_button4 = ttk.Button(root, text="Calculate 456 Abs Fit", command= lambda: calculate_abs_fit_456(folder,labels,plot_sets[0]))
         open_button4.grid(column=3,row=1)
 
-        open_button4 = ttk.Button(root, text="Calculate 894 Abs Fit", command= lambda: calculate_abs_fit_894(folder,))
+        open_button4 = ttk.Button(root, text="Calculate 894 Abs Fit", command= lambda: calculate_abs_fit_894(folder,labels,plot_sets[1]))
         open_button4.grid(column=3,row=5)
         
         open_button5 = ttk.Button(root, text="Close", command= exit)
         open_button5.grid(column=3,row=9)
         
-    
+        
 
         workingdir_txt = tk.StringVar()
         workingdir_txt.set('hello')
         workingdir = ttk.Label(root, textvariable=workingdir_txt)
-        workingdir.grid(column=4, row=8)
+        workingdir.grid(column=4, row=8,columnspan=3, sticky="nsew")
     print(folder.folderpath)
     root.mainloop()
 	

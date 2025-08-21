@@ -9,7 +9,7 @@ class plots:
         self.scan = scan
         self.plot_w = plot_w
         self.plot_h = plot_h
-        self.plotslabs=['Tavg','Pavg','scaledT_and_fit','correctedT','ogbeat','filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals']
+        self.plotslabs=['Tavg','Pavg','scaledT','FittedScan','FittedScanResid','ogbeat','filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals']
         self.plots = []
         for i in self.plotslabs:
             self.plots.append(ImageTk.PhotoImage(resized_default.copy()))
@@ -34,20 +34,22 @@ class plots:
                 self.plots[0] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'Pavg':
                 self.plots[1] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'scaledT_and_fit':
+            elif whichone == 'scaledT':
                 self.plots[2] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'correctedT':
+            elif whichone == 'FittedScan':
                 self.plots[3] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'ogbeat':
+            elif whichone == 'FittedScanResid':
                 self.plots[4] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'filteredbeat':
+            elif whichone == 'ogbeat':
                 self.plots[5] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'fitted_beat':
+            elif whichone == 'filteredbeat':
                 self.plots[6] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'unscaledresiduals':
+            elif whichone == 'fitted_beat':
                 self.plots[7] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'ScaledResiduals':
+            elif whichone == 'unscaledresiduals':
                 self.plots[8] = ImageTk.PhotoImage(resized_temp)
+            elif whichone == 'ScaledResiduals':
+                self.plots[9] = ImageTk.PhotoImage(resized_temp)
 
 def change_Label_image(oldlabel,new):
     #oldlabel is the label you want to change and
