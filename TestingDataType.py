@@ -4,9 +4,9 @@ from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 from scipy.special import voigt_profile as voigt
 from scipy.special import wofz as wofz
-from scipy.optimize import curve_fit
 from scipy.integrate import quad
 import scipy as sci
+from scipy import optimize as opt
 from matplotlib import lines as lines
 from numpy import pi as pi
 import os as os
@@ -392,17 +392,21 @@ class data:
         k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
         k2 = 10000 * afs * np.sqrt(m*c*c*pi**3/(8*kB)) #power analysis leads to the 10^4 factor 
         
-
+        T = 273+30  # guess at hot portion of cell
         mini = find_peaks(-np.array(self.correctedT), width=250)
         guess = self.beatfit(mini[0][0])
         if self.scan == '456':
             w1 = self.abs_wavenum[0]*29.9792458 #Abs freq w1 in GHz
-            p0 = 0.9
+            p0 = 0.9 #scaledT pwr at top
+            L = 1/137.54/2 #half of lifetime in MHz
         else:
-            w1 = self.abs_wavenum[0]
-            p0 = 0.11
+            w1 = self.abs_wavenum[0] * k1
+            p0 = 0.11 #scaledT power at top
+            L = 0.0045612/2 #half of lifetime in MHz
+            wD = self.abs_wavenum[0] * np.sqrt(2*T) * k1
+            
         coeff = self.hyp_weights
-        param_guess = [1,0.4,1/10,1/100,0.7]
+        param_guess = [1,0.4,1/10,0.7]
         sqrtlog2 = np.sqrt(np.log(2))
         temp = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
         # self.voit_eqn = 
@@ -419,14 +423,19 @@ class data:
 
         self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real)
 
-        self.fitting_eqn2 = lambda w,p0,k0,a,T,L,mv: p0 * (1-k0*(w - mv)) * np.exp(-a * (k2/np.sqrt(T)) * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/((w1+w)*k1*np.sqrt(2*T))),self.hyp_weights,self.hypsplit))),axis=0).real)
+        self.fitting_eqn2 = lambda w,p0,k0,a,T,L,mv: p0 * (1-k0*(w - mv)) * np.exp(-a * (k2/np.sqrt(T)) * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/((w1+w*k1)*np.sqrt(2*T))),self.hyp_weights,self.hypsplit))),axis=0).real)
 
-        self.fitting_eqn3 = lambda w,p0,a,wD,L,mv, k0: p0 * (1-k0*(w - mv)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real)
+        self.fitting_eqn3 = lambda w,p0,a,wD,L,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L/2)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
 
-        param_guess2 = [p0,2,1,273,1,guess]
+        param_guess2 = [p0,0.01,1,273,L,guess]
 
         param_guess3 = param_guess.copy()
+        param_guess3.append(0.1)
         param_guess3.append(1)
+        param_guess3.append(0.001)
+        if self.scan=='894':
+            bounds3 = ([0.1,0.00001,0.001,200,0.00001,0],[3,1,10,400,0.1,5])
+
 
 
         # self.fitting_eqn = lambda w,p0,a,wD,L,mv: np.sum(np.real(list(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD,coeff,self.hypsplit))))
@@ -449,7 +458,7 @@ class data:
         # plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
 
 
-        # self.fitted_param, pcov = curve_fit(self.fitting_eqn, plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]],param_guess)
+        # self.fitted_param, pcov = opt.curve_fit(self.fitting_eqn, plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]],param_guess)
         
         # plt.scatter(plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]])
         # plt.plot(plotting_freq,self.fitting_eqn(plotting_freq,*self.fitted_param), '-r',linewidth=0.5,marker='.')#, mew='0.05')
@@ -459,7 +468,7 @@ class data:
         # plt.savefig(self.folder+r'\plots\FittedScan.png')
         # plt.clf()
         
-        # fitted_param2, pcov2 = curve_fit(self.fitting_eqn2, plotting_freq, self.scaledT[self.beat_rng[0]:self.beat_rng[1]], param_guess2)
+        # fitted_param2, pcov2 = opt.curve_fit(self.fitting_eqn2, plotting_freq, self.scaledT[self.beat_rng[0]:self.beat_rng[1]], param_guess2, bounds=([0.1,0.00001,0.001,200,0.00001,0],[3,1,10,400,0.1,5]))
         # plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]], marker='.')
         # plt.plot(plotting_freq,self.fitting_eqn2(plotting_freq,*fitted_param2), '-r',linewidth=0.5,marker='.')#, mew='0.05')
         # plt.title(self.scan+ 'Fitted plot')
@@ -468,8 +477,8 @@ class data:
         # plt.savefig(self.folder+r'\plots\FittedScan.png')
         # plt.clf()
 
-        fitted_param3, pcov3 = curve_fit(self.fitting_eqn3, plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]],param_guess3)
-        
+        fitted_param3, pcov3 = opt.curve_fit(self.fitting_eqn3, plotting_freq,self.correctedT[self.beat_rng[0]:self.beat_rng[1]],param_guess3)
+        print(fitted_param3)
         plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
         plt.plot(plotting_freq,self.fitting_eqn3(plotting_freq,*fitted_param3), '-r',linewidth=0.5,marker='.')#, mew='0.05')
         plt.title(self.scan+ 'Fitted plot')
@@ -478,7 +487,7 @@ class data:
         plt.savefig(self.folder+r'\plots\FittedScan.png')
         plt.clf()
 
-        print(fitted_param3)
+        
         
 
 
