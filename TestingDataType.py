@@ -143,6 +143,7 @@ class data:
             np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
             np.savetxt(folder+r'\fitting\original\Tavg.csv', Tavg, delimiter=',')
             np.savetxt(folder+r'\fitting\original\Pavg.csv', Pavg, delimiter=',')
+            np.savetxt(folder+r'\fitting\processed\scaledT.csv', Pavg, delimiter=',')
             np.savetxt(folder+r'\beatnote\original\ogbeat.csv', ogbeat, delimiter=',')
             np.savetxt(folder+r'\beatnote\original\peak_indices.csv', peak_indices, fmt='%i', delimiter=',')
             np.savetxt(folder+r'\beatnote\original\peak_val.csv', peak_val,  delimiter=',')
