@@ -116,17 +116,6 @@ class data:
             Tavg = pure_dat[:,0:int(pure_dat.shape[1]/2)-1].mean(1)
             Pavg = pure_dat[:,int(pure_dat.shape[1]/2)-1:pure_dat.shape[1]-2].mean(1)
             ogbeat = pure_dat[:,pure_dat.shape[1]-2]
-            # if scan == '894':
-            #     Tavg =Tavg.tolist()
-            #     Pavg = Pavg.tolist()
-            #     ogbeat = ogbeat.tolist()
-
-            #     Tavg.reverse()
-            #     Pavg.reverse()
-            #     ogbeat.reverse()
-            #     Tavg = np.array(Tavg)
-            #     Pavg = np.array(Pavg)
-            #     ogbeat = np.array(ogbeat)
             self.indices = pure_dat[:,pure_dat.shape[1]-1]
             self.indices = self.indices - self.indices.min()
             self.scaledT = Tavg/Pavg
@@ -145,7 +134,7 @@ class data:
                 folder = par_folder + r'\Analysis\894'
             self.folder = folder
             #Transition clean up 
-            
+
             self.calculate_T_shift() 
             (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
             #beatnoteClean
@@ -242,10 +231,11 @@ class data:
 
         plt.plot(self.indices,self.scaledT)
         plt.plot(self.indices,self.backgoundFit(self.indices),'-r')
-        plt.title(r'\frac{Transmission}{Laser Power}')
+        plt.title(r'$\frac{Transmission}{Laser Power}$')
+        plt.axvspan(0,self.beat_rng[0],alpha=0.2,color='grey')
+        plt.axvspan(self.beat_rng[1],len(self.indices),alpha=0.2,color='grey')
         plt.savefig(self.folder+r'\plots\scaledT.png')
         plt.clf()
-        # plt.show()
         if self.par_folder.find('BaselineMeas')!=-1:
             #is baseline measurement
             self.PwrWings = 0
@@ -329,8 +319,14 @@ class data:
         plt.title(self.scan+' beat fit scaledT')
         plt.savefig(self.folder+r'\plots\beatScaledT.png')
         plt.clf()
+        
+        plt.plot(self.indices,self.scaledT)
+        plt.title(r'$\frac{Transmission}{Laser Power}$')
+        plt.axvspan(0,self.beat_rng[0],alpha=0.2,color='grey')
+        plt.axvspan(self.beat_rng[1],len(self.indices),alpha=0.2,color='grey')
+        plt.savefig(self.folder+r'\plots\scaledT.png')
         plt.clf()
-        np.savetxt(self.folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
+
         # self.voigt_rng = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
 
     def set_transition(self, F1):
@@ -388,8 +384,18 @@ class data:
         k2 = 10000 * afs * np.sqrt(m*c*c*pi**3/(8*kB)) #power analysis leads to the 10^4 factor 
         
         temp = 273+30  # guess at hot portion of cell
-        mini = find_peaks(-np.array(self.scaledT), width=250)
-        guess = self.beatfit(mini[0][0])
+        if self.scan == '894':
+            mini = find_peaks(-np.array(self.scaledT), width=250)
+            guess = self.beatfit(mini[0][0])
+        else:
+            temp = 100
+            mini = 0
+            for i,val in enumerate(self.scaledT):
+                if val < temp:
+                    temp = val
+                    mini = i
+            guess = self.beatfit(mini)
+            
         if self.scan == '456':
             w1 = self.abs_wavenum[0]*29.9792458 *k1 #Abs freq w1 in GHz
             p0 = 0.9 #scaledT pwr at top
@@ -477,11 +483,14 @@ class data:
         self.pcov = pcov3
         self.alpha = fitted_param3[1]
         self.fitted = True
+        perr = np.sqrt(np.diag(pcov3))
+        print(perr)
+        alph_err=perr[1]
         np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
         np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
         plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
         plt.plot(plotting_freq,self.fitting_eqn3(plotting_freq,*fitted_param3), '-r',linewidth=0.5,marker='.')#, mew='0.05')
-        plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]))
+        plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]) +r', $\sigma_{err}=$'+ str(alph_err))
         plt.xlabel('Freq [GHz]')
         # plt.show()
         plt.savefig(self.folder+r'\plots\FittedScan.png')

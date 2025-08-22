@@ -55,7 +55,7 @@ class analysis:
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=False)
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False)
-
+            self.Temperature = TestingDataType.simple_dat_get(self.folderpath+r'\Temperature.csv')[0][0]
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
 
@@ -120,10 +120,13 @@ def recalculate456beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=5
     analysis_dat.analysis456.beat_rng[0] = int(entries[1][1][0].get())
     analysis_dat.analysis456.beat_rng[1] = int(entries[1][1][1].get())
     analysis_dat.analysis456.calculate_beat_fit()
-    plots_grp.update_image(['filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals'])
+    plots_grp.update_image(['filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals','scaledT'])
     tochange = [6,7,8,9]
     for i in tochange:
         change_Label_image(labels[1][i-switchlabelsat], plots_grp.plots[i])
+    tochange = [2]
+    for i in tochange:
+        change_Label_image(labels[0][i], plots_grp.plots[i])
 
 def recalculate894T(analysis_dat, labels, entries, plots_grp,switchlabelsat=5):
     for i in [0,1]:
@@ -139,21 +142,26 @@ def recalculate894beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=5
     analysis_dat.analysis894.beat_rng[0] = int(entries[1][3][0].get())
     analysis_dat.analysis894.beat_rng[1] = int(entries[1][3][1].get())
     analysis_dat.analysis894.calculate_beat_fit()
-    plots_grp.update_image(['filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals'])
+    plots_grp.update_image(['filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals','scaledT'])
     tochange = [6,7,8,9]
     for i in tochange:
         change_Label_image(labels[3][i-switchlabelsat], plots_grp.plots[i])
+    tochange = [2]
+    for i in tochange:
+        change_Label_image(labels[2][i], plots_grp.plots[i])
 
 def calculate_abs_fit_456(analysis_dat,labels,plots_grp):
     analysis_dat.analysis456.set_fitting_function()
+    plots_grp.update_image(['FittedScan','FittedScanResid'])
     tochange = [3,4]
     for i in tochange:
         change_Label_image(labels[0][i], plots_grp.plots[i])
 def calculate_abs_fit_894(analysis_dat,labels,plots_grp):
     analysis_dat.analysis894.set_fitting_function()
+    plots_grp.update_image(['FittedScan','FittedScanResid'])
     tochange = [3,4]
     for i in tochange:
-        change_Label_image(labels[0][i], plots_grp.plots[i])
+        change_Label_image(labels[2][i], plots_grp.plots[i])
 
 def calculate_ratio(analysis_dat):
     if analysis_dat.analysis894.fitted and analysis_dat.analysis456.fitted:
@@ -237,7 +245,7 @@ if __name__ == '__main__':
                 notebooks[j+k].add(labels[j+k][-1],text=plot_sets[temp].scan+' '+lab)
         entry = ttk.Entry(root,width=ent_wdth)
         open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1]))
-        open_button.grid(column=3,row=8)
+        open_button.grid(column=3,row=0)
 
         open_button1 = ttk.Button(root, text="Recalculate 456 Scan", command= lambda: recalculate456T(folder,labels,entries,plot_sets[0]))
         open_button1.grid(column=0,row=1)
