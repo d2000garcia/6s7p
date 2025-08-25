@@ -58,6 +58,14 @@ class analysis:
             self.Temperature = TestingDataType.simple_dat_get(self.folderpath+r'\Temperature.csv')[0][0]
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
+    
+    def record_fits(self):
+        date = self.folderpath[self.folderpath.rfind('\\')+1:]
+        lines = []
+        if self.fitted:
+            file = open(".\\"+self.scan+'Fits.csv')
+            for line in file:
+                line = line.strip().split(',')
 
         
 

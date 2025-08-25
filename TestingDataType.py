@@ -19,7 +19,7 @@ def simple_dat_get(filename, skip_lines=0):
         x = list(map(float, line.strip().split(',')))
         data.append(x)
     # print(data)
-    
+    file.close()
     return np.array(data)
 
 def process_beatnote(indices,ogBeat,run_avg_num):
@@ -98,6 +98,7 @@ def cvt_abs_wav_to_diff(abs_wav):
 class data:
     def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[2340,8000], back_rngs=[[0,0],[6300,8000]], file_skip_lines=0, scan='456', F =0, exists = False):
         self.fitted = False
+        
         if not exists:
             if scan == '456':
                 filename = par_folder + r"\456Scan.csv"
@@ -373,6 +374,7 @@ class data:
                 # self.hyp_weights = [5/8,7/8]
                 self.hypsplit = [0,1.167680]
                 #Lower frequency because father F=4->F=3,4 
+
         
     
     def set_fitting_function(self):
@@ -504,7 +506,16 @@ class data:
         plt.savefig(self.folder+r'\plots\FittedScanResid.png')
         plt.clf()
 
-        
+
+    def record_fits(self):
+        date = self.par_folder[self.par_folder.rfind('\\')+1:]
+        lines = {}
+        if self.fitted:
+            file = open(".\\"+self.scan+'Fits.csv')
+            for line in file:
+                line = line.strip().split(',')
+
+                
         
 
 
