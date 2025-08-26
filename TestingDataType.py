@@ -144,7 +144,7 @@ class data:
             np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
             np.savetxt(folder+r'\fitting\original\Tavg.csv', Tavg, delimiter=',')
             np.savetxt(folder+r'\fitting\original\Pavg.csv', Pavg, delimiter=',')
-            np.savetxt(folder+r'\fitting\processed\scaledT.csv', Pavg, delimiter=',')
+            np.savetxt(folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
             np.savetxt(folder+r'\beatnote\original\ogbeat.csv', ogbeat, delimiter=',')
             np.savetxt(folder+r'\beatnote\original\peak_indices.csv', peak_indices, fmt='%i', delimiter=',')
             np.savetxt(folder+r'\beatnote\original\peak_val.csv', peak_val,  delimiter=',')
@@ -193,7 +193,6 @@ class data:
                     self.set_transition(F1=4)
                 else:
                     self.set_transition(F1=3)
-
             self.beatnote_det_f = beatnote_det_f
             self.folder = folder
             self.indices = np.loadtxt(folder+r'\indices.csv', dtype=int, delimiter=',')
@@ -203,6 +202,11 @@ class data:
             self.peak_val2 = np.loadtxt(folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
             self.BeatRunAvgN = BeatRunAvgN
             self.par_folder = par_folder
+
+            if os.path.exists(self.folder+r'\fitting\processed\fitting_param.csv'):
+                self.fitted=True
+            else:
+                self.fitted = False
 
             temp = np.loadtxt(folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',') 
             #Save as domain, window, coef
@@ -216,6 +220,11 @@ class data:
             temp = np.loadtxt(folder+r'\entries\back_rngs.csv', dtype=int, delimiter=',').tolist()
             self.back_rngs = [temp[:2],temp[2:]]
             (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
+            if self.fitted:
+                self.fitted_param = np.loadtxt(self.folder+r'\fitting\processed\fitting_param.csv', delimiter=',')
+                self.pcov = np.loadtxt(self.folder+r'\fitting\processed\pcov.csv',delimiter=',')
+                self.alph_err=np.sqrt(np.diag(self.pcov))[1]
+                self.alpha=self.fitted_param[1]
             # self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
     
     def calculate_T_shift(self):
@@ -388,7 +397,7 @@ class data:
         
         temp = 273+30  # guess at hot portion of cell
         if self.scan == '894':
-            mini = find_peaks(-np.array(self.scaledT), width=250)
+            mini = find_peaks(-np.array(self.scaledT), width=150)
             guess = self.beatfit(mini[0][0])
         else:
             temp = 100
@@ -423,20 +432,10 @@ class data:
                 #so w + shift - mv ideally moves peaks to relative frequency from start of scan
                 #wD is the temperature dependentr part of the Dopler full width half max, since it has frequency portion include small shiftings
         # self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * (w+shift -mv) * np.sum(np.real(np.array(list(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD,coeff,self.hypsplit))))))
-        test = lambda w,p0,a,wD,L,mv: np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real
-
-        # self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * (w+shift-mv) * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real)
-
-        self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real)
-
-        self.fitting_eqn2 = lambda w,p0,k0,a,T,L,mv: p0 * (1-k0*(w - mv)) * np.exp(-a * (k2/np.sqrt(T)) * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, L)/((w1+w*k1)*np.sqrt(2*T))),self.hyp_weights,self.hypsplit))),axis=0).real)
 
         self.fitting_eqn3 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
 
         # self.fitting_eqn4 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2,x3:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
-
-
-        param_guess2 = [p0,0.01,1,273,Life,guess]
 
         param_guess3 = [p0,0.1,wD0,guess,0.01,0.01,0.1]
         if self.scan == '456':
@@ -444,56 +443,23 @@ class data:
         else:
             bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.1])
 
-
-
-        # self.fitting_eqn = lambda w,p0,a,wD,L,mv: np.sum(np.real(list(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD,coeff,self.hypsplit))))
-        
         plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-        pass
 
-            # def eqn(w,p0,a,wD,L,mv):
-                # np.sum(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD))
-                # return p0 * np.exp(-a * (w+shift -mv) * np.real(np.sum(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD))))
-        # temp = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-
-
-        # plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-
-
-
-        
-        # plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
-        # plt.plot(plotting_freq,self.fitting_eqn(plotting_freq,*self.fitted_param), '-r',linewidth=0.5,marker='.')#, mew='0.05')
-        # plt.title(self.scan+ 'Fitted plot')
-        # plt.xlabel('Freq [GHz]')
-        # plt.show()
-        # plt.savefig(self.folder+r'\plots\FittedScan.png')
-        # plt.clf()
-        
-        # fitted_param2, pcov2 = opt.curve_fit(self.fitting_eqn2, plotting_freq, self.scaledT[self.beat_rng[0]:self.beat_rng[1]], param_guess2, bounds=([0.1,0.00001,0.001,200,0.00001,0],[3,1,10,400,0.1,5]))
-        # plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]], marker='.')
-        # plt.plot(plotting_freq,self.fitting_eqn2(plotting_freq,*fitted_param2), '-r',linewidth=0.5,marker='.')#, mew='0.05')
-        # plt.title(self.scan+ 'Fitted plot')
-        # plt.xlabel('Freq [GHz]')
-        # plt.show()
-        # plt.savefig(self.folder+r'\plots\FittedScan.png')
-        # plt.clf()
-
-        # print(param_guess3)
-        # print(bounds3)
         fitted_param3, pcov3 = opt.curve_fit(self.fitting_eqn3, plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]],param_guess3,bounds=bounds3)
         self.fitted_param = fitted_param3
+        # print(fitted_param3)
         self.pcov = pcov3
         self.alpha = fitted_param3[1]
         self.fitted = True
         perr = np.sqrt(np.diag(pcov3))
-        print(perr)
-        alph_err=perr[1]
+        # print(perr)
+        self.alph_err=perr[1]
+        print(np.linalg.cond(pcov3))
         np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
         np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
         plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
         plt.plot(plotting_freq,self.fitting_eqn3(plotting_freq,*fitted_param3), '-r',linewidth=0.5,marker='.')#, mew='0.05')
-        plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]) +r', $\sigma_{err}=$'+ str(alph_err))
+        plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]) +r', $\sigma_{err}=$'+ str(self.alph_err))
         plt.xlabel('Freq [GHz]')
         # plt.show()
         plt.savefig(self.folder+r'\plots\FittedScan.png')
@@ -505,27 +471,6 @@ class data:
         plt.xlabel('Freq [GHz]')
         plt.savefig(self.folder+r'\plots\FittedScanResid.png')
         plt.clf()
-
-
-    def record_fits(self):
-        date = self.par_folder[self.par_folder.rfind('\\')+1:]
-        lines = {}
-        if self.fitted:
-            file = open(".\\"+self.scan+'Fits.csv')
-            for line in file:
-                line = line.strip().split(',')
-
-                
-        
-
-
-        
-
-
-# dat = data(r"D:\Diego\git\6s7p\Aug01,2025+4-20-28PM", 80, exists=False)
-# print(dat.indices)
-# print(dat.scaledT)
-
 
 
 

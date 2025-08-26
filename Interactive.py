@@ -60,12 +60,38 @@ class analysis:
             update_path_label(self.folderpath)
     
     def record_fits(self):
-        date = self.folderpath[self.folderpath.rfind('\\')+1:]
-        lines = []
-        if self.fitted:
-            file = open(".\\"+self.scan+'Fits.csv')
+        date = self.folderpath[self.folderpath.rfind('/')+1:]
+        lines = {}
+        if self.analysis456.fitted and self.analysis894.fitted:
+            data = [date, str(self.Temperature), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
+            print(data)
+            file = open(r'.\Fits.tsv',"r")
+            file.readline()
             for line in file:
-                line = line.strip().split(',')
+                line = line.strip().split('\t')
+                lines[line[0]]=line
+            file.close()
+            lines[date] = data
+            order = list(lines.keys())
+            order.sort()
+            file = open(r'.\Fits.tsv',"w")
+            file.write('Date\tTemp\t456alph\t456err\t894alph\t894err\n')
+            for j in range(len(order)-1):
+                for i in range(len(lines[order[j]])-1):
+                    file.write(lines[order[j]][i])
+                    file.write('\t')
+                file.write(lines[order[j]][-1])
+                file.write('\n')
+            for i in range(len(lines[order[-1]])-1):
+                file.write(lines[order[-1]][i])
+                file.write('\t')
+            file.write(lines[order[-1]][-1])
+            
+                
+            file.close()
+            print('Saved')
+                
+
 
         
 
@@ -175,6 +201,9 @@ def calculate_ratio(analysis_dat):
     if analysis_dat.analysis894.fitted and analysis_dat.analysis456.fitted:
         print(analysis_dat.analysis456.alpha/analysis_dat.analysis894.fitted)
 
+def record_fits(analysis_dat):
+    analysis_dat.record_fits()
+
 first = True
 template_image = r".\Picture_template.png"
 switchlabelsat=5
@@ -275,6 +304,9 @@ if __name__ == '__main__':
         
         open_button5 = ttk.Button(root, text="Close", command= exit)
         open_button5.grid(column=3,row=9)
+
+        open_button6 = ttk.Button(root, text="Record T Fits", command= lambda: record_fits(folder))
+        open_button6.grid(column=3,row=4)
         
         
 
