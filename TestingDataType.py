@@ -266,8 +266,8 @@ class data:
             print(self.scan+ ' Pwr in wings mean: ' +str(np.mean(self.scaledT[temp[0][0]-250:temp[0][0]+250])))
             print(poly.fit(self.indices[temp[0][0]-250:temp[0][0]+250],self.scaledT[temp[0][0]-250:temp[0][0]+250],1))
             # np.savetxt(self.par_folder+r'\PwrWings'+self.scan+'.csv',self.scaledT[temp[0][0]-250:temp[0][0]+250])
-            for i in os.listdir(self.par_folder.replace(r'/BaselineMeas','')):
-                np.savetxt(self.par_folder.replace('BaselineMeas',i) + '/PwrWings'+self.scan+'.csv', self.scaledT[temp[0][0]-250:temp[0][0]+250], delimiter=',')
+            for i in os.listdir(self.par_folder[:self.par_folder.rfind('/')]):
+                np.savetxt( self.par_folder[:self.par_folder.rfind('/')] +'/'+ i + '/PwrWings'+self.scan+'.csv', self.scaledT[temp[0][0]-250:temp[0][0]+250], delimiter=',')
             
             
     
