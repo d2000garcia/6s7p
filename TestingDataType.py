@@ -96,7 +96,7 @@ def cvt_abs_wav_to_diff(abs_wav):
 
 
 class data:
-    def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[2340,8000], back_rngs=[[0,0],[6300,8000]], file_skip_lines=0, scan='456', F =0, exists = False):
+    def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[0,8000], back_rngs=[[0,0],[6300,8000]], file_skip_lines=0, scan='456', F =0, exists = False):
         self.fitted = False
         
         if not exists:
@@ -453,19 +453,23 @@ class data:
         self.fitted = True
         perr = np.sqrt(np.diag(pcov3))
         # print(perr)
-        self.alph_err=perr[1]
+        # self.alph_err=perr[1]
         print(np.linalg.cond(pcov3))
+        
+        resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
+        chi2 = resid**2/self.fitting_eqn3(plotting_freq,*fitted_param3)
+        self.alph_err=np.sum(chi2)
         np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
         np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
         plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
         plt.plot(plotting_freq,self.fitting_eqn3(plotting_freq,*fitted_param3), '-r',linewidth=0.5,marker='.')#, mew='0.05')
-        plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]) +r', $\sigma_{err}=$'+ str(self.alph_err))
+        plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]) +r', $\chi^2=$'+ str(self.alph_err))
         plt.xlabel('Freq [GHz]')
         # plt.show()
         plt.savefig(self.folder+r'\plots\FittedScan.png')
         plt.clf()
 
-        plt.scatter(plotting_freq,self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
+        plt.scatter(plotting_freq,resid)
         # plt.show()
         plt.title(self.scan+ 'Fitted plot residuals')
         plt.xlabel('Freq [GHz]')
