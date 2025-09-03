@@ -457,8 +457,8 @@ class data:
         print(np.linalg.cond(pcov3))
         
         resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
-        chi2 = resid**2/self.fitting_eqn3(plotting_freq,*fitted_param3)
-        self.alph_err=np.sum(chi2)
+        chi2 = resid**2
+        self.alph_err=np.sum(chi2)/(self.beat_rng[1]-self.beat_rng[0])
         np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
         np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
         plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
