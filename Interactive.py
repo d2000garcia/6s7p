@@ -31,8 +31,8 @@ class analysis:
                 temp2 = [0,0]
             if 'Analysis' in contents:
                 print('Analysis exists, continue')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=temp2[0])
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=temp2[1])
+                self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=temp2[0]/1000)
+                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=temp2[1]/1000)
             else:
                 print('Analysis does not exist ')
                 os.mkdir(self.folderpath+r'\Analysis')
@@ -59,8 +59,8 @@ class analysis:
                 temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0])
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1])
+                self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0]/1000)
+                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000)
             self.Temperature = TestingDataType.simple_dat_get(self.folderpath+r'\Temperature.csv')[0][0]
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
