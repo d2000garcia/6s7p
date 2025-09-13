@@ -32,7 +32,7 @@ def process_beatnote(indices,ogBeat,run_avg_num):
     filteredBeat=ogBeat-runningavg
     #Peak finding filtered data
     standard_peak_min = np.std(filteredBeat[run_avg_num+1:len(indices)-run_avg_num-1])*2
-    peak_indices2 = find_peaks(filteredBeat, height=standard_peak_min,distance=50)
+    peak_indices2 = find_peaks(filteredBeat, height=standard_peak_min,distance=20)
     peak_indices = peak_indices.tolist()
     peak_val = peak_val.tolist()
     peak_val2 = peak_indices2[1]['peak_heights']
@@ -397,7 +397,7 @@ class data:
         
         temp = 273+30  # guess at hot portion of cell
         if self.scan == '894':
-            mini = find_peaks(-np.array(self.scaledT), width=150)
+            mini = find_peaks(-np.array(self.scaledT), width=150,height=np.mean(-self.scaledT))
             guess = self.beatfit(mini[0][0])
         else:
             temp = 100
@@ -439,9 +439,9 @@ class data:
 
         param_guess3 = [p0,0.1,wD0,guess,0.01,0.01,0.1]
         if self.scan == '456':
-            bounds3 = ([0.1,0.00001,0.1,0.00001,-2,-1,0],[3,10,0.5,4,2,1,0.1])
+            bounds3 = ([0.1,0.00001,0.1,0.00001,-2,-1,0],[3,10,0.5,4,2,1,0.2])
         else:
-            bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.1])
+            bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.2])
 
         plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
 
