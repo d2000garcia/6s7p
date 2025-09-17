@@ -71,7 +71,7 @@ class analysis:
         if self.analysis456.fitted and self.analysis894.fitted:
             data = [date, str(self.Temperature), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
             print(data)
-            file = open(r'.\Fits.tsv',"r")
+            file = open(r'.\Fits2.tsv',"r")
             file.readline()
             for line in file:
                 line = line.strip().split('\t')
@@ -80,7 +80,7 @@ class analysis:
             lines[date] = data
             order = list(lines.keys())
             order.sort()
-            file = open(r'.\Fits.tsv',"w")
+            file = open(r'.\Fits2.tsv',"w")
             file.write('Date\tTemp\t456alph\t456err\t894alph\t894err\n')
             for j in range(len(order)-1):
                 for i in range(len(lines[order[j]])-1):
@@ -210,6 +210,14 @@ def calculate_ratio(analysis_dat):
 def record_fits(analysis_dat):
     analysis_dat.record_fits()
 
+def set_beat_peak_min(analysis_dat, scan, vals):
+    if scan == '456':
+        analysis_dat.analysis456.beat_height = float(vals[1][0].get())
+        analysis_dat.analysis456.reprocess_beatnote()
+    else:
+        analysis_dat.analysis894.beat_height = float(vals[1][1].get())
+        analysis_dat.analysis894.reprocess_beatnote()
+
 first = True
 template_image = r".\Picture_template.png"
 switchlabelsat=5
@@ -286,6 +294,15 @@ if __name__ == '__main__':
                 labels[j+k][-1].image = plot_sets[temp].plots[i]
                 labels[j+k][-1].pack()
                 notebooks[j+k].add(labels[j+k][-1],text=plot_sets[temp].scan+' '+lab)
+
+
+        beat_mins = [[ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)]]
+        beat_mins.append([tk.StringVar(value="0"), tk.StringVar(value="0")])
+        beat_mins[0][0].grid(column=5,row=3)
+        beat_mins[0][1].grid(column=5,row=7)
+        beat_mins[0][0].configure(textvariable=beat_mins[1][0])
+        beat_mins[0][1].configure(textvariable=entries[1][1])
+
         entry = ttk.Entry(root,width=ent_wdth)
         open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1]))
         open_button.grid(column=3,row=0)
@@ -313,7 +330,12 @@ if __name__ == '__main__':
 
         open_button6 = ttk.Button(root, text="Record T Fits", command= lambda: record_fits(folder))
         open_button6.grid(column=3,row=4)
-        
+
+        open_button7 = ttk.Button(root, text="Set 456 Peak min", command= lambda: set_beat_peak_min(folder,scan='456',vals=beat_mins))
+        open_button7.grid(column=4,row=3)
+
+        open_button8 = ttk.Button(root, text="Set 894 Peak min", command= lambda: set_beat_peak_min(folder,scan='894',vals=beat_mins))
+        open_button8.grid(column=4,row=7)
         
 
         workingdir_txt = tk.StringVar()

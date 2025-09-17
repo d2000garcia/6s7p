@@ -123,6 +123,7 @@ class data:
             self.scan = scan
             self.back_rngs = back_rngs
             self.beat_rng = beat_rng
+            self.beat_height = 0
             if F == 0:
                 if scan == '456':
                     self.set_transition(F1=4)
@@ -202,6 +203,7 @@ class data:
             self.peak_val2 = np.loadtxt(folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
             self.BeatRunAvgN = BeatRunAvgN
             self.par_folder = par_folder
+            self.beat_height = 0
 
             if os.path.exists(self.folder+r'\fitting\processed\fitting_param.csv'):
                 self.fitted=True
@@ -227,8 +229,19 @@ class data:
                 self.alpha=self.fitted_param[1]
             # self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
     
-    def calculate_T_shift(self):
+    def reprocess_beatnote(self):
+        if self.beat_height == 0:
+            standard_peak_min = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
+        else:
+            standard_peak_min = self.beat_height
+        peak_indices2 = find_peaks(self.filteredBeat, height=standard_peak_min,distance=20)
+        peak_val2 = peak_indices2[1]['peak_heights']
+        peak_indices2 = peak_indices2[0]
+        (peak_indices2, peak_val2) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
+        self.peak_indices2 = peak_indices2
+        self.peak_val2 = peak_val2
 
+    def calculate_T_shift(self):
         self.backgoundFit = LinFit(self.back_rngs, self.indices, self.scaledT)
         back_fit_param = self.backgoundFit.domain.tolist()
         back_fit_param.extend(self.backgoundFit.window.tolist())
@@ -307,7 +320,10 @@ class data:
         plt.scatter(self.peak_indices2,self.peak_val2,color='red', marker='x')
         plt.xlim(0,len(self.indices))
         plt.ylim(0, max(self.peak_val2)+0.1)
-        temp = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
+        if self.beat_height == 0:
+            temp = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
+        else:
+            temp = self.beat_height
         plt.axvspan(0,self.beat_rng[0],alpha=0.2,color='grey')
         plt.axvspan(self.beat_rng[1],len(self.indices),alpha=0.2,color='grey')
         plt.plot([0,len(self.indices)],[temp, temp], '-r')
@@ -339,6 +355,36 @@ class data:
         plt.clf()
 
         # self.voigt_rng = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
+
+    def find_pairs(self, peak_indices, peak_val):
+        differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
+        close_pairs = []
+        far_pairs = []
+        bads_close = []
+        bads_far = []
+        avg_diff = np.mean(differences)
+        pattern = -1
+        for i,diff in enumerate(differences):
+            if diff< i:
+                if pattern == -1:
+                    pattern = 0
+                    start=0
+                elif pattern == 1:
+                    #good switch
+                    pattern = 0
+                else:
+                    bads_close.append([i-1,i,i+1])
+                close_pairs.append([i, i+1])
+            else:
+                if pattern == -1:
+                    pattern = 1
+                    start = 1
+                elif pattern == 0:
+                    #good switch
+                    pattern = 1
+                    far_pairs.append([i,i+1])
+                else:
+                    bads_far.append([i-1,i,i+1])
 
     def set_transition(self, F1):
         #Can be used to verify i some fashion if need be of the coefficient
