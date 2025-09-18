@@ -228,6 +228,22 @@ class data:
                 self.alph_err=np.sqrt(np.diag(self.pcov))[1]
                 self.alpha=self.fitted_param[1]
             # self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
+        
+        if not os.path.exists(folder+r'\plots\Temperature.png'):
+            temps = simple_dat_get(par_folder +r'\Temperature.csv',0)
+            temp_0 = temps[:,2]
+            temp_1 = temps[:,3]
+            temp_2 = temps[:,4]
+            ones = np.ones(temp_0.shape[0])
+            plt.scatter(ones,temp_0,color='k')
+            plt.scatter(ones+1, temp_1,color='k')
+            plt.scatter(ones+2, temp_2,color='k')
+            plt.scatter([1,2,3], [np.mean(temp_0),np.mean(temp_1),np.mean(temp_2)],color='r')
+            plt.savefig(folder+r'\plots\Temperature.png')
+            plt.title("Temperature Measurements")
+            plt.ylim(bottom=0)
+            plt.clf()
+            
     
     def reprocess_beatnote(self):
         if self.beat_height == 0:

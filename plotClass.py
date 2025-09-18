@@ -9,7 +9,7 @@ class plots:
         self.scan = scan
         self.plot_w = plot_w
         self.plot_h = plot_h
-        self.plotslabs=['Tavg','Pavg','scaledT','FittedScan','FittedScanResid','ogbeat','filteredbeat','fitted_beat','unscaledresiduals','ScaledResiduals']
+        self.plotslabs=['Tavg','Pavg','scaledT','FittedScan','FittedScanResid','ogbeat','filteredbeat','fitted_beat','unscaledresiduals','Temperature']
         self.plots = []
         for i in self.plotslabs:
             self.plots.append(ImageTk.PhotoImage(resized_default.copy()))
@@ -48,7 +48,7 @@ class plots:
                 self.plots[7] = ImageTk.PhotoImage(resized_temp)
             elif whichone == 'unscaledresiduals':
                 self.plots[8] = ImageTk.PhotoImage(resized_temp)
-            elif whichone == 'ScaledResiduals':
+            elif whichone == 'Temperature':
                 self.plots[9] = ImageTk.PhotoImage(resized_temp)
 
 def change_Label_image(oldlabel,new):
