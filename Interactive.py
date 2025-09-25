@@ -71,7 +71,7 @@ class analysis:
         if self.analysis456.fitted and self.analysis894.fitted:
             data = [date, str(self.Temperature), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
             print(data)
-            file = open(r'.\Fits2.tsv',"r")
+            file = open(r'.\Fits3.tsv',"r")
             file.readline()
             for line in file:
                 line = line.strip().split('\t')
@@ -80,7 +80,7 @@ class analysis:
             lines[date] = data
             order = list(lines.keys())
             order.sort()
-            file = open(r'.\Fits2.tsv',"w")
+            file = open(r'.\Fits3.tsv',"w")
             file.write('Date\tTemp\t456alph\t456err\t894alph\t894err\n')
             for j in range(len(order)-1):
                 for i in range(len(lines[order[j]])-1):
@@ -301,7 +301,7 @@ if __name__ == '__main__':
         beat_mins[0][0].grid(column=5,row=3)
         beat_mins[0][1].grid(column=5,row=7)
         beat_mins[0][0].configure(textvariable=beat_mins[1][0])
-        beat_mins[0][1].configure(textvariable=entries[1][1])
+        beat_mins[0][1].configure(textvariable=beat_mins[1][1])
 
         entry = ttk.Entry(root,width=ent_wdth)
         open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1]))

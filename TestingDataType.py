@@ -10,6 +10,20 @@ from scipy import optimize as opt
 from matplotlib import lines as lines
 from numpy import pi as pi
 import os as os
+
+def convertAD590(V):
+    return V*20
+
+def vapor_pres(T):
+    #T in Celsius
+    if T < 28.5:
+        T =T+273.15
+        Pres = 2.881+4.711-3999/T
+    else:
+        T =T+273.15
+        Pres = 2.881+4.165-3830/T
+    return 10**(Pres)
+
 def simple_dat_get(filename, skip_lines=0):
     file = open(filename, 'r')
     data = []
@@ -229,20 +243,28 @@ class data:
                 self.alpha=self.fitted_param[1]
             # self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
         
-        if not os.path.exists(folder+r'\plots\Temperature.png'):
+        if not os.path.exists(folder+r'\plots\VapPres.png'):
             temps = simple_dat_get(par_folder +r'\Temperature.csv',0)
-            temp_0 = temps[:,2]
-            temp_1 = temps[:,3]
-            temp_2 = temps[:,4]
-            ones = np.ones(temp_0.shape[0])
+            temp_0 = (20*temps[:,2]).tolist()
+            temp_1 = (20*temps[:,3]).tolist()
+            temp_2 = (20*temps[:,4]).tolist()
+            ones = np.ones(len(temp_0))
             plt.scatter(ones,temp_0,color='k')
             plt.scatter(ones+1, temp_1,color='k')
             plt.scatter(ones+2, temp_2,color='k')
             plt.scatter([1,2,3], [np.mean(temp_0),np.mean(temp_1),np.mean(temp_2)],color='r')
-            plt.savefig(folder+r'\plots\Temperature.png')
             plt.title("Temperature Measurements")
-            plt.ylim(bottom=0)
+            plt.savefig(folder+r'\plots\Temperature.png')
             plt.clf()
+
+            plt.scatter(ones, list(map(vapor_pres,temp_0)),color='k')
+            plt.scatter(ones+1, list(map(vapor_pres,temp_1)),color='k')
+            plt.scatter(ones+2, list(map(vapor_pres,temp_2)),color='k')
+            plt.scatter([1,2,3], list(map(vapor_pres,[np.mean(temp_0),np.mean(temp_1),np.mean(temp_2)])),color='r')
+            plt.title("Vapor Pressure")
+            plt.savefig(folder+r'\plots\VapPres.png')
+            plt.clf()
+            
             
     
     def reprocess_beatnote(self):
