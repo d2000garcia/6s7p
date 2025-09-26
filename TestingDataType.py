@@ -275,7 +275,7 @@ class data:
         peak_indices2 = find_peaks(self.filteredBeat, height=standard_peak_min,distance=20)
         peak_val2 = peak_indices2[1]['peak_heights']
         peak_indices2 = peak_indices2[0]
-        (peak_indices2, peak_val2) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
+        # (peak_indices2, peak_val2) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
         self.peak_indices2 = peak_indices2
         self.peak_val2 = peak_val2
 
@@ -323,7 +323,8 @@ class data:
             
     
     def calculate_beat_fit(self):
-        (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
+        # (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
+        (self.cleared_indices, self.cleared_peaks)=(self.peak_indices2.copy(), self.peak_val2.copy())
         self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
         avg_diff = np.mean(self.differences)
         self.freq = [0]
