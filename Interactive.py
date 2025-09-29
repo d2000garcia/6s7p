@@ -61,7 +61,11 @@ class analysis:
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0]/1000)
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000)
-            self.Temperature = TestingDataType.simple_dat_get(self.folderpath+r'\Temperature.csv')[0][0]
+            temps = TestingDataType.simple_dat_get(self.folderpath +r'\Temperature.csv',0)
+            temp_0 = np.mean(20*temps[:,2])
+            temp_1 = np.mean(20*temps[:,3])
+            temp_2 = np.mean(20*temps[:,4])
+            self.Temperature = [temp_0,temp_1,temp_2]
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
     
@@ -69,9 +73,9 @@ class analysis:
         date = self.folderpath[self.folderpath.rfind('/')+1:]
         lines = {}
         if self.analysis456.fitted and self.analysis894.fitted:
-            data = [date, str(self.Temperature), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
+            data = [date, str(self.Temperature[0]),str(self.Temperature[1]),str(self.Temperature[2]), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
             print(data)
-            file = open(r'.\Fits3.tsv',"r")
+            file = open(r'.\Fits4.tsv',"r")
             file.readline()
             for line in file:
                 line = line.strip().split('\t')
@@ -80,7 +84,7 @@ class analysis:
             lines[date] = data
             order = list(lines.keys())
             order.sort()
-            file = open(r'.\Fits3.tsv',"w")
+            file = open(r'.\Fits4.tsv',"w")
             file.write('Date\tTemp\t456alph\t456err\t894alph\t894err\n')
             for j in range(len(order)-1):
                 for i in range(len(lines[order[j]])-1):
