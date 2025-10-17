@@ -75,7 +75,7 @@ class analysis:
         if self.analysis456.fitted and self.analysis894.fitted:
             data = [date, str(self.Temperature[0]),str(self.Temperature[1]),str(self.Temperature[2]), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
             print(data)
-            file = open(r'.\Fits4.tsv',"r")
+            file = open(r'.\Fits6.tsv',"r")
             file.readline()
             for line in file:
                 line = line.strip().split('\t')
@@ -84,7 +84,7 @@ class analysis:
             lines[date] = data
             order = list(lines.keys())
             order.sort()
-            file = open(r'.\Fits4.tsv',"w")
+            file = open(r'.\Fits6.tsv',"w")
             file.write('Date\tTemp\t456alph\t456err\t894alph\t894err\n')
             for j in range(len(order)-1):
                 for i in range(len(lines[order[j]])-1):
