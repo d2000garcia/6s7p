@@ -323,7 +323,9 @@ class data:
             
     
     def calculate_beat_fit(self):
-        (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
+        if not type(self.peak_indices2) == list:
+            (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy().tolist(), self.peak_val2.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
+        else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
         # (self.cleared_indices, self.cleared_peaks)=(self.peak_indices2.copy(), self.peak_val2.copy())
         self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
         avg_diff = np.mean(self.differences)
@@ -531,6 +533,8 @@ class data:
         plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
 
         fitted_param3, pcov3 = opt.curve_fit(self.fitting_eqn3, plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]],param_guess3,bounds=bounds3)
+        print('fitted params')
+        print(fitted_param3)
         self.fitted_param = fitted_param3
         # print(fitted_param3)
         self.pcov = pcov3
@@ -561,6 +565,40 @@ class data:
         plt.savefig(self.folder+r'\plots\FittedScanResid.png')
         plt.clf()
 
-
+        if self.scan == '456':
+            lines = {}
+            date = self.par_folder[self.par_folder.rfind('/')+1:]
+            temp = list(map(str, fitted_param3.copy().tolist()))
+            data = [date]
+            data.extend(temp)
+            day_path = self.par_folder[:self.par_folder.rfind('/')]
+            fits456 = day_path+'/456Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
+            if not os.path.exists(fits456):
+                file = open(fits456,'w')
+                file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
+                file.close()
+            file = open(fits456,'r')
+            file.readline()
+            for line in file:
+                line = line.strip().split('\t')
+                lines[line[0]]=line
+            file.close()
+            lines[date] = data
+            order = list(lines.keys())
+            order.sort()
+            file = open(fits456,"w")
+            file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
+            for j in range(len(order)-1):
+                for i in range(len(lines[order[j]])-1):
+                    file.write(lines[order[j]][i])
+                    file.write('\t')
+                file.write(lines[order[j]][-1])
+                file.write('\n')
+            for i in range(len(lines[order[-1]])-1):
+                file.write(lines[order[-1]][i])
+                file.write('\t')
+            file.write(lines[order[-1]][-1])
+            file.close()
+            print('456 param saved')
 
         
