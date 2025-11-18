@@ -3,6 +3,8 @@ from scipy.signal import find_peaks
 from matplotlib import pyplot as plt
 import numpy as np
 from numpy.polynomial import Polynomial as poly
+from scipy import optimize as opt
+from scipy.special import wofz as wofz
 # m = lm.models.VoigtModel()
 # h = lm.models.VoigtModel()
 # h.make_params(gamma=1)
@@ -29,6 +31,18 @@ def LinFit(data_bounds, indices, data):
     lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
     fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
     return fitted_param
+
+def quad(data_bounds, indices, data):
+    new_data = []
+    new_indices = []
+    for bound in data_bounds:
+        new_data.extend(data[bound[0]:bound[1]])
+        new_indices.extend(indices[bound[0]:bound[1]])
+    upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]])
+    lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
+    fitted_param, pcov = opt.curve_fit(lambda x,a,b,c:c*x**2+b*x+a, new_indices,new_data)
+    return fitted_param
+
 scan = '894'
 F1=3
 if scan == '456':
@@ -107,23 +121,73 @@ else:
     w0center = beatfit((peaks[0]+peaks[1])/2)
     k3 =beatfit(properties["left_bases"])
     k4 =beatfit(properties["right_bases"])
-    sig = (np.max(k4)-np.min(k3))/2.35482
-    weights = lm.models.gaussian(beatfit(indices),center=w0center,sigma=sig) + 1/(sig * np.sqrt(2 * pi)*8)
+    sig = (np.max(k4)-np.min(k3))/10
+    weights = lm.models.gaussian(beatfit(indices),center=w0center,sigma=sig) + 1/(sig * np.sqrt(2 * pi)*50)
 guess = beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
 base  = np.mean(scaledT[5878:5980])
 
 etalon_ranges = [[200,3300],[7000,8000]]
 test = LinFit(etalon_ranges, beatfit(indices), scaledT)
+test2 = quad(etalon_ranges, beatfit(indices), scaledT)
+print(test2)
+test2[1]=test2[1]/test2[0]
+test2[2]=test2[2]/test2[0]
 params = lm.Parameters()
 # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
-params.add_many(('a', 0.1, True, 0, 10, None, None),
-                ('p0', 10, True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
-                ('k0', test[0], True, test[0]-abs(test[0])*0.1, test[0]+abs(test[0])*0.1, None, None),
+print(test)
+# params.add_many(('a', 6, True, 0, 10, None, None),
+#                 ('p0', test[1], True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
+#                 ('k0', test[0], True, test[0]-abs(test[0])*0.1, test[0]+abs(test[0])*0.1, None, None),
+#                 ('mv', guess, True, 0, 4, None, None),
+#                 ('sigma', wD, True, wD*0.5, wD*1.5, None, None),
+#                 ('gamma', Life, False, None, None, None, None),
+#                 ('base', base, True, base*0.7, base*1.3, None, None))
+params.add_many(('a', 6, True, 0, 10, None, None),
+                ('p0', test2[0], True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
+                ('h1', test2[1], True, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test2[1])*0.2, None, None),
+                ('h2', test2[2], True, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
                 ('sigma', wD, True, wD*0.5, wD*1.5, None, None),
                 ('gamma', Life, False, None, None, None, None),
                 ('base', base, True, base*0.7, base*1.3, None, None))
+params2 = lm.Parameters()
+test1 = [6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447]
+# params2.add_many(('a', test1[0], True, test1[0]*0.9, test1[0]*1.1, None, None),
+#                 ('p0', test1[1], True, test1[1]*0.9, test1[1]*1.1, None, None),
+#                 ('k0', test1[2], True, test1[2]-abs(test1[2])*0.1, test1[2]+abs(test1[2])*0.1, None, None),
+#                 ('mv', test1[3], True, test1[3]*0.97, test1[3]*1.03, None, None),
+#                 ('wD', test1[4], True, wD*0.5, wD*1.5, None, None),
+#                 ('base', test1[5], True, base*0.7, base*1.3, None, None))
 
+params2.add_many(('a', 6, True, 0, 10, None, None),
+                ('p0', test[1], True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
+                ('k0', test[0], True, test[0]-abs(test[0])*0.8, test[0]+abs(test[0])*0.8, None, None),
+                ('mv', guess, True, 0, 4, None, None),
+                ('wD', wD*center, True, center*wD*0.8, center*wD*1.2, None, None),
+                ('base', base, True, base*0.7, base*1.3, None, None))
+z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
 if scan == '894':
-    fun = lambda w,a,p0,k0,mv,sigma,gamma,base: (p0-k0*w)*np.exp(-a*(w0center/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,(abs_freq[0]-mv)*wD,gamma)
-                                                                                      +lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],(abs_freq[1]-mv)*wD,gamma)))
+    # fun1 = lambda w,a,p0,k0,mv,sigma,gamma,base: p0*(1+k0*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
+    fun1 = lambda w,a,p0,h1,h2,mv,sigma,gamma,base: p0*(1+h1*w+h2*w**2)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
+    fun = lambda w,a,p0,k0,mv,wD, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),hyp_weights,hypsplit))),axis=0).real) + base
+    # lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
+# mod = lm.Model(fun1,['w'],['a','p0','k0','mv','sigma','gamma','base'])
+mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','sigma','gamma','base'])
+
+init = mod.eval(params,w=beatfit(indices))
+# result = mod.fit(scaledT,params=params,weights=weights,method='basinhopping',w=beatfit(indices))
+result = mod.fit(scaledT,params=params,weights=weights,w=beatfit(indices))
+print(result.fit_report())
+plt.plot(beatfit(indices), scaledT, '+')
+# plt.plot(beatfit(indices),weights,'-r')
+plt.plot(beatfit(indices), init, '--', label='initial fit')
+plt.plot(beatfit(indices), result.best_fit, '-', label='best fit')
+plt.legend()
+plt.show()
+
+plt.plot(beatfit(indices), scaledT, '+')
+plt.plot(beatfit(indices),test[1]+test[0]*beatfit(indices))
+plt.plot(beatfit(indices),fun(beatfit(indices),6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447),'-r')
+plt.plot(beatfit(indices),fun1(beatfit(indices),6.68280,0.1872,0.0021299356,3.040347,0.145481102,Life,0.0087447),'--g')
+plt.show()
+

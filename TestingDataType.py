@@ -2,7 +2,6 @@ import numpy as np
 from numpy.polynomial import Polynomial as poly
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
-from scipy.special import voigt_profile as voigt
 from scipy.special import wofz as wofz
 from scipy.integrate import quad
 import scipy as sci
@@ -634,6 +633,10 @@ class data:
         plt.show()
         # plt.savefig(self.folder+r'\plots\FittedScan.png')
         # plt.clf()
+
+        plt.plot(self.beatfit(self.indices),self.scaledT)
+        plt.plot(self.beatfit(self.indices),self.fitting_eqn3(self.beatfit(self.indices),0.1872,6.68289265,0.145481102,3.040347,0.0021299356,0.00874469))
+        plt.show()
 
         plt.scatter(plotting_freq,resid)
         # plt.show()
