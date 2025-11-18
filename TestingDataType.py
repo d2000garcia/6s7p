@@ -10,6 +10,7 @@ from scipy import optimize as opt
 from matplotlib import lines as lines
 from numpy import pi as pi
 import os as os
+import lmfit as lm 
 
 def convertAD590(V):
     return V*20
@@ -98,7 +99,10 @@ def LinFit(data_bounds, indices, data):
     for bound in data_bounds:
         new_data.extend(data[bound[0]:bound[1]])
         new_indices.extend(indices[bound[0]:bound[1]])
-    return poly.fit(new_indices,new_data,1)
+    upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]])
+    lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
+    fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
+    return fitted_param
 
 def cvt_abs_wav_to_diff(abs_wav):
     #assume units of wavnum are 1/cm
@@ -155,6 +159,7 @@ class data:
             (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
             #beatnoteClean
             self.calculate_beat_fit()
+            self.etalon_ranges = [[0,0],[0,0]]
 
             np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
             np.savetxt(folder+r'\fitting\original\Tavg.csv', Tavg, delimiter=',')
@@ -228,8 +233,8 @@ class data:
             #Save as domain, window, coef
             self.beatfit = poly(temp[4:], temp[0:2], temp[2:4])
 
-            temp = np.loadtxt(folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',') 
-            self.backgoundFit = poly(temp[4:], temp[0:2], temp[2:4])
+            # temp = np.loadtxt(folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',') 
+            # self.backgoundFit = poly(temp[4:], temp[0:2], temp[2:4])
 
             self.scaled_residuals = np.loadtxt(folder+r'\beatnote\processed\scaled_residuals.csv', delimiter=',')
             self.beat_rng = np.loadtxt(folder+r'\entries\beat_rng.csv', dtype=int, delimiter=',').tolist()
@@ -242,7 +247,15 @@ class data:
                 self.alph_err=np.sqrt(np.diag(self.pcov))[1]
                 self.alpha=self.fitted_param[1]
             # self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
+            if os.path.exists(folder+r'\entries\linfitrngs.csv'):
+                temp = np.loadtxt(self.folder+r'\entries\linfitrngs.csv', delimiter=',',dtype=int)
+                self.etalon_ranges = [[temp[0],temp[1]],[temp[2],temp[3]]]
+            else:
+                self.etalon_ranges = [[0,0],[0,0]]
         
+        self.use_cur_bot = False
+        
+
         if not os.path.exists(folder+r'\plots\VapPres.png'):
             temps = simple_dat_get(par_folder +r'\Temperature.csv',0)
             temp_0 = (20*temps[:,2]).tolist()
@@ -264,6 +277,7 @@ class data:
             plt.title("Vapor Pressure")
             plt.savefig(folder+r'\plots\VapPres.png')
             plt.clf()
+        
             
             
     
@@ -280,19 +294,19 @@ class data:
         self.peak_val2 = peak_val2
 
     def calculate_T_shift(self):
-        self.backgoundFit = LinFit(self.back_rngs, self.indices, self.scaledT)
-        back_fit_param = self.backgoundFit.domain.tolist()
-        back_fit_param.extend(self.backgoundFit.window.tolist())
-        back_fit_param.extend(self.backgoundFit.coef.tolist())
+        # self.backgoundFit = LinFit(self.back_rngs, self.indices, self.scaledT)
+        # back_fit_param = self.backgoundFit.domain.tolist()
+        # back_fit_param.extend(self.backgoundFit.window.tolist())
+        # back_fit_param.extend(self.backgoundFit.coef.tolist())
 
-        np.savetxt(self.folder+r'\fitting\processed\back_fit_param.csv', back_fit_param, delimiter=',')
+        # np.savetxt(self.folder+r'\fitting\processed\back_fit_param.csv', back_fit_param, delimiter=',')
 
             
         temp = [self.back_rngs[0][0],self.back_rngs[0][1], self.back_rngs[1][0],self.back_rngs[1][1]]
         np.savetxt(self.folder+r'\entries\back_rngs.csv', temp, fmt='%i', delimiter=',')
 
         plt.plot(self.indices,self.scaledT)
-        plt.plot(self.indices,self.backgoundFit(self.indices),'-r')
+        # plt.plot(self.indices,self.backgoundFit(self.indices),'-r')
         plt.title(r'$\frac{Transmission}{Laser Power}$')
         plt.axvspan(0,self.beat_rng[0],alpha=0.2,color='grey')
         plt.axvspan(self.beat_rng[1],len(self.indices),alpha=0.2,color='grey')
@@ -311,14 +325,29 @@ class data:
 
         # self.voigt_rng = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
             # plt.show()
+        # if self.par_folder.find('BaselineMeas')!=-1:
+        #     #If this is the baseline measurement folder
+        #     temp  = find_peaks(-np.array(self.scaledT), width=500)
+        #     print(self.scan+ ' Pwr in wings mean: ' +str(np.mean(self.scaledT[temp[0][0]-250:temp[0][0]+250])))
+        #     print(poly.fit(self.indices[temp[0][0]-250:temp[0][0]+250],self.scaledT[temp[0][0]-250:temp[0][0]+250],1))
+        #     # np.savetxt(self.par_folder+r'\PwrWings'+self.scan+'.csv',self.scaledT[temp[0][0]-250:temp[0][0]+250])
+        #     for i in os.listdir(self.par_folder[:self.par_folder.rfind('/')]):
+        #         np.savetxt( self.par_folder[:self.par_folder.rfind('/')] +'/'+ i + '/PwrWings'+self.scan+'.csv', self.scaledT[temp[0][0]-250:temp[0][0]+250], delimiter=',')'
+
+    def calculate_baseline_ratio(self):
         if self.par_folder.find('BaselineMeas')!=-1:
             #If this is the baseline measurement folder
-            temp  = find_peaks(-np.array(self.scaledT), width=500)
-            print(self.scan+ ' Pwr in wings mean: ' +str(np.mean(self.scaledT[temp[0][0]-250:temp[0][0]+250])))
-            print(poly.fit(self.indices[temp[0][0]-250:temp[0][0]+250],self.scaledT[temp[0][0]-250:temp[0][0]+250],1))
+            ceiling = self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]]
+            ceil_avg = np.mean(ceiling)
+            floor = self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]]
+            floor_avg = np.mean(floor)
+            print('The ceiling and floor are:(',ceil_avg,';',floor_avg,')')
+            temp = np.array([ceil_avg,floor_avg])
+            # print(self.scan+ ' Pwr in wings mean: ' +str(np.mean(self.scaledT[temp[0][0]-250:temp[0][0]+250])))
+            # print(poly.fit(self.indices[temp[0][0]-250:temp[0][0]+250],self.scaledT[temp[0][0]-250:temp[0][0]+250],1))
             # np.savetxt(self.par_folder+r'\PwrWings'+self.scan+'.csv',self.scaledT[temp[0][0]-250:temp[0][0]+250])
             for i in os.listdir(self.par_folder[:self.par_folder.rfind('/')]):
-                np.savetxt( self.par_folder[:self.par_folder.rfind('/')] +'/'+ i + '/PwrWings'+self.scan+'.csv', self.scaledT[temp[0][0]-250:temp[0][0]+250], delimiter=',')
+                np.savetxt( self.par_folder[:self.par_folder.rfind('/')] +'/'+ i + '/PwrWings'+self.scan+'.csv', temp, delimiter=',')
             
             
     
@@ -437,80 +466,71 @@ class data:
         if self.scan == '456':
             #In GHz
             if F1 == 3:
-                self.abs_wavenum = [21946.56347,21946.56514,21946.56736]
+                abs_wavenum = [21946.56347,21946.56514,21946.56736]
                 #from W. Williams, M. Herd, and W. Hawkins, Laser Phys. Lett. 15,095702 (2018).
-                self.center = np.mean(self.abs_wavenum) * 29.9792458
-                self.hypsplit = cvt_abs_wav_to_diff(self.abs_wavenum)
+                self.abs_freq = list(map(lambda x:  x*29.9792458,abs_wavenum))#29.9..... = c decimals for scaling to convert to GHz
+                self.center = np.mean(self.abs_freq)
+                self.hypsplit = list(map(lambda x: x-self.abs_freq[0],self.abs_freq)) 
                 self.hyp_weights = [5/12,7/26,5/16]
                 #Higher frequency because its closer ie. F=3->F=2,3,4
             else:
                 #F1 == 4
-                self.abs_wavenum = [21946.25850,21946.26072,21946.26349]
-                self.center = np.mean(self.abs_wavenum) * 29.9792458
-                self.hypsplit = cvt_abs_wav_to_diff(self.abs_wavenum)
+                abs_wavenum = [21946.25850,21946.26072,21946.26349]
+                self.abs_freq = list(map(lambda x:  x*29.9792458,abs_wavenum))#29.9..... = c decimals for scaling for scaling to convert to GHz
+                self.center = np.mean(self.abs_freq)
+                self.hypsplit = list(map(lambda x: x-self.abs_freq[0],self.abs_freq)) 
                 self.hyp_weights = [7/48,7/16,5/16]
                 #Lower frequency because father F=4->F=3,4,5
         elif self.scan == '894':
+            #already in GHz
             main_tran = 335116.048807
             center_to6PF3 = 0.656820
             center_to6PF4 = 0.510860
             center_to6SF3 = 5.170855370625
             center_to6SF4 = 4.021776399375
             if F1 == 3:
-                self.abs_wavenum = [main_tran+center_to6SF3-center_to6PF3,main_tran+center_to6SF3+center_to6PF4]
-                self.center = np.mean(self.abs_wavenum)
+                self.abs_freq= [main_tran+center_to6SF3-center_to6PF3,main_tran+center_to6SF3+center_to6PF4]
+                self.center = np.mean(self.abs_freq)
                 self.hyp_weights = [7/24,7/8]
                 self.hypsplit = [0,1.167680]
                 #Higher frequency because its closer ie. F=3->F=3,4
             else:
                 #F1 == 4
-                self.abs_wavenum = [main_tran-center_to6SF4-center_to6PF3,main_tran-center_to6SF4+center_to6PF4]
-                self.center = np.mean(self.abs_wavenum)
+                self.abs_freq = [main_tran-center_to6SF4-center_to6PF3,main_tran-center_to6SF4+center_to6PF4]
+                self.center = np.mean(self.abs_freq)
                 self.hyp_weights = [7/8,5/8]
                 # self.hyp_weights = [5/8,7/8]
                 self.hypsplit = [0,1.167680]
                 #Lower frequency because father F=4->F=3,4 
 
-        
+    
     
     def set_fitting_function(self):
         #constants wihout powers
         c=2.99792458
         afs=7.29735256
-        m=2.20694650
+        m=2.2069484567911638
         kB=1.3806503
         k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
         k2 = 10000 * afs * np.sqrt(m*c*c*pi**3/(8*kB)) #power analysis leads to the 10^4 factor 
         
         temp = 273+30  # guess at hot portion of cell
-        if self.scan == '894':
-            mini = find_peaks(-np.array(self.scaledT), width=150,height=np.mean(-self.scaledT))
-            guess = self.beatfit(mini[0][0])
-        else:
-            temp = 100
-            mini = 0
-            for i,val in enumerate(self.scaledT):
-                if val < temp:
-                    temp = val
-                    mini = i
-            guess = self.beatfit(mini)
             
         if self.scan == '456':
-            w1 = self.abs_wavenum[0]*29.9792458 *k1 #Abs freq w1 in GHz
-            p0 = 0.9 #scaledT pwr at top
-            Life = 1/137.54/2 #half of lifetime in MHz
-            wD0 = self.center * np.sqrt(380) * k1 #estimate
-            denom = self.center* k1
+            peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
+            p0 = 0.37 #scaledT pwr at top
+            Life = 1/137.54/2 #half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
+            wD0 = self.center * np.sqrt(288.15) * k1 #estimate using 15C
+            #sigma = wD/(2rad(2ln2))
+            #wD = w * sqrt(8kbT ln(2)/Mc^2)
         else:
-            w1 = self.abs_wavenum[0] * k1
-            p0 = 0.11 #scaledT power at top
-            Life = 0.0045612/2 #half of lifetime in MHz
-            wD0 = self.center * np.sqrt(380) * k1
-            
+            peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+            p0=0.2 #scaledT power at top
+            Life = 1/34.791/2 #half of lifetime in GHz from Stek
+            wD0 = self.center * np.sqrt(288.15) * k1
+        guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
         coeff = self.hyp_weights
-        param_guess = [1,0.4,1/10,0.7]
-        sqrtlog2 = np.sqrt(np.log(2))
-        temp = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
+        z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
         # self.voit_eqn = 
                 #x1 = coeff
                 #x2 = freq shifts from peak 1
@@ -520,17 +540,67 @@ class data:
                 #wD is the temperature dependentr part of the Dopler full width half max, since it has frequency portion include small shiftings
         # self.fitting_eqn = lambda w,p0,a,wD,L,mv: p0 * np.exp(-a * (w+shift -mv) * np.sum(np.real(np.array(list(map(lambda x1,x2:x1*wofz(sqrtlog2*complex(2*(w-x2-mv), L)/(w+shift - mv)/wD)/(w+shift - mv)/wD,coeff,self.hypsplit))))))
 
-        self.fitting_eqn3 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
+        # old self.fitting_eqn3 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
+        if self.scan == '894':
+            if self.use_cur_bot:
+                # ceiling = np.mean(self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]])
+                # floor = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
+                # baseline = floor/ceiling
+                baseline = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
+            else:
+                if os.path.exists(self.par_folder+'\\PwrWings894.csv'):
+                    hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
+                    baseline = hotcell[1]/hotcell[0]
+                else:
+                    baseline = 0.05 #estimate 5% power in wings for 894
+        else:
+            if os.path.exists(self.par_folder+'\\PwrWings456.csv'):
+                hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
+                baseline = hotcell[1]/hotcell[0]
+            else:
+                baseline = 0.008 #estimate 5% power in wings for 894
+        plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+        scaledw = self.center/10**6
+        if self.etalon_ranges[0][1] != 0:
+            test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
+
+            # new_data = []
+            # new_indices = []
+            # for bound in self.etalon_ranges:
+            #     new_data.extend(self.scaledT[bound[0]:bound[1]])
+            #     new_indices.extend(self.beatfit(self.indices)[bound[0]:bound[1]])
+            # upper = np.mean(self.scaledT[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.scaledT[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
+            # lower = np.mean(self.beatfit(self.indices)[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.beatfit(self.indices)[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
+            # fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
+
+
+            plt.plot(self.beatfit(self.indices),test[0]*self.beatfit(self.indices)+test[1])
+            plt.plot(self.beatfit(self.indices),self.scaledT)
+            plt.show()
+            # temp2 = np.mean(test(plotting_freq))*baseline
+            # self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 *(1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
+            # param_guess3 = [p0,0.1,wD0,guess,test.coef[0]]
+            # bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.95,test.coef[0]-abs(test.coef[0])*0.05],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.05,test.coef[0]+abs(test.coef[0])*0.05])
+            guess1 = test[1]-baseline
+            guess2 = test[0]/(test[1]-baseline)
+            self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
+            param_guess3 = [guess1,0.1,wD0,guess,guess2, baseline]
+            bounds3 = ([guess1*0.95,0,self.center * np.sqrt(283.15) * k1*0.9,guess*0.9,guess2-abs(guess2)*0.05, baseline*0.9],[guess1*1.05,10,self.center * np.sqrt(303.15)*k1*1.1,guess*1.1,guess2+abs(guess2)*0.05,baseline*1.1])
+            np.savetxt(self.folder+r'\entries\linfitrngs.csv', [self.etalon_ranges[0][0],self.etalon_ranges[0][1],self.etalon_ranges[1][0],self.etalon_ranges[1][1]], delimiter=',',fmt='%i')
+        else:
+            self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 * (1-k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
+            param_guess3 = [p0,0.1,wD0,guess,0.01]
+            bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.9,-0.1],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.1,0.1])
+        
 
         # self.fitting_eqn4 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2,x3:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
 
-        param_guess3 = [p0,0.1,wD0,guess,0.01,0.01,0.1]
-        if self.scan == '456':
-            bounds3 = ([0.1,0.00001,0.1,0.00001,-2,-1,0],[3,10,0.5,10,2,1,0.2])
-        else:
-            bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.2])
-
-        plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+        # param_guess3 = [p0,0.1,wD0,guess,0.01,0.01,0.1]
+        # if self.scan == '456':
+        #     bounds3 = ([0.1,0.00001,0.1,0.00001,-2,-1,0],[3,10,0.5,10,2,1,0.2])
+        # else:
+        #     bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.2])
+        
 
         fitted_param3, pcov3 = opt.curve_fit(self.fitting_eqn3, plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]],param_guess3,bounds=bounds3)
         print('fitted params')
@@ -555,8 +625,15 @@ class data:
         plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]) +r', $\chi^2=$'+ str(self.alph_err))
         plt.xlabel('Freq [GHz]')
         # plt.show()
-        plt.savefig(self.folder+r'\plots\FittedScan.png')
-        plt.clf()
+        plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
+
+        k3 =self.beatfit(properties["left_ips"])
+        k4 = self.beatfit(properties["right_ips"])
+        plt.vlines(x=self.beatfit(peaks), ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "blue")
+        plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
+        plt.show()
+        # plt.savefig(self.folder+r'\plots\FittedScan.png')
+        # plt.clf()
 
         plt.scatter(plotting_freq,resid)
         # plt.show()

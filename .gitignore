@@ -1,0 +1,8 @@
+*
+!.gitignore
+!**/*.py
+!**/*.csv
+!**/*.tsv
+!**/*.txt
+!**/*.xlsx
+!**/*.bmp
