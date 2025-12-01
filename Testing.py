@@ -27,8 +27,8 @@ def LinFit(data_bounds, indices, data):
     for bound in data_bounds:
         new_data.extend(data[bound[0]:bound[1]])
         new_indices.extend(indices[bound[0]:bound[1]])
-    upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]])
-    lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
+    upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]]) #numerator
+    lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])#denominator
     fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
     return fitted_param
 
@@ -122,19 +122,19 @@ else:
     k3 =beatfit(properties["left_bases"])
     k4 =beatfit(properties["right_bases"])
     sig = (np.max(k4)-np.min(k3))/10
-    weights = lm.models.gaussian(beatfit(indices),center=w0center,sigma=sig) + 1/(sig * np.sqrt(2 * pi)*50)
+    weights = lm.models.gaussian(beatfit(indices),center=w0center,sigma=sig) + 1/(sig * np.sqrt(2 * pi)0)
 guess = beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
 base  = np.mean(scaledT[5878:5980])
 
 etalon_ranges = [[200,3300],[7000,8000]]
 test = LinFit(etalon_ranges, beatfit(indices), scaledT)
-test2 = quad(etalon_ranges, beatfit(indices), scaledT)
-print(test2)
-test2[1]=test2[1]/test2[0]
-test2[2]=test2[2]/test2[0]
-params = lm.Parameters()
-# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
+# test2 = quad(etalon_ranges, beatfit(indices), scaledT)
 print(test)
+# test2[1]=test2[1]/test2[0]
+# test2[2]=test2[2]/test2[0]
+params = lm.Parameters()
+
+# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
 # params.add_many(('a', 6, True, 0, 10, None, None),
 #                 ('p0', test[1], True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
 #                 ('k0', test[0], True, test[0]-abs(test[0])*0.1, test[0]+abs(test[0])*0.1, None, None),
@@ -143,9 +143,8 @@ print(test)
 #                 ('gamma', Life, False, None, None, None, None),
 #                 ('base', base, True, base*0.7, base*1.3, None, None))
 params.add_many(('a', 6, True, 0, 10, None, None),
-                ('p0', test2[0], True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
-                ('h1', test2[1], True, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test2[1])*0.2, None, None),
-                ('h2', test2[2], True, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
+                ('p0', test[1], True, 0.8*scaledT[1], 1.2*scaledT[1], None, None),
+                ('h1', test[0], True, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
                 ('sigma', wD, True, wD*0.5, wD*1.5, None, None),
                 ('gamma', Life, False, None, None, None, None),
@@ -168,11 +167,11 @@ params2.add_many(('a', 6, True, 0, 10, None, None),
 z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
 if scan == '894':
     # fun1 = lambda w,a,p0,k0,mv,sigma,gamma,base: p0*(1+k0*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
-    fun1 = lambda w,a,p0,h1,h2,mv,sigma,gamma,base: p0*(1+h1*w+h2*w**2)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
+    fun1 = lambda w,a,p0,h1,mv,sigma,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
     fun = lambda w,a,p0,k0,mv,wD, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),hyp_weights,hypsplit))),axis=0).real) + base
     # lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
 # mod = lm.Model(fun1,['w'],['a','p0','k0','mv','sigma','gamma','base'])
-mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','sigma','gamma','base'])
+mod = lm.Model(fun1,['w'],['a','p0','h1','mv','sigma','gamma','base'])
 
 init = mod.eval(params,w=beatfit(indices))
 # result = mod.fit(scaledT,params=params,weights=weights,method='basinhopping',w=beatfit(indices))
