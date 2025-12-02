@@ -724,64 +724,79 @@ def set_fitting_function(self):
             else:
                 baseline = 0.008 #estimate 5% power in wings for 894
         plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-        scaledw = self.center/10**6
         if self.etalon_ranges[0][1] != 0:
             test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
-
-            # new_data = []
-            # new_indices = []
-            # for bound in self.etalon_ranges:
-            #     new_data.extend(self.scaledT[bound[0]:bound[1]])
-            #     new_indices.extend(self.beatfit(self.indices)[bound[0]:bound[1]])
-            # upper = np.mean(self.scaledT[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.scaledT[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
-            # lower = np.mean(self.beatfit(self.indices)[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.beatfit(self.indices)[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
-            # fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
-
-
-            plt.plot(self.beatfit(self.indices),test[0]*self.beatfit(self.indices)+test[1])
-            plt.plot(self.beatfit(self.indices),self.scaledT)
-            plt.show()
-            # temp2 = np.mean(test(plotting_freq))*baseline
-            # self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 *(1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
-            # param_guess3 = [p0,0.1,wD0,guess,test.coef[0]]
-            # bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.95,test.coef[0]-abs(test.coef[0])*0.05],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.05,test.coef[0]+abs(test.coef[0])*0.05])
-            guess1 = test[1]-baseline
-            guess2 = test[0]/(test[1]-baseline)
-            self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
-            param_guess3 = [guess1,0.1,wD0,guess,guess2, baseline]
-            bounds3 = ([guess1*0.95,0,self.center * np.sqrt(283.15) * k1*0.9,guess*0.9,guess2-abs(guess2)*0.05, baseline*0.9],[guess1*1.05,10,self.center * np.sqrt(303.15)*k1*1.1,guess*1.1,guess2+abs(guess2)*0.05,baseline*1.1])
-            np.savetxt(self.folder+r'\entries\linfitrngs.csv', [self.etalon_ranges[0][0],self.etalon_ranges[0][1],self.etalon_ranges[1][0],self.etalon_ranges[1][1]], delimiter=',',fmt='%i')
+            params = lm.Parameters()
+            params.add_many(
+                ('a', 5, True, 0, 10, None, None),
+                ('p0', test[1]-baseline, True, 0.8*(test[1]-baseline), 1.2*(test-baseline), None, None),
+                ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
+                ('mv', guess, True, 0, 4, None, None),
+                ('T', 25, True, -15, 30, None, None),
+                ('gamma', Life, False, None, None, None, None),
+                ('base', baseline, True, baseline*0.5, baseline*2, None, None))
+        if self.scan == '456':
+            fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(lm.models.voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                                                                          lm.models.voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
+                                                                          lm.models.voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
         else:
-            self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 * (1-k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
-            param_guess3 = [p0,0.1,wD0,guess,0.01]
-            bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.9,-0.1],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.1,0.1])
-        
+            fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*(lm.models.voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+lm.models.voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
 
-        # self.fitting_eqn4 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2,x3:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
 
-        # param_guess3 = [p0,0.1,wD0,guess,0.01,0.01,0.1]
-        # if self.scan == '456':
-        #     bounds3 = ([0.1,0.00001,0.1,0.00001,-2,-1,0],[3,10,0.5,10,2,1,0.2])
+        #     # new_data = []
+        #     # new_indices = []
+        #     # for bound in self.etalon_ranges:
+        #     #     new_data.extend(self.scaledT[bound[0]:bound[1]])
+        #     #     new_indices.extend(self.beatfit(self.indices)[bound[0]:bound[1]])
+        #     # upper = np.mean(self.scaledT[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.scaledT[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
+        #     # lower = np.mean(self.beatfit(self.indices)[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.beatfit(self.indices)[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
+        #     # fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
+
+
+        #     plt.plot(self.beatfit(self.indices),test[0]*self.beatfit(self.indices)+test[1])
+        #     plt.plot(self.beatfit(self.indices),self.scaledT)
+        #     plt.show()
+        #     # temp2 = np.mean(test(plotting_freq))*baseline
+        #     # self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 *(1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
+        #     # param_guess3 = [p0,0.1,wD0,guess,test.coef[0]]
+        #     # bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.95,test.coef[0]-abs(test.coef[0])*0.05],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.05,test.coef[0]+abs(test.coef[0])*0.05])
+        #     guess1 = test[1]-baseline
+        #     guess2 = test[0]/(test[1]-baseline)
+        #     self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
+        #     param_guess3 = [guess1,0.1,wD0,guess,guess2, baseline]
+        #     bounds3 = ([guess1*0.95,0,self.center * np.sqrt(283.15) * k1*0.9,guess*0.9,guess2-abs(guess2)*0.05, baseline*0.9],[guess1*1.05,10,self.center * np.sqrt(303.15)*k1*1.1,guess*1.1,guess2+abs(guess2)*0.05,baseline*1.1])
+        #     np.savetxt(self.folder+r'\entries\linfitrngs.csv', [self.etalon_ranges[0][0],self.etalon_ranges[0][1],self.etalon_ranges[1][0],self.etalon_ranges[1][1]], delimiter=',',fmt='%i')
         # else:
-        #     bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.2])
+        #     self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 * (1-k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
+        #     param_guess3 = [p0,0.1,wD0,guess,0.01]
+        #     bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.9,-0.1],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.1,0.1])
         
 
-        fitted_param3, pcov3 = opt.curve_fit(self.fitting_eqn3, plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]],param_guess3,bounds=bounds3)
-        print('fitted params')
-        print(fitted_param3)
-        self.fitted_param = fitted_param3
-        # print(fitted_param3)
-        self.pcov = pcov3
-        self.alpha = fitted_param3[1]
-        self.fitted = True
-        perr = np.sqrt(np.diag(pcov3))
-        # print(perr)
-        # self.alph_err=perr[1]
-        print(np.linalg.cond(pcov3))
+        # # self.fitting_eqn4 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2,x3:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
+
+        # # param_guess3 = [p0,0.1,wD0,guess,0.01,0.01,0.1]
+        # # if self.scan == '456':
+        # #     bounds3 = ([0.1,0.00001,0.1,0.00001,-2,-1,0],[3,10,0.5,10,2,1,0.2])
+        # # else:
+        # #     bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.2])
         
-        resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
-        chi2 = resid**2
-        self.alph_err=np.sum(chi2)/(self.beat_rng[1]-self.beat_rng[0])
+
+        # fitted_param3, pcov3 = opt.curve_fit(self.fitting_eqn3, plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]],param_guess3,bounds=bounds3)
+        # print('fitted params')
+        # print(fitted_param3)
+        # self.fitted_param = fitted_param3
+        # # print(fitted_param3)
+        # self.pcov = pcov3
+        # self.alpha = fitted_param3[1]
+        # self.fitted = True
+        # perr = np.sqrt(np.diag(pcov3))
+        # # print(perr)
+        # # self.alph_err=perr[1]
+        # print(np.linalg.cond(pcov3))
+        
+        # resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
+        # chi2 = resid**2
+        # self.alph_err=np.sum(chi2)/(self.beat_rng[1]-self.beat_rng[0])
         np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
         np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
         plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
