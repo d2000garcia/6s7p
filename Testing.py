@@ -142,14 +142,14 @@ params = lm.Parameters()
 #                 ('p0', test[1], True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
 #                 ('k0', test[0], True, test[0]-abs(test[0])*0.1, test[0]+abs(test[0])*0.1, None, None),
 #                 ('mv', guess, True, 0, 4, None, None),
-#                 ('sigma', wD, True, wD*0.5, wD*1.5, None, None),
+#                 ('T', wD, True, wD*0.5, wD*1.5, None, None),
 #                 ('gamma', Life, False, None, None, None, None),
 #                 ('base', base, True, base*0.7, base*1.3, None, None))
-params.add_many(('a', 6, True, 0, 10, None, None),
+params.add_many(('a', 5, True, 0, 10, None, None),
                 ('p0', test[1]-base, True, 0.8*(scaledT[1]-base), 1.2*(scaledT[1]-base), None, None),
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
-                ('sigma', wD, True, 0, None, None, None),
+                ('T', 25, True, -15, 30, None, None),
                 ('gamma', Life, False, None, None, None, None),
                 ('base', base, True, base*0.8, base*2, None, None))
 params2 = lm.Parameters()
@@ -170,11 +170,11 @@ params2.add_many(('a', 6, True, 0, 10, None, None),
 z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
 if scan == '894':
     # fun1 = lambda w,a,p0,k0,mv,sigma,gamma,base: p0*(1+k0*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
-    fun1 = lambda w,a,p0,h1,mv,sigma,gamma,base: (p0+h1*w)*np.exp(-a*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
+    fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*(lm.models.voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],np.sqrt(T+273.15)*k1*abs_freq[1],gamma))) + base
     fun = lambda w,a,p0,k0,mv,wD, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),hyp_weights,hypsplit))),axis=0).real) + base
     # lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
 # mod = lm.Model(fun1,['w'],['a','p0','k0','mv','sigma','gamma','base'])
-mod = lm.Model(fun1,['w'],['a','p0','h1','mv','sigma','gamma','base'])
+mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
 
 # runningavg2 = np.convolve(scaledT, np.ones(5)/5, mode='same')  
 
@@ -202,11 +202,14 @@ for key in result.params.keys():
         params[key].set(min=mini)
         params[key].set(max=maxi)
         params[key].set(value=(result.params[key].value+result2.params[key].value)/2)
-        params[key].set(brute_step=(maxi-mini)/5)
+        params[key].set(brute_step=(maxi-mini)/10)
 result3 = mod.fit(scaledT,params=params,w=beatfit(indices),method='brute')
 print(result3.fit_report())
 plt.plot(beatfit(indices), scaledT, '+')
-plt.plot(beatfit(indices), result3.best_fit, '-', label='best fit')
+plt.plot(beatfit(indices), result.best_fit, '-', label='best fit')
+plt.plot(beatfit(indices), result2.best_fit, '-', label='best fit2')
+plt.plot(beatfit(indices), result3.best_fit, '-', label='best fit3')
+plt.legend()
 plt.show()
 
 
