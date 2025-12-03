@@ -11,6 +11,24 @@ from scipy.special import wofz as wofz
 # k=2
 # print('2')
 # thing  = lm.models.voigt
+pi = np.pi
+s2pi = np.sqrt(2*pi)
+s2 = np.sqrt(2.0)
+
+def voigt(x, amplitude=1.0, center=0.0, sigma=1.0, gamma=None):
+    """Return a 1-dimensional Voigt function.
+
+    voigt(x, amplitude, center, sigma, gamma) =
+        amplitude*real(wofz(z)) / (sigma*s2pi)
+
+    For more information, see: https://en.wikipedia.org/wiki/Voigt_profile
+
+    """
+    if gamma is None:
+        gamma = sigma
+    z = (x-center + 1j*gamma) / (sigma*s2)
+    return amplitude*np.real(wofz(z)) / (sigma*s2pi)
+
 def LinFit(data_bounds, indices, data):
     #b = self.indices[-1]
     #t = 2(x-a)/(b-a) -1 scales x in [a,b] to [-1,1]
@@ -93,14 +111,14 @@ kB=1.3806503
 pi = np.pi
 k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
 k2 = 10000 * afs * np.sqrt(m*c*c*pi**3/(8*kB)) #power analysis leads to the 10^4 factor 
-# temp = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',') 
-temp = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',')
+temp = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',') 
+# temp = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',')
             #Save as domain, window, coef
 beatfit = poly(temp[4:], temp[0:2], temp[2:4])
-# scaledT = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
-# indices = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
-scaledT = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
-indices = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
+scaledT = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
+indices = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
+# scaledT = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
+# indices = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
 
 temp = 273+30  # guess at hot portion of cell
 
@@ -146,11 +164,11 @@ params = lm.Parameters()
 #                 ('gamma', Life, False, None, None, None, None),
 #                 ('base', base, True, base*0.7, base*1.3, None, None))
 params.add_many(('a', 5, True, 0, 10, None, None),
-                ('p0', test[1]-base, True, 0.8*(test[1]-base), 1.2*(test[1]-base), None, None),
+                ('p0', test[1]-base, True, 0.7*(test[1]-base), 1.3*(test[1]-base), None, None),
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
-                ('T', 25, True, 0, 30, None, None),
-                ('gamma', Life, False, None, None, None, None),
+                ('T', 25, True, 0, 50, None, None),
+                ('gamma', Life/(2*pi), True, None, None, None, None),
                 ('base', base, True, base*0.4, base*2.5, None, None)) #seems like fit is very dependent on baseline matters more for 894 i think
 params2 = lm.Parameters()
 test1 = [6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447]
@@ -170,7 +188,7 @@ params2.add_many(('a', 6, True, 0, 10, None, None),
 z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
 if scan == '894':
     # fun1 = lambda w,a,p0,k0,mv,sigma,gamma,base: p0*(1+k0*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
-    fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],np.sqrt(T+273.15)*k1*abs_freq[1],gamma))) + base
+    fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+voigt(w,hyp_weights[1],mv+hypsplit[1],np.sqrt(T+273.15)*k1*abs_freq[1],gamma))) + base
     fun = lambda w,a,p0,k0,mv,wD, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),hyp_weights,hypsplit))),axis=0).real) + base
     # lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
 # mod = lm.Model(fun1,['w'],['a','p0','k0','mv','sigma','gamma','base'])
@@ -190,7 +208,7 @@ plt.plot(beatfit(indices), scaledT, '+')
 # plt.plot(beatfit(indices),weights,'-r')
 plt.plot(beatfit(indices), init, '--', label='initial fit')
 plt.plot(beatfit(indices), result.best_fit, '-', label='best fit')
-plt.plot(beatfit(indices), result2.best_fit, '-', label='best fit2')
+plt.plot(beatfit(indices), result2.best_fit, '-r', label='best fit2')
 plt.legend()
 plt.show()
 

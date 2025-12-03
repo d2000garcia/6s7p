@@ -11,6 +11,23 @@ from numpy import pi as pi
 import os as os
 import lmfit as lm 
 
+s2pi = np.sqrt(2*pi)
+s2 = np.sqrt(2.0)
+
+def voigt(x, amplitude=1.0, center=0.0, sigma=1.0, gamma=None):
+    """Return a 1-dimensional Voigt function.
+
+    voigt(x, amplitude, center, sigma, gamma) =
+        amplitude*real(wofz(z)) / (sigma*s2pi)
+
+    For more information, see: https://en.wikipedia.org/wiki/Voigt_profile
+
+    """
+    if gamma is None:
+        gamma = sigma
+    z = (x-center + 1j*gamma) / (sigma*s2)
+    return amplitude*np.real(wofz(z)) / (sigma*s2pi)
+
 def convertAD590(V):
     return V*20
 
@@ -682,183 +699,135 @@ class data:
     #         print('456 param saved')
 
         
-def set_fitting_function(self):
-        #New function using lmfit
-        #constants wihout powers
-        c=2.99792458
-        afs=7.29735256
-        m=2.2069484567911638
-        kB=1.3806503
-        k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
-        
-        temp = 273+30  # guess at hot portion of cell
+    def set_fitting_function(self):
+            #New function using lmfit
+            #constants wihout powers
+            c=2.99792458
+            afs=7.29735256
+            m=2.2069484567911638
+            kB=1.3806503
+            k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
             
-        if self.scan == '456':
-            peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
-            p0 = 0.37 #scaledT pwr at top
-            Life = 1/137.54/2 #half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
+            temp = 273+30  # guess at hot portion of cell
+                
+            if self.scan == '456':
+                peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
+                p0 = 0.37 #scaledT pwr at top
+                Life = 1/137.54/2 #half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
 
-        else:
-            peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
-            p0=0.2 #scaledT power at top
-            Life = 1/34.791/2 #half of lifetime in GHz from Stek
-        guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
-        coeff = self.hyp_weights
-        
-        if self.scan == '894':
-            if self.use_cur_bot:
-                # ceiling = np.mean(self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]])
-                # floor = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
-                # baseline = floor/ceiling
-                baseline = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
             else:
-                if os.path.exists(self.par_folder+'\\PwrWings894.csv'):
-                    hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
-                    baseline = hotcell[1]/hotcell[0]
+                peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                p0=0.2 #scaledT power at top
+                Life = 1/34.791/2 #half of lifetime in GHz from Stek
+            guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
+            coeff = self.hyp_weights
+            
+            if self.scan == '894':
+                if self.use_cur_bot:
+                    # ceiling = np.mean(self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]])
+                    # floor = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
+                    # baseline = floor/ceiling
+                    baseline = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
                 else:
-                    baseline = 0.05 #estimate 5% power in wings for 894
-        else:
-            if os.path.exists(self.par_folder+'\\PwrWings456.csv'):
-                hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
-                baseline = hotcell[1]/hotcell[0]
+                    if os.path.exists(self.par_folder+'\\PwrWings894.csv'):
+                        hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
+                        baseline = hotcell[1]
+                    else:
+                        baseline = 0.00818383 #estimate power in wings for 894
             else:
-                baseline = 0.008 #estimate 5% power in wings for 894
-        plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-        if self.etalon_ranges[0][1] != 0:
-            test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
-            params = lm.Parameters()
-            params.add_many(
-                ('a', 5, True, 0, 10, None, None),
-                ('p0', test[1]-baseline, True, 0.8*(test[1]-baseline), 1.2*(test-baseline), None, None),
-                ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
-                ('mv', guess, True, 0, 4, None, None),
-                ('T', 25, True, -15, 30, None, None),
-                ('gamma', Life, False, None, None, None, None),
-                ('base', baseline, True, baseline*0.5, baseline*2, None, None))
-        if self.scan == '456':
-            fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(lm.models.voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
-                                                                          lm.models.voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
-                                                                          lm.models.voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
-        else:
-            fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*(lm.models.voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+lm.models.voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
+                if os.path.exists(self.par_folder+'\\PwrWings456.csv'):
+                    hotcell= np.loadtxt(self.par_folder+'\\PwrWings456.csv', delimiter=',')
+                    baseline = hotcell[1]
+                else:
+                    baseline = 0.008 #estimate 5% power in wings for 894
+            plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+            if self.etalon_ranges[0][1] != 0:
+                test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
+                params = lm.Parameters()
+                params.add_many(
+                    ('a', 5, True, 0, 10, None, None),
+                    ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
+                    ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
+                    ('mv', guess, True, 0, 4, None, None),
+                    ('T', 25, True, 0, 50, None, None),
+                    ('gamma', Life/(2*pi), True, 0, Life, None, None),
+                    ('base', baseline, True, baseline*0.5, baseline*2, None, None))
+            if self.scan == '456':
+                params['a'].set(1)
+                fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                                                                            voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
+                                                                            voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
+            else:
+                fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                                                                                                            voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
+            
+            mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
+            result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='leastsq')
+            print(result.fit_report())
+            resid = result.residual
+            self.fitted_parm = list(map(lambda key:result.params[key].value,result.params.keys()))
+            self.pcov = list(map(lambda key:result.params[key].stderr,result.params.keys()))
+            # resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
+            # chi2 = resid**2
+            self.alph_err=self.pcov[0]
+            np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
+            np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
+            plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
+            plt.plot(plotting_freq,result.best_fit, '-r',linewidth=0.2,marker='.')#, mew='0.05')
+            plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_parm[0]) + r', err='+ str(self.alph_err))
+            plt.xlabel('Freq [GHz]')
+            # plt.show()
+            plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
 
+            k3 =self.beatfit(properties["left_ips"])
+            k4 = self.beatfit(properties["right_ips"])
+            plt.vlines(x=self.beatfit(peaks), ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "blue")
+            plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
+            plt.show()
+            # plt.savefig(self.folder+r'\plots\FittedScan.png')
+            # plt.clf()
 
-        #     # new_data = []
-        #     # new_indices = []
-        #     # for bound in self.etalon_ranges:
-        #     #     new_data.extend(self.scaledT[bound[0]:bound[1]])
-        #     #     new_indices.extend(self.beatfit(self.indices)[bound[0]:bound[1]])
-        #     # upper = np.mean(self.scaledT[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.scaledT[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
-        #     # lower = np.mean(self.beatfit(self.indices)[self.etalon_ranges[1][0]:self.etalon_ranges[1][1]])-np.mean(self.beatfit(self.indices)[self.etalon_ranges[0][0]:self.etalon_ranges[0][1]])
-        #     # fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
+            # plt.scatter(plotting_freq,resid)
+            # # plt.show()
+            # plt.title(self.scan+ 'Fitted plot residuals')
+            # plt.xlabel('Freq [GHz]')
+            # plt.savefig(self.folder+r'\plots\FittedScanResid.png')
+            # plt.clf()
 
+            # if self.scan == '456':
+            #     lines = {}
+            #     date = self.par_folder[self.par_folder.rfind('/')+1:]
+            #     temp = list(map(str, fitted_param3.copy().tolist()))
+            #     data = [date]
+            #     data.extend(temp)
+            #     day_path = self.par_folder[:self.par_folder.rfind('/')]
+            #     fits456 = day_path+'/456Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
+            #     if not os.path.exists(fits456):
+            #         file = open(fits456,'w')
+            #         file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
+            #         file.close()
+            #     file = open(fits456,'r')
+            #     file.readline()
+            #     for line in file:
+            #         line = line.strip().split('\t')
+            #         lines[line[0]]=line
+            #     file.close()
+            #     lines[date] = data
+            #     order = list(lines.keys())
+            #     order.sort()
+            #     file = open(fits456,"w")
+            #     file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
+            #     for j in range(len(order)-1):
+            #         for i in range(len(lines[order[j]])-1):
+            #             file.write(lines[order[j]][i])
+            #             file.write('\t')
+            #         file.write(lines[order[j]][-1])
+            #         file.write('\n')
+            #     for i in range(len(lines[order[-1]])-1):
+            #         file.write(lines[order[-1]][i])
+            #         file.write('\t')
+            #     file.write(lines[order[-1]][-1])
+            #     file.close()
+            #     print('456 param saved')
 
-        #     plt.plot(self.beatfit(self.indices),test[0]*self.beatfit(self.indices)+test[1])
-        #     plt.plot(self.beatfit(self.indices),self.scaledT)
-        #     plt.show()
-        #     # temp2 = np.mean(test(plotting_freq))*baseline
-        #     # self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 *(1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
-        #     # param_guess3 = [p0,0.1,wD0,guess,test.coef[0]]
-        #     # bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.95,test.coef[0]-abs(test.coef[0])*0.05],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.05,test.coef[0]+abs(test.coef[0])*0.05])
-        #     guess1 = test[1]-baseline
-        #     guess2 = test[0]/(test[1]-baseline)
-        #     self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
-        #     param_guess3 = [guess1,0.1,wD0,guess,guess2, baseline]
-        #     bounds3 = ([guess1*0.95,0,self.center * np.sqrt(283.15) * k1*0.9,guess*0.9,guess2-abs(guess2)*0.05, baseline*0.9],[guess1*1.05,10,self.center * np.sqrt(303.15)*k1*1.1,guess*1.1,guess2+abs(guess2)*0.05,baseline*1.1])
-        #     np.savetxt(self.folder+r'\entries\linfitrngs.csv', [self.etalon_ranges[0][0],self.etalon_ranges[0][1],self.etalon_ranges[1][0],self.etalon_ranges[1][1]], delimiter=',',fmt='%i')
-        # else:
-        #     self.fitting_eqn3 = lambda w,p0,a,wD,mv,k0: p0 * (1-k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + p0*baseline
-        #     param_guess3 = [p0,0.1,wD0,guess,0.01]
-        #     bounds3 = ([p0*0.7,0,self.center * np.sqrt(283.15) * k1,guess*0.9,-0.1],[p0*1.3,10,self.center * np.sqrt(303.15)*k1,guess*1.1,0.1])
-        
-
-        # # self.fitting_eqn4 = lambda w,p0,a,wD,mv,mv2,k0, offset: p0 * (1-k0*(w - mv - mv2)) * np.exp(-a * np.sum(np.array(list(map(lambda x1,x2,x3:x1*wofz(temp(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + offset
-
-        # # param_guess3 = [p0,0.1,wD0,guess,0.01,0.01,0.1]
-        # # if self.scan == '456':
-        # #     bounds3 = ([0.1,0.00001,0.1,0.00001,-2,-1,0],[3,10,0.5,10,2,1,0.2])
-        # # else:
-        # #     bounds3 = ([0.01,0.00001,0.05,0.00001,-2,-1,0],[3,10,0.3,4,2,1,0.2])
-        
-
-        # fitted_param3, pcov3 = opt.curve_fit(self.fitting_eqn3, plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]],param_guess3,bounds=bounds3)
-        # print('fitted params')
-        # print(fitted_param3)
-        # self.fitted_param = fitted_param3
-        # # print(fitted_param3)
-        # self.pcov = pcov3
-        # self.alpha = fitted_param3[1]
-        # self.fitted = True
-        # perr = np.sqrt(np.diag(pcov3))
-        # # print(perr)
-        # # self.alph_err=perr[1]
-        # print(np.linalg.cond(pcov3))
-        
-        # resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
-        # chi2 = resid**2
-        # self.alph_err=np.sum(chi2)/(self.beat_rng[1]-self.beat_rng[0])
-        np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
-        np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
-        plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
-        plt.plot(plotting_freq,self.fitting_eqn3(plotting_freq,*fitted_param3), '-r',linewidth=0.5,marker='.')#, mew='0.05')
-        plt.title(self.scan+ 'Fitted plot, a='+str(fitted_param3[1]) +r', $\chi^2=$'+ str(self.alph_err))
-        plt.xlabel('Freq [GHz]')
-        # plt.show()
-        plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
-
-        k3 =self.beatfit(properties["left_ips"])
-        k4 = self.beatfit(properties["right_ips"])
-        plt.vlines(x=self.beatfit(peaks), ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "blue")
-        plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
-        plt.show()
-        # plt.savefig(self.folder+r'\plots\FittedScan.png')
-        # plt.clf()
-
-        plt.plot(self.beatfit(self.indices),self.scaledT)
-        plt.plot(self.beatfit(self.indices),self.fitting_eqn3(self.beatfit(self.indices),0.1872,6.68289265,0.145481102,3.040347,0.0021299356,0.00874469))
-        plt.show()
-
-        plt.scatter(plotting_freq,resid)
-        # plt.show()
-        plt.title(self.scan+ 'Fitted plot residuals')
-        plt.xlabel('Freq [GHz]')
-        plt.savefig(self.folder+r'\plots\FittedScanResid.png')
-        plt.clf()
-
-        if self.scan == '456':
-            lines = {}
-            date = self.par_folder[self.par_folder.rfind('/')+1:]
-            temp = list(map(str, fitted_param3.copy().tolist()))
-            data = [date]
-            data.extend(temp)
-            day_path = self.par_folder[:self.par_folder.rfind('/')]
-            fits456 = day_path+'/456Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
-            if not os.path.exists(fits456):
-                file = open(fits456,'w')
-                file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
-                file.close()
-            file = open(fits456,'r')
-            file.readline()
-            for line in file:
-                line = line.strip().split('\t')
-                lines[line[0]]=line
-            file.close()
-            lines[date] = data
-            order = list(lines.keys())
-            order.sort()
-            file = open(fits456,"w")
-            file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
-            for j in range(len(order)-1):
-                for i in range(len(lines[order[j]])-1):
-                    file.write(lines[order[j]][i])
-                    file.write('\t')
-                file.write(lines[order[j]][-1])
-                file.write('\n')
-            for i in range(len(lines[order[-1]])-1):
-                file.write(lines[order[-1]][i])
-                file.write('\t')
-            file.write(lines[order[-1]][-1])
-            file.close()
-            print('456 param saved')
-
-        
+            
