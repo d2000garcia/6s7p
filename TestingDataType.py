@@ -141,7 +141,7 @@ class data:
 
             if beatnote_det_f == 0:
                 if scan == '456':
-                    beatnote_det_f = 0.045
+                    beatnote_det_f = 0.025
                 else:
                     beatnote_det_f = 0.020
             self.par_folder = par_folder
@@ -774,7 +774,7 @@ class data:
             
             print(result.fit_report())
             resid = result.residual
-            self.fitted_parm = list(map(lambda key:result.params[key].value,result.params.keys()))
+            self.fitted_param = list(map(lambda key:result.params[key].value,result.params.keys()))
             self.pcov = list(map(lambda key:result.params[key].stderr,result.params.keys()))
             # resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
             # chi2 = resid**2
@@ -783,7 +783,7 @@ class data:
             np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
             plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
             plt.plot(plotting_freq,result.best_fit, '-r',linewidth=0.2,marker='.')#, mew='0.05')
-            plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_parm[0]) + r', err='+ str(self.alph_err))
+            plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_param[0]) + r', err='+ str(self.alph_err))
             plt.xlabel('Freq [GHz]')
             # plt.show()
             plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
@@ -792,51 +792,86 @@ class data:
             k4 = self.beatfit(properties["right_ips"])
             plt.vlines(x=self.beatfit(peaks), ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "blue")
             plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
-            plt.show()
-            # plt.savefig(self.folder+r'\plots\FittedScan.png')
-            # plt.clf()
+            # plt.show()
+            plt.savefig(self.folder+r'\plots\FittedScan.png')
+            plt.clf()
 
-            # plt.scatter(plotting_freq,resid)
+            plt.scatter(plotting_freq,resid)
             # # plt.show()
-            # plt.title(self.scan+ 'Fitted plot residuals')
-            # plt.xlabel('Freq [GHz]')
-            # plt.savefig(self.folder+r'\plots\FittedScanResid.png')
-            # plt.clf()
+            plt.title(self.scan+ 'Fitted plot residuals')
+            plt.xlabel('Freq [GHz]')
+            plt.savefig(self.folder+r'\plots\FittedScanResid.png')
+            plt.clf()
 
-            # if self.scan == '456':
-            #     lines = {}
-            #     date = self.par_folder[self.par_folder.rfind('/')+1:]
-            #     temp = list(map(str, fitted_param3.copy().tolist()))
-            #     data = [date]
-            #     data.extend(temp)
-            #     day_path = self.par_folder[:self.par_folder.rfind('/')]
-            #     fits456 = day_path+'/456Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
-            #     if not os.path.exists(fits456):
-            #         file = open(fits456,'w')
-            #         file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
-            #         file.close()
-            #     file = open(fits456,'r')
-            #     file.readline()
-            #     for line in file:
-            #         line = line.strip().split('\t')
-            #         lines[line[0]]=line
-            #     file.close()
-            #     lines[date] = data
-            #     order = list(lines.keys())
-            #     order.sort()
-            #     file = open(fits456,"w")
-            #     file.write('Date\tAlpha\twD\tmv\tmv2\tk0\toffset\n')
-            #     for j in range(len(order)-1):
-            #         for i in range(len(lines[order[j]])-1):
-            #             file.write(lines[order[j]][i])
-            #             file.write('\t')
-            #         file.write(lines[order[j]][-1])
-            #         file.write('\n')
-            #     for i in range(len(lines[order[-1]])-1):
-            #         file.write(lines[order[-1]][i])
-            #         file.write('\t')
-            #     file.write(lines[order[-1]][-1])
-            #     file.close()
-            #     print('456 param saved')
+            if self.scan == '456':
+                lines = {}
+                date = self.par_folder[self.par_folder.rfind('/')+1:]
+                temp = list(map(str, self.fitted_param))
+                data = [date]
+                data.extend(temp)
+                day_path = self.par_folder[:self.par_folder.rfind('/')]
+                fits456 = day_path+'/456Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
+                if not os.path.exists(fits456):
+                    file = open(fits456,'w')
+                    file.write('Date\tAlpha\tP0\th1\tmv\tT\tgamma\toffset\n')
+                    file.close()
+                file = open(fits456,'r')
+                file.readline()
+                for line in file:
+                    line = line.strip().split('\t')
+                    lines[line[0]]=line
+                file.close()
+                lines[date] = data
+                order = list(lines.keys())
+                order.sort()
+                file = open(fits456,"w")
+                file.write('Date\tAlpha\tP0\th1\tmv\tT\tgamma\toffset\n')
+                for j in range(len(order)-1):
+                    for i in range(len(lines[order[j]])-1):
+                        file.write(lines[order[j]][i])
+                        file.write('\t')
+                    file.write(lines[order[j]][-1])
+                    file.write('\n')
+                for i in range(len(lines[order[-1]])-1):
+                    file.write(lines[order[-1]][i])
+                    file.write('\t')
+                file.write(lines[order[-1]][-1])
+                file.close()
+                print('456 param saved')
+            else:
+                lines = {}
+                date = self.par_folder[self.par_folder.rfind('/')+1:]
+                temp = list(map(str, self.fitted_param))
+                data = [date]
+                data.extend(temp)
+                day_path = self.par_folder[:self.par_folder.rfind('/')]
+                fits894 = day_path+'/894Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
+                if not os.path.exists(fits894):
+                    file = open(fits894,'w')
+                    file.write('Date\tAlpha\tP0\th1\tmv\tT\tgamma\toffset\n')
+                    file.close()
+                file = open(fits894,'r')
+                file.readline()
+                for line in file:
+                    line = line.strip().split('\t')
+                    lines[line[0]]=line
+                file.close()
+                lines[date] = data
+                order = list(lines.keys())
+                order.sort()
+                file = open(fits894,"w")
+                file.write('Date\tAlpha\tP0\th1\tmv\tT\tgamma\toffset\n')
+                for j in range(len(order)-1):
+                    for i in range(len(lines[order[j]])-1):
+                        file.write(lines[order[j]][i])
+                        file.write('\t')
+                    file.write(lines[order[j]][-1])
+                    file.write('\n')
+                for i in range(len(lines[order[-1]])-1):
+                    file.write(lines[order[-1]][i])
+                    file.write('\t')
+                file.write(lines[order[-1]][-1])
+                file.close()
+                print('894 param saved')
 
             
