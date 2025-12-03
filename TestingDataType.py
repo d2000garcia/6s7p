@@ -259,9 +259,9 @@ class data:
             (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
             if self.fitted:
                 self.fitted_param = np.loadtxt(self.folder+r'\fitting\processed\fitting_param.csv', delimiter=',')
-                self.pcov = np.loadtxt(self.folder+r'\fitting\processed\pcov.csv',delimiter=',')
-                self.alph_err=np.sqrt(np.diag(self.pcov))[1]
-                self.alpha=self.fitted_param[1]
+                # self.pcov = np.loadtxt(self.folder+r'\fitting\processed\pcov.csv',delimiter=',')
+                # self.alph_err=np.sqrt(np.diag(self.pcov))[1]
+                self.alpha=self.fitted_param[0]
             # self.voigt_range = [max(self.back_rngs[0][1],self.beat_rng[0]), min(self.back_rngs[1][0],self.beat_rng[1])]
             if os.path.exists(folder+r'\entries\linfitrngs.csv'):
                 temp = np.loadtxt(self.folder+r'\entries\linfitrngs.csv', delimiter=',',dtype=int)
@@ -713,12 +713,12 @@ class data:
             if self.scan == '456':
                 peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
                 p0 = 0.37 #scaledT pwr at top
-                Life = 1/137.54/2 #half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
+                Life = 1/137.54/2/(2*pi)#half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
 
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
                 p0=0.2 #scaledT power at top
-                Life = 1/34.791/2 #half of lifetime in GHz from Stek
+                Life = 1/34.791/2 /(2*pi) #half of lifetime in GHz from Stek
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
             coeff = self.hyp_weights
             
@@ -741,28 +741,37 @@ class data:
                 else:
                     baseline = 0.008 #estimate 5% power in wings for 894
             plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-            if self.etalon_ranges[0][1] != 0:
-                test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
-                params = lm.Parameters()
-                params.add_many(
-                    ('a', 5, True, 0, 10, None, None),
-                    ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
-                    ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
-                    ('mv', guess, True, 0, 4, None, None),
-                    ('T', 25, True, 0, 50, None, None),
-                    ('gamma', Life/(2*pi), True, 0, Life, None, None),
-                    ('base', baseline, True, baseline*0.5, baseline*2, None, None))
+            # if self.etalon_ranges[0][1] != 0:
+            #     test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
+            # else:
             if self.scan == '456':
-                params['a'].set(1)
+                #this is 456 scan
+                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+            else:
+                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[1]+int(properties['widths'][1]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+            params = lm.Parameters()
+            # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
+            params.add_many(
+                ('a', 5, True, 0, 10, None, None),
+                ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
+                ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
+                ('mv', guess, True, 0, 4, None, None),
+                ('T', 25, True, 0, 50, None, None),
+                ('gamma', Life/(2*pi), True, 0, Life, None, None),
+                ('base', baseline, True, baseline*0.5, baseline*2, None, None))
+            if self.scan == '456':
+                params['a'].set(value=1)
                 fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
+                mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
+                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
             else:
                 fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
+                mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
+                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='leastsq')
             
-            mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
-            result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='leastsq')
             print(result.fit_report())
             resid = result.residual
             self.fitted_parm = list(map(lambda key:result.params[key].value,result.params.keys()))

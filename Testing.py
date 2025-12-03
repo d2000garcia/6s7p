@@ -111,14 +111,14 @@ kB=1.3806503
 pi = np.pi
 k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
 k2 = 10000 * afs * np.sqrt(m*c*c*pi**3/(8*kB)) #power analysis leads to the 10^4 factor 
-temp = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',') 
-# temp = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',')
+# temp = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',') 
+temp = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',')
             #Save as domain, window, coef
 beatfit = poly(temp[4:], temp[0:2], temp[2:4])
-scaledT = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
-indices = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
-# scaledT = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
-# indices = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
+# scaledT = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
+# indices = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
+scaledT = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
+indices = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
 
 temp = 273+30  # guess at hot portion of cell
 
