@@ -718,7 +718,7 @@ class data:
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
                 p0=0.2 #scaledT power at top
-                Gamma = 1/34.791/2 /(2*pi) #half of lifetime in GHz from Stek
+                Gamma = 1/34.791/2/(2*pi) #half of lifetime in GHz from Stek
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
             coeff = self.hyp_weights
             
@@ -748,7 +748,7 @@ class data:
                 #this is 456 scan
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
             else:
-                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[1]+int(properties['widths'][1]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
             params = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
             params.add_many(
@@ -757,7 +757,7 @@ class data:
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
                 ('T', 25, True, 0, 50, None, None),
-                ('gamma', Gamma, False, Gamma*0.8, Gamma*3, None, None),
+                ('gamma', Gamma*1.2, False, Gamma, Gamma*3, None, None),
                 ('base', baseline, False, baseline*0.5, baseline*2, None, None))
             if self.scan == '456':
                 params['a'].set(value=1)
