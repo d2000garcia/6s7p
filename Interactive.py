@@ -72,10 +72,17 @@ class analysis:
     def record_fits(self):
         date = self.folderpath[self.folderpath.rfind('/')+1:]
         lines = {}
+        parent_path = self.folderpath[:self.folderpath.rfind('/')]
         if self.analysis456.fitted and self.analysis894.fitted:
             data = [date, str(self.Temperature[0]),str(self.Temperature[1]),str(self.Temperature[2]), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
             print(data)
-            file = open(r'.\FitsOct1617.tsv',"r")
+            # file = open(r'.\FitsOct1617.tsv',"r")
+            fitspath = parent_path+'/Fits'+parent_path[parent_path.rfind('/')+1:]+'.tsv'
+            if not os.path.exists(fitspath):
+                file = open(fitspath,'w')
+                file.write('Date\tTemp1\tTemp2\tTemp3\t456alph\t456err\t894alph\t894err\n')
+                file.close()
+            file = open(fitspath,'r')
             file.readline()
             for line in file:
                 line = line.strip().split('\t')
@@ -84,8 +91,8 @@ class analysis:
             lines[date] = data
             order = list(lines.keys())
             order.sort()
-            file = open(r'.\FitsOct1617.tsv',"w")
-            file.write('Date\tTemp\t456alph\t456err\t894alph\t894err\n')
+            file = open(fitspath,"w")
+            file.write('Date\tTemp1\tTemp2\tTemp3\t456alph\t456err\t894alph\t894err\n')
             for j in range(len(order)-1):
                 for i in range(len(lines[order[j]])-1):
                     file.write(lines[order[j]][i])
@@ -105,7 +112,7 @@ class analysis:
 
         
 
-def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,switchlabelsat=5):
+def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,entries2,switchlabelsat=5):
     temporary = filedialog.askdirectory(
         initialdir="/",  # Optional: set initial directory
         title="Select a folder",
@@ -139,6 +146,17 @@ def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,switchlabelsa
             for i in range(len(entries[0])):
                 for j in range(len(entries[0][i])):
                     entries[0][i][j].configure(textvariable=entries[1][i][j])
+        
+        if os.path.exists(analysis_dat.analysis456.folder+r'\entries\linfitrngs.csv'):
+            temp = np.loadtxt(analysis_dat.analysis456.folder+r'\entries\linfitrngs.csv',dtype=int)
+            for i in range(4):
+                entries2[0][i].set(str(temp[i]))
+
+        if os.path.exists(analysis_dat.analysis894.folder+r'\entries\linfitrngs.csv'):
+            temp = np.loadtxt(analysis_dat.analysis894.folder+r'\entries\linfitrngs.csv',dtype=int)
+            for i in range(4):
+                entries2[1][i].set(str(temp[i]))
+
 
 
 def update_path_label(text):
@@ -151,10 +169,11 @@ def change_Label_image(oldlabel,new):
     oldlabel.image = new
 
 def recalculate456T(analysis_dat, labels, entries, plots_grp,switchlabelsat=5):
+    #Repurposed for baseline
     for i in [0,1]:
             analysis_dat.analysis456.back_rngs[0][i] = int(entries[1][0][i].get())
             analysis_dat.analysis456.back_rngs[1][i] = int(entries[1][0][2+i].get())
-    analysis_dat.analysis456.calculate_T_shift()
+    analysis_dat.analysis456.calculate_baseline_ratio()
     plots_grp.update_image(['scaledT'])
     tochange = [2]
     for i in tochange:
@@ -173,10 +192,11 @@ def recalculate456beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=5
         change_Label_image(labels[0][i], plots_grp.plots[i])
 
 def recalculate894T(analysis_dat, labels, entries, plots_grp,switchlabelsat=5):
+    #Repurposed for baseline
     for i in [0,1]:
             analysis_dat.analysis894.back_rngs[0][i] = int(entries[1][2][i].get())
             analysis_dat.analysis894.back_rngs[1][i] = int(entries[1][2][2+i].get())
-    analysis_dat.analysis894.calculate_T_shift()
+    analysis_dat.analysis894.calculate_baseline_ratio()
     plots_grp.update_image(['scaledT'])
     tochange = [2]
     for i in tochange:
@@ -195,12 +215,23 @@ def recalculate894beat(analysis_dat, labels, entries, plots_grp,switchlabelsat=5
         change_Label_image(labels[2][i], plots_grp.plots[i])
 
 def calculate_abs_fit_456(analysis_dat,labels,plots_grp):
+    for i in [0,1]:
+            analysis_dat.analysis456.back_rngs[0][i] = int(entries[1][0][i].get())
+            analysis_dat.analysis456.back_rngs[1][i] = int(entries[1][0][2+i].get())
+            analysis_dat.analysis456.etalon_ranges[0][i] = int(etalon_entries[0][0][i].get())
+            analysis_dat.analysis456.etalon_ranges[1][i] = int(etalon_entries[0][0][2+i].get())
     analysis_dat.analysis456.set_fitting_function()
     plots_grp.update_image(['FittedScan','FittedScanResid'])
     tochange = [3,4]
     for i in tochange:
         change_Label_image(labels[0][i], plots_grp.plots[i])
+
 def calculate_abs_fit_894(analysis_dat,labels,plots_grp):
+    for i in [0,1]:
+            analysis_dat.analysis894.back_rngs[0][i] = int(entries[1][2][i].get())
+            analysis_dat.analysis894.back_rngs[1][i] = int(entries[1][2][2+i].get())
+            analysis_dat.analysis894.etalon_ranges[0][i] = int(etalon_entries[0][1][i].get())
+            analysis_dat.analysis894.etalon_ranges[1][i] = int(etalon_entries[0][1][2+i].get())
     analysis_dat.analysis894.set_fitting_function()
     plots_grp.update_image(['FittedScan','FittedScanResid'])
     tochange = [3,4]
@@ -222,6 +253,21 @@ def set_beat_peak_min(analysis_dat, scan, vals):
         analysis_dat.analysis894.beat_height = float(vals[1][1].get())
         analysis_dat.analysis894.reprocess_beatnote()
 
+def use_cur_baseline(analysis_dat):
+    # analysis_dat.analysis894.back_rngs[0][i] = int(entries[1][2][i].get())
+    # analysis_dat.analysis894.back_rngs[1][i] = int(entries[1][2][2+i].get())
+    if var.get():
+        analysis_dat.analysis894.use_cur_bot =True
+    else:
+        analysis_dat.analysis894.use_cur_bot =False
+
+def graph(analysis_dat, scan):
+    if scan == '456':
+        plt.plot(analysis_dat.analysis456.indices, analysis_dat.analysis456.scaledT)
+    else:
+        plt.plot(analysis_dat.analysis894.indices, analysis_dat.analysis894.scaledT)
+    plt.show()
+
 first = True
 template_image = r".\Picture_template.png"
 switchlabelsat=5
@@ -233,7 +279,7 @@ if __name__ == '__main__':
         plot_sets= [plots(scan='456'),plots(scan='894')]
         # plots456 = plots(scan='456')
         # plots894 = plots(scan='894')
-        root.title("Geometry Calculation")
+        root.title("6s7pFittingCalculations")
 
         notebooks= [ttk.Notebook(root),ttk.Notebook(root),ttk.Notebook(root),ttk.Notebook(root)]
         #notebooks = [456T,456Beat,894T,894Beat]
@@ -244,12 +290,17 @@ if __name__ == '__main__':
 
 
         entry_lbl = [ttk.Label(root, text='456  Background Linear Fit Ranges'), ttk.Label(root, text='456 Beatnote Range')]
-        entry_lbl.append(ttk.Label(root, text='Left data group'))
-        entry_lbl.append(ttk.Label(root, text='Right data group'))
+        entry_lbl.append(ttk.Label(root, text='Upper-Baseline'))
+        entry_lbl.append(ttk.Label(root, text='Lower-Baseline'))
         entry_lbl.append(ttk.Label(root, text='894 Background Linear Fit Rngs'))
         entry_lbl.append(ttk.Label(root, text='894 Beatnote Range'))
-        entry_lbl.append(ttk.Label(root, text='Left data group'))
-        entry_lbl.append(ttk.Label(root, text='Right data group'))
+        entry_lbl.append(ttk.Label(root, text='Upper-Baseline'))
+        entry_lbl.append(ttk.Label(root, text='Lower-Baseline'))
+        entry_lbl.append(ttk.Label(root, text='Left Group'))
+        entry_lbl.append(ttk.Label(root, text='Right Group'))
+        entry_lbl.append(ttk.Label(root, text='456 fit etalon effect'))
+        entry_lbl.append(ttk.Label(root, text='894 etalon etalon effect'))
+
         entry_lbl[0].grid(column=1,row=1,columnspan=2, sticky="nsew")
         entry_lbl[1].grid(column=5,row=1,columnspan=2, sticky="nsew")
         entry_lbl[2].grid(column=0,row=2)
@@ -258,6 +309,11 @@ if __name__ == '__main__':
         entry_lbl[5].grid(column=5,row=5,columnspan=2, sticky="nsew")
         entry_lbl[6].grid(column=0,row=6)
         entry_lbl[7].grid(column=0,row=7)
+        entry_lbl[8].grid(column=0,row=9)
+        entry_lbl[9].grid(column=0,row=10)
+        entry_lbl[10].grid(column=1,row=8,columnspan=2)
+        entry_lbl[11].grid(column=5,row=8,columnspan=2)
+
 
         ent_wdth = 20
         entries = [[[ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)],[ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)]]]
@@ -308,17 +364,28 @@ if __name__ == '__main__':
         beat_mins[0][1].configure(textvariable=beat_mins[1][1])
 
         entry = ttk.Entry(root,width=ent_wdth)
-        open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1]))
+
+        etalon_entries = [[[ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth)],[ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth)]]]
+        etalon_entries.append([[tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0")],[tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0")]])
+        for i in range(2):
+            #i=0 is 456
+            for j in range(4):
+                etalon_entries[0][i][j].configure(textvariable=etalon_entries[1][i][j])
+                # print(etalon_entries[1][i][j].get())
+                # print(1+j%2+4*i,(j>1)+8)
+                etalon_entries[0][i][j].grid(column=1+j%2+4*i,row=(j>1)+9)
+
+        open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1],etalon_entries[1]))
         open_button.grid(column=3,row=0)
 
-        open_button1 = ttk.Button(root, text="Recalculate 456 Scan", command= lambda: recalculate456T(folder,labels,entries,plot_sets[0]))
-        open_button1.grid(column=0,row=1)
+        open_button1 = ttk.Button(root, text="Calculate 456 baseline ratio", command= lambda: recalculate456T(folder,labels,entries,plot_sets[0]))
+        open_button1.grid(column=2,row=1)
 
         open_button2 = ttk.Button(root, text="Recalculate 456 Beat", command= lambda: recalculate456beat(folder,labels,entries,plot_sets[0]))
         open_button2.grid(column=4,row=1)
 
-        open_button3 = ttk.Button(root, text="Recalculate 894 Scan", command= lambda: recalculate894T(folder,labels,entries,plot_sets[1]))
-        open_button3.grid(column=0,row=5)
+        open_button3 = ttk.Button(root, text="Calculate 894 baseline ratio", command= lambda: recalculate894T(folder,labels,entries,plot_sets[1]))
+        open_button3.grid(column=2,row=5)
 
         open_button4 = ttk.Button(root, text="Recalculate 894 Beat", command= lambda: recalculate894beat(folder,labels,entries,plot_sets[1]))
         open_button4.grid(column=4,row=5)
@@ -330,7 +397,7 @@ if __name__ == '__main__':
         open_button4.grid(column=3,row=5)
         
         open_button5 = ttk.Button(root, text="Close", command= exit)
-        open_button5.grid(column=3,row=9)
+        open_button5.grid(column=3,row=10)
 
         open_button6 = ttk.Button(root, text="Record T Fits", command= lambda: record_fits(folder))
         open_button6.grid(column=3,row=4)
@@ -341,11 +408,21 @@ if __name__ == '__main__':
         open_button8 = ttk.Button(root, text="Set 894 Peak min", command= lambda: set_beat_peak_min(folder,scan='894',vals=beat_mins))
         open_button8.grid(column=4,row=7)
         
+        var = tk.IntVar(value=0)
+        
+        open_button9 = ttk.Checkbutton(root, text="use_current894", command=lambda: use_cur_baseline(folder), variable=var)
+        open_button9.grid(column=3,row=7)
 
+        open_button10 = ttk.Button(root, text="Check coord 456", command= lambda: graph(folder,scan='456'))
+        open_button10.grid(column=3,row=2)
+
+        open_button10 = ttk.Button(root, text="Check coord 894", command= lambda: graph(folder,scan='894'))
+        open_button10.grid(column=3,row=3)
+        
         workingdir_txt = tk.StringVar()
         workingdir_txt.set('hello')
         workingdir = ttk.Label(root, textvariable=workingdir_txt)
-        workingdir.grid(column=4, row=8,columnspan=3, sticky="nsew")
+        workingdir.grid(column=3, row=11,columnspan=3, sticky="nsew")
     print(folder.folderpath)
     root.mainloop()
 	
