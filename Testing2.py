@@ -62,7 +62,10 @@ def quad(data_bounds, indices, data):
     return fitted_param
 
 scan = '894'
-F1=3
+if scan == '894':
+    F1=3
+else:
+    F1=4
 if scan == '456':
     #In GHz
     if F1 == 3:
@@ -156,13 +159,7 @@ print(test)
 params = lm.Parameters()
 
 # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
-# params.add_many(('a', 6, True, 0, 10, None, None),
-#                 ('p0', test[1], True, 0.8*scaledT[0], 1.2*scaledT[0], None, None),
-#                 ('k0', test[0], True, test[0]-abs(test[0])*0.1, test[0]+abs(test[0])*0.1, None, None),
-#                 ('mv', guess, True, 0, 4, None, None),
-#                 ('T', wD, True, wD*0.5, wD*1.5, None, None),
-#                 ('gamma', Life, False, None, None, None, None),
-#                 ('base', base, True, base*0.7, base*1.3, None, None))
+
 params.add_many(('a', 5, True, 0, 10, None, None),
                 ('p0', test[1]-base, True, 0.7*(test[1]-base), 1.3*(test[1]-base), None, None),
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
@@ -170,21 +167,9 @@ params.add_many(('a', 5, True, 0, 10, None, None),
                 ('T', 25, True, 0, 50, None, None),
                 ('gamma', Life/(2*pi), True, None, None, None, None),
                 ('base', base, True, base*0.4, base*2.5, None, None)) #seems like fit is very dependent on baseline matters more for 894 i think
-params2 = lm.Parameters()
 test1 = [6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447]
-# params2.add_many(('a', test1[0], True, test1[0]*0.9, test1[0]*1.1, None, None),
-#                 ('p0', test1[1], True, test1[1]*0.9, test1[1]*1.1, None, None),
-#                 ('k0', test1[2], True, test1[2]-abs(test1[2])*0.1, test1[2]+abs(test1[2])*0.1, None, None),
-#                 ('mv', test1[3], True, test1[3]*0.97, test1[3]*1.03, None, None),
-#                 ('wD', test1[4], True, wD*0.5, wD*1.5, None, None),
-#                 ('base', test1[5], True, base*0.7, base*1.3, None, None))
 
-params2.add_many(('a', 6, True, 0, 10, None, None),
-                ('p0', test[1]-base, True, 0.8*(scaledT[0]-base), 1.2*(scaledT[0]-base), None, None),
-                ('k0', test[0], True, test[0]-abs(test[0])*0.8, test[0]+abs(test[0])*0.8, None, None),
-                ('mv', guess, True, 0, 4, None, None),
-                ('wD', wD*center, True, center*wD*0.8, center*wD*1.2, None, None),
-                ('base', base, True, base*0.7, base*1.3, None, None))
+
 z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
 if scan == '894':
     # fun1 = lambda w,a,p0,k0,mv,sigma,gamma,base: p0*(1+k0*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
@@ -199,10 +184,8 @@ mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
 init = mod.eval(params,w=beatfit(indices))
 # result = mod.fit(scaledT,params=params,weights=weights,method='basinhopping',w=beatfit(indices))
 
-# result = mod.fit(scaledT,params=params,weights=weights,w=beatfit(indices))
-result = mod.fit(scaledT,params=params,weights=weights,w=beatfit(indices),method='leastsq')
 result2 = mod.fit(scaledT,params=params,w=beatfit(indices),method='leastsq')
-print(result.fit_report())
+# print(result.fit_report())
 print(result2.fit_report())
 plt.plot(beatfit(indices), scaledT, '+')
 # plt.plot(beatfit(indices),weights,'-r')

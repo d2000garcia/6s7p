@@ -757,7 +757,7 @@ class data:
                 ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
-                ('T', 25, True, 10, None, None, None),
+                ('T', 30, True, 20, None, None, None),
                 ('gamma', Gamma*1.2, False, Gamma, Gamma*3, None, None),
                 ('base', baseline, False, baseline*0.5, baseline*2, None, None))
             if self.scan == '456':
