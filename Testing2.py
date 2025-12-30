@@ -151,6 +151,8 @@ guess = beatfit(peaks[0]) #guess of frequency location of first peak relative to
 base  = np.mean(scaledT[5878:5980])
 
 etalon_ranges = [[200,3300],[7000,8000]]
+
+
 test = LinFit(etalon_ranges, beatfit(indices), scaledT)
 # test2 = quad(etalon_ranges, beatfit(indices), scaledT)
 print(test)
