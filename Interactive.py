@@ -8,9 +8,29 @@ from tkinter import ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import TestingDataType
-
+from numpy import pi as pi
 from plotClass import plots
 
+s2pi = np.sqrt(2*pi)
+s2 = np.sqrt(2.0)
+c=2.99792458
+m=2.2069484567911638
+kB=1.3806503
+k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
+
+def voigt(x, amplitude=1.0, center=0.0, sigma=1.0, gamma=None):
+    """Return a 1-dimensional Voigt function.
+
+    voigt(x, amplitude, center, sigma, gamma) =
+        amplitude*real(wofz(z)) / (sigma*s2pi)
+
+    For more information, see: https://en.wikipedia.org/wiki/Voigt_profile
+
+    """
+    if gamma is None:
+        gamma = sigma
+    z = (x-center + 1j*gamma) / (sigma*s2)
+    return amplitude*np.real(wofz(z)) / (sigma*s2pi)
 
 class analysis:
     def __init__(self):
@@ -108,7 +128,13 @@ class analysis:
             file.close()
             print('Saved')
                 
-
+    def dual_fit(self):
+        self.analysis894
+        fun456 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,self.analysis456.hyp_weights[0],mv,np.sqrt(T+273.15)*k1*self.analysis456.abs_freq[0],gamma)+
+                                                                            voigt(w,self.analysis456.hyp_weights[1],mv+self.analysis456.hypsplit[1],np.sqrt(T+273.15)*k1*self.analysis456.abs_freq[1],gamma)+
+                                                                            voigt(w,self.analysis456.hyp_weights[2],mv+self.analysis456.hypsplit[2],np.sqrt(T+273.15)*k1*self.analysis456.abs_freq[2],gamma))) + base
+        fun894 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,self.analysis894.hyp_weights[0],mv,np.sqrt(T+273.15)*k1*self.analysis894.abs_freq[0],gamma)+
+                                                                                                            voigt(w,self.analysis894.hyp_weights[1],mv+self.analysis894.hypsplit[1],np.sqrt(T+273.15)*k1*self.analysis894.abs_freq[1],gamma))) + base
 
         
 
