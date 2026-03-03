@@ -7,3 +7,6 @@
 !**/*.xlsx
 !**/*.bmp
 !**/*.png
+
+change to 
+.gitignore title later
