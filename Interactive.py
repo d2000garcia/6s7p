@@ -81,11 +81,23 @@ class analysis:
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0]/1000)
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000)
-            temps = TestingDataType.simple_dat_get(self.folderpath +r'\Temperature.csv',0)
-            temp_0 = np.mean(20*temps[:,2])
-            temp_1 = np.mean(20*temps[:,3])
-            temp_2 = np.mean(20*temps[:,4])
-            self.Temperature = [temp_0,temp_1,temp_2]
+            if os.path.exists(self.folderpath +r'\Temperature.csv'):
+                temps = TestingDataType.simple_dat_get(self.folderpath +r'\Temperature.csv',0)
+                temp_0 = np.mean(20*temps[:,2])
+                temp_1 = np.mean(20*temps[:,3])
+                temp_2 = np.mean(20*temps[:,4])
+                self.Temperature = [temp_0,temp_1,temp_2]
+                self.V_Temperature = 1
+            elif os.path.exists(self.folderpath +r'\TemperatureV2.csv'):
+                temps = TestingDataType.simple_dat_get(self.folderpath +r'\TemperatureV2.csv',0)
+                temp_0 = np.mean(20*temps[:,0])
+                temp_1 = np.mean(20*temps[:,1])
+                temp_2 = np.mean(20*temps[:,2])
+                temp_3 = np.mean(temps[:,3])
+                temp_4 = np.mean(temps[:,4])
+                temp_5 = np.mean(temps[:,5])
+            self.TemperatureV2 = [temp_0,temp_1,temp_2,temp_3,temp_4,temp_5]
+            self.V_Temperature = 2
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
     
@@ -93,40 +105,76 @@ class analysis:
         date = self.folderpath[self.folderpath.rfind('/')+1:]
         lines = {}
         parent_path = self.folderpath[:self.folderpath.rfind('/')]
+        
         if self.analysis456.fitted and self.analysis894.fitted:
-            data = [date, str(self.Temperature[0]),str(self.Temperature[1]),str(self.Temperature[2]), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
-            print(data)
-            # file = open(r'.\FitsOct1617.tsv',"r")
-            fitspath = parent_path+'/Fits'+parent_path[parent_path.rfind('/')+1:]+'.tsv'
-            if not os.path.exists(fitspath):
-                file = open(fitspath,'w')
-                file.write('Date\tTemp1\tTemp2\tTemp3\t456alph\t456err\t894alph\t894err\n')
+            if self.V_Temperature == 1:
+                data = [date, str(self.Temperature[0]),str(self.Temperature[1]),str(self.Temperature[2]), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
+                print(data)
+                # file = open(r'.\FitsOct1617.tsv',"r")
+                fitspath = parent_path+'/Fits'+parent_path[parent_path.rfind('/')+1:]+'.tsv'
+                if not os.path.exists(fitspath):
+                    file = open(fitspath,'w')
+                    file.write('Date\tTemp1\tTemp2\tTemp3\t456alph\t456err\t894alph\t894err\n')
+                    file.close()
+                file = open(fitspath,'r')
+                file.readline()
+                for line in file:
+                    line = line.strip().split('\t')
+                    lines[line[0]]=line
                 file.close()
-            file = open(fitspath,'r')
-            file.readline()
-            for line in file:
-                line = line.strip().split('\t')
-                lines[line[0]]=line
-            file.close()
-            lines[date] = data
-            order = list(lines.keys())
-            order.sort()
-            file = open(fitspath,"w")
-            file.write('Date\tTemp1\tTemp2\tTemp3\t456alph\t456err\t894alph\t894err\n')
-            for j in range(len(order)-1):
-                for i in range(len(lines[order[j]])-1):
-                    file.write(lines[order[j]][i])
+                lines[date] = data
+                order = list(lines.keys())
+                order.sort()
+                file = open(fitspath,"w")
+                file.write('Date\tTemp1\tTemp2\tTemp3\t456alph\t456err\t894alph\t894err\n')
+                for j in range(len(order)-1):
+                    for i in range(len(lines[order[j]])-1):
+                        file.write(lines[order[j]][i])
+                        file.write('\t')
+                    file.write(lines[order[j]][-1])
+                    file.write('\n')
+                for i in range(len(lines[order[-1]])-1):
+                    file.write(lines[order[-1]][i])
                     file.write('\t')
-                file.write(lines[order[j]][-1])
-                file.write('\n')
-            for i in range(len(lines[order[-1]])-1):
-                file.write(lines[order[-1]][i])
-                file.write('\t')
-            file.write(lines[order[-1]][-1])
-            
+                file.write(lines[order[-1]][-1])
                 
-            file.close()
-            print('Saved')
+                    
+                file.close()
+                print('Saved')
+            elif self.V_Temperature == 2:
+                data = [date, str(self.TemperatureV2[0]),str(self.TemperatureV2[1]),str(self.TemperatureV2[2]), str(self.TemperatureV2[3]),str(self.TemperatureV2[4]),str(self.TemperatureV2[5]), str(self.analysis456.alpha),str(self.analysis456.alph_err),str(self.analysis894.alpha),str(self.analysis894.alph_err)]
+                print(data)
+                # file = open(r'.\FitsOct1617.tsv',"r")
+                fitspath = parent_path+'/Fits'+parent_path[parent_path.rfind('/')+1:]+'.tsv'
+                if not os.path.exists(fitspath):
+                    file = open(fitspath,'w')
+                    file.write('Date\tColdT1\tColdT2\tColdT3\tHotT1\tHotT2\tHotT3\t456alph\t456err\t894alph\t894err\n')
+                    file.close()
+                file = open(fitspath,'r')
+                file.readline()
+                for line in file:
+                    line = line.strip().split('\t')
+                    lines[line[0]]=line
+                file.close()
+                lines[date] = data
+                order = list(lines.keys())
+                order.sort()
+                file = open(fitspath,"w")
+                file.write('Date\tColdT1\tColdT2\tColdT3\tHotT1\tHotT2\tHotT3\t456alph\t456err\t894alph\t894err\n')
+                for j in range(len(order)-1):
+                    for i in range(len(lines[order[j]])-1):
+                        file.write(lines[order[j]][i])
+                        file.write('\t')
+                    file.write(lines[order[j]][-1])
+                    file.write('\n')
+                for i in range(len(lines[order[-1]])-1):
+                    file.write(lines[order[-1]][i])
+                    file.write('\t')
+                file.write(lines[order[-1]][-1])
+                
+                    
+                file.close()
+                print('Saved')
                 
     def dual_fit(self):
         self.analysis894

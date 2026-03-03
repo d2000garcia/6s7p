@@ -1,0 +1,10 @@
+*
+!.gitignore
+!**/*.py
+!**/*.csv
+!**/*.tsv
+!**/*.txt
+!**/*.xlsx
+!**/*.bmp
+!**/*.png
+/6s7p

@@ -174,7 +174,10 @@ class data:
             self.calculate_T_shift() 
             (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
             #beatnoteClean
-            self.calculate_beat_fit()
+            try:
+                self.calculate_beat_fit()
+            except:
+                print("Error in calculating fit for beatnote")
             self.etalon_ranges = [[0,0],[0,0]]
 
             np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
