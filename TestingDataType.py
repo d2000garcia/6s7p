@@ -276,29 +276,46 @@ class data:
         
 
         if not os.path.exists(folder+r'\plots\VapPres.png'):
-            temps = simple_dat_get(par_folder +r'\Temperature.csv',0)
-            temp_0 = (20*temps[:,2]).tolist()
-            temp_1 = (20*temps[:,3]).tolist()
-            temp_2 = (20*temps[:,4]).tolist()
-            ones = np.ones(len(temp_0))
-            plt.scatter(ones,temp_0,color='k')
-            plt.scatter(ones+1, temp_1,color='k')
-            plt.scatter(ones+2, temp_2,color='k')
-            plt.scatter([1,2,3], [np.mean(temp_0),np.mean(temp_1),np.mean(temp_2)],color='r')
-            plt.title("Temperature Measurements")
-            plt.savefig(folder+r'\plots\Temperature.png')
-            plt.clf()
+            if os.path.exists(self.par_folder +r'\Temperature.csv'):
+                temps = simple_dat_get(par_folder +r'\Temperature.csv',0)
+                temp_0 = (20*temps[:,2]).tolist()
+                temp_1 = (20*temps[:,3]).tolist()
+                temp_2 = (20*temps[:,4]).tolist()
+                # plt.scatter(ones,temp_0,color='k')
+                # plt.scatter(ones+1, temp_1,color='k')
+                # plt.scatter(ones+2, temp_2,color='k')
+                # plt.scatter([1,2,3], [np.mean(temp_0),np.mean(temp_1),np.mean(temp_2)],color='r')
+                # plt.title("Temperature Measurements")
+                # plt.savefig(folder+r'\plots\Temperature.png')
+                # plt.clf()
 
-            plt.scatter(ones, list(map(vapor_pres,temp_0)),color='k')
-            plt.scatter(ones+1, list(map(vapor_pres,temp_1)),color='k')
-            plt.scatter(ones+2, list(map(vapor_pres,temp_2)),color='k')
-            plt.scatter([1,2,3], list(map(vapor_pres,[np.mean(temp_0),np.mean(temp_1),np.mean(temp_2)])),color='r')
-            plt.title("Vapor Pressure")
-            plt.savefig(folder+r'\plots\VapPres.png')
-            plt.clf()
-        
-            
-            
+                # plt.scatter(ones, list(map(vapor_pres,temp_0)),color='k')
+                # plt.scatter(ones+1, list(map(vapor_pres,temp_1)),color='k')
+                # plt.scatter(ones+2, list(map(vapor_pres,temp_2)),color='k')
+                # plt.scatter([1,2,3], list(map(vapor_pres,[np.mean(temp_0),np.mean(temp_1),np.mean(temp_2)])),color='r')
+                # plt.title("Vapor Pressure")
+                # plt.savefig(folder+r'\plots\VapPres.png')
+                # plt.clf()
+                plt.plot(np.linspace(0,1,len(temp_0)),'-r')
+                plt.plot(np.linspace(1,2,len(temp_1)),'-b')
+                plt.plot(np.linspace(2,3,len(temp_2)),'-g')
+                plt.title("Cold Finger Temp")
+                plt.savefig(folder+r'\plots\VapPres.png')
+                plt.clf()
+            elif os.path.exists(self.par_folder +r'\TemperatureV2.csv'):
+                temps = simple_dat_get(self.par_folder +r'\TemperatureV2.csv',0)
+                temp_0 = np.mean(temps[:,0])
+                temp_1 = np.mean(temps[:,1])
+                temp_2 = np.mean(temps[:,2])
+                plt.plot(np.linspace(0,1,len(temp_0)),'-r')
+                plt.plot(np.linspace(1,2,len(temp_1)),'-b')
+                plt.plot(np.linspace(2,3,len(temp_2)),'-g')
+                plt.title("Cold Finger Temp")
+                plt.savefig(folder+r'\plots\VapPres.png')
+                plt.clf()
+
+
+                
     
     def reprocess_beatnote(self):
         if self.beat_height == 0:
@@ -710,8 +727,6 @@ class data:
             m=2.2069484567911638
             kB=1.3806503
             k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
-            
-            temp = 273+30  # guess at hot portion of cell
                 
             if self.scan == '456':
                 peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
@@ -748,6 +763,7 @@ class data:
             #     test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
             # else:
             if self.scan == '456':
+                #fitting slope of background
                 #this is 456 scan
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
             else:
