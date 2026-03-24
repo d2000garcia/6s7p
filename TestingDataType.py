@@ -296,27 +296,28 @@ class data:
                 # plt.title("Vapor Pressure")
                 # plt.savefig(folder+r'\plots\VapPres.png')
                 # plt.clf()
-                plt.plot(np.linspace(0,1,len(temp_0)),'-r')
-                plt.plot(np.linspace(1,2,len(temp_1)),'-b')
-                plt.plot(np.linspace(2,3,len(temp_2)),'-g')
+                plt.plot(np.linspace(0,1,len(temp_0)),temp_0,'-r')
+                plt.plot(np.linspace(1,2,len(temp_1)),temp_1,'-b')
+                plt.plot(np.linspace(2,3,len(temp_2)),temp_2,'-g')
                 plt.title("Cold Finger Temp")
                 plt.savefig(folder+r'\plots\VapPres.png')
                 plt.clf()
             elif os.path.exists(self.par_folder +r'\TemperatureV2.csv'):
                 temps = simple_dat_get(self.par_folder +r'\TemperatureV2.csv',0)
-                temp_0 = np.mean(temps[:,0])
-                temp_1 = np.mean(temps[:,1])
-                temp_2 = np.mean(temps[:,2])
-                plt.plot(np.linspace(0,1,len(temp_0)),'-r')
-                plt.plot(np.linspace(1,2,len(temp_1)),'-b')
-                plt.plot(np.linspace(2,3,len(temp_2)),'-g')
+                temp_0 = temps[:,0].tolist()
+                temp_1 = temps[:,1].tolist()
+                temp_2 = temps[:,2].tolist()
+                plt.plot(np.linspace(0,1,len(temp_0)),temp_0,'-r')
+                plt.plot(np.linspace(1,2,len(temp_1)),temp_1,'-b')
+                plt.plot(np.linspace(2,3,len(temp_2)),temp_2,'-g')
                 plt.title("Cold Finger Temp")
                 plt.savefig(folder+r'\plots\VapPres.png')
                 plt.clf()
+            
+    def set_temperature(self,coldfinger,hotbody):
+        self.coldfinger = coldfinger
+        self.hotbody = hotbody
 
-
-                
-    
     def reprocess_beatnote(self):
         if self.beat_height == 0:
             standard_peak_min = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
@@ -425,7 +426,10 @@ class data:
         plt.plot(self.indices, self.filteredBeat,linewidth=0.5,marker='.', mew='0.05')
         plt.scatter(self.peak_indices2,self.peak_val2,color='red', marker='x')
         plt.xlim(0,len(self.indices))
-        plt.ylim(0, max(self.peak_val2)+0.1)
+        if max(self.peak_val2)<25:
+            plt.ylim(0, max(self.peak_val2)+0.1)
+        else:
+            plt.ylim(0, np.std(self.peak_val2)*2)
         if self.beat_height == 0:
             temp = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
         else:
@@ -769,14 +773,22 @@ class data:
             else:
                 print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+
+            print(self.hotbody)
+            if self.hotbody == 30:
+                low = 20
+                high = None
+            else:
+                low = self.hotbody-2
+                high = self.hotbody+2
             params = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
             params.add_many(
-                ('a', 5, True, 0, 10, None, None),
+                ('a', 5, True, 0, None, None, None),
                 ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
-                ('T', 30, True, 20, None, None, None),
+                ('T', self.hotbody, True, low, high, None, None),
                 ('gamma', Gamma*1.2, False, Gamma, Gamma*3, None, None),
                 ('base', baseline, False, baseline*0.5, baseline*2, None, None))
             if self.scan == '456':

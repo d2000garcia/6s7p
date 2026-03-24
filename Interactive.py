@@ -51,30 +51,6 @@ class analysis:
                 temp2 = [0,0]
             if 'Analysis' in contents:
                 print('Analysis exists, continue')
-                if not os.path.exists(self.folderpath +r'\Analysis\TempMeas.csv'):
-                    if os.path.exists(self.folderpath +r'\Temperature.csv'):
-                        temps = TestingDataType.simple_dat_get(self.folderpath +r'\Temperature.csv',0)
-                        temp_0 = np.mean(20*temps[:,2])
-                        temp_1 = np.mean(20*temps[:,3])
-                        temp_2 = np.mean(20*temps[:,4])
-                        self.Temperature = [temp_0,temp_1,temp_2]
-                        self.V_Temperature = 1
-                        np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', [temp_0,temp_1,temp_2,1], delimiter=',')
-
-
-                    elif os.path.exists(self.folderpath +r'\TemperatureV2.csv'):
-                        temps = TestingDataType.simple_dat_get(self.folderpath +r'\TemperatureV2.csv',0)
-                        temp_0 = np.mean(temps[:,0])
-                        temp_1 = np.mean(temps[:,1])
-                        temp_2 = np.mean(temps[:,2])
-                        temp_3 = np.mean(temps[:,3])
-                        temp_4 = np.mean(temps[:,4])
-                        temp_5 = np.mean(temps[:,5])
-                        self.V_Temperature = 2
-                        self.Temperature = [temp_0,temp_1,temp_2,temp_3,temp_4,temp_5]
-                        self.Temperature.append(2)
-                        np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
-                
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=temp2[0]/1000)
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=temp2[1]/1000)
             else:
@@ -103,30 +79,38 @@ class analysis:
                 temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
-                if not os.path.exists(self.folderpath +r'\Analysis\TempMeas.csv'):
-                    if os.path.exists(self.folderpath +r'\Temperature.csv'):
-                        temps = TestingDataType.simple_dat_get(self.folderpath +r'\Temperature.csv',0)
-                        temp_0 = np.mean(20*temps[:,2])
-                        temp_1 = np.mean(20*temps[:,3])
-                        temp_2 = np.mean(20*temps[:,4])
-                        self.Temperature = [temp_0,temp_1,temp_2]
-                        self.V_Temperature = 1
-                        np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', [temp_0,temp_1,temp_2,1], delimiter=',')
-
-                    elif os.path.exists(self.folderpath +r'\TemperatureV2.csv'):
-                        temps = TestingDataType.simple_dat_get(self.folderpath +r'\TemperatureV2.csv',0)
-                        temp_0 = np.mean(temps[:,0])
-                        temp_1 = np.mean(temps[:,1])
-                        temp_2 = np.mean(temps[:,2])
-                        temp_3 = np.mean(temps[:,3])
-                        temp_4 = np.mean(temps[:,4])
-                        temp_5 = np.mean(temps[:,5])
-                        self.V_Temperature = 2
-                        self.Temperature = [temp_0,temp_1,temp_2,temp_3,temp_4,temp_5]
-                        self.Temperature.append(2)
-                        np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0]/1000)
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000)               
+                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000)
+            if not os.path.exists(self.folderpath +r'\Analysis\TempMeas.csv'):
+                if os.path.exists(self.folderpath +r'\Temperature.csv'):
+                    temps = TestingDataType.simple_dat_get(self.folderpath +r'\Temperature.csv',0)
+                    temp_0 = np.mean(20*temps[:,2])
+                    temp_1 = np.mean(20*temps[:,3])
+                    temp_2 = np.mean(20*temps[:,4])
+                    self.Temperature = [temp_0,temp_1,temp_2]
+                    self.V_Temperature = 1
+                    np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', [temp_0,temp_1,temp_2,1], delimiter=',')
+
+                elif os.path.exists(self.folderpath +r'\TemperatureV2.csv'):
+                    temps = TestingDataType.simple_dat_get(self.folderpath +r'\TemperatureV2.csv',0)
+                    temp_0 = np.mean(temps[:,0])
+                    temp_1 = np.mean(temps[:,1])
+                    temp_2 = np.mean(temps[:,2])
+                    temp_3 = np.mean(temps[:,3])
+                    temp_4 = np.mean(temps[:,4])
+                    temp_5 = np.mean(temps[:,5])
+                    self.V_Temperature = 2
+                    self.Temperature = [temp_0,temp_1,temp_2,temp_3,temp_4,temp_5]
+                    self.Temperature.append(2)
+                    np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
+            temps = np.loadtxt(self.folderpath+r'\Analysis\TempMeas.csv', delimiter=',')
+            if  temps[-1] == 1:
+                self.analysis456.set_temperature(np.mean(temps[:-1]),30)
+                self.analysis894.set_temperature(np.mean(temps[:-1]),30)
+            elif temps[-1] == 2:
+                self.analysis456.set_temperature(np.mean(temps[:3]),np.mean(temps[3:-1]))
+                self.analysis894.set_temperature(np.mean(temps[:3]),np.mean(temps[3:-1]))
+
             # self.folderpath_tkvar.set(self.folderpath)
             update_path_label(self.folderpath)
     
