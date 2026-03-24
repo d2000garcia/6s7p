@@ -114,111 +114,130 @@ kB=1.3806503
 pi = np.pi
 k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
 k2 = 10000 * afs * np.sqrt(m*c*c*pi**3/(8*kB)) #power analysis leads to the 10^4 factor 
-temp = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',') 
+temp = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',')
+temp2 = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\456\beatnote\processed\beat_fit_param.csv', delimiter=',') 
 # temp = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\beatnote\processed\beat_fit_param.csv', delimiter=',')
             #Save as domain, window, coef
-beatfit = poly(temp[4:], temp[0:2], temp[2:4])
-scaledT = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
-indices = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\894\indices.csv', delimiter=',')
+beatfit1 = poly(temp[4:], temp[0:2], temp[2:4])
+beatfit2 = poly(temp2[4:], temp2[0:2], temp2[2:4])
+scaledT1 = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
+indices1 = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\894\indices.csv', delimiter=',')
+scaledT2 = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\456\fitting\processed\scaledT.csv', delimiter=',')
+indices2 = np.loadtxt(r'D:\Diego\git\6s7p\BeatNoteDataNew\Oct27,2025/Oct27,2025+2-11-50PM\Analysis\456\indices.csv', delimiter=',')
 # scaledT = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\fitting\processed\scaledT.csv', delimiter=',')
 # indices = np.loadtxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\BeatNoteDataNew\Oct24,2025\Oct24,2025+3-17-56PM\Analysis\894\indices.csv', delimiter=',')
 
 temp = 273+30  # guess at hot portion of cell
+for scan in ['894','456']:
+    if scan == '456':
+        beatfit = beatfit1
+        scaledT=scaledT1
+        indices=indices1
+        peaks, properties = find_peaks(-scaledT,width=500,prominence=0.02)
+        p0 = 0.37 #scaledT pwr at top
+        Gamma = 1/137.54/2/(2*pi)#half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
+        Life = 1/137.54/2 #half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
+        wD = np.sqrt(288.15) * k1 #estimate using 15C
+        #sigma = wD/(2rad(2ln2))
+        #wD = w * sqrt(8kbT ln(2)/Mc^2)
+        w0center = beatfit(peaks[0])
+        k3 =beatfit(properties["left_bases"])
+        k4 =beatfit(properties["right_bases"])
+        sig = (k4[0]-k3[0])/2.35482
+        
+    else:
+        beatfit=beatfit2
+        scaledT=scaledT2
+        indices=indices2
+        peaks, properties = find_peaks(-scaledT,width=500, prominence=0.1)
+        p0=0.2 #scaledT power at top
+        Gamma = 1/34.791/2/(2*pi) #half of lifetime in GHz from Stek
+        Life = 1/34.791/2 #half of lifetime in GHz from Stek
+        wD = np.sqrt(288.15) * k1
+        w0center = beatfit((peaks[0]+peaks[1])/2)
+        k3 =beatfit(properties["left_bases"])
+        k4 =beatfit(properties["right_bases"])
+        sig = (np.max(k4)-np.min(k3))/10
+        
+    guess = beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
+    base  = np.mean(scaledT[5878:5980])
 
-if scan == '456':
-    peaks, properties = find_peaks(-scaledT,width=500,prominence=0.02)
-    p0 = 0.37 #scaledT pwr at top
-    Life = 1/137.54/2 #half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
-    wD = np.sqrt(288.15) * k1 #estimate using 15C
-    #sigma = wD/(2rad(2ln2))
-    #wD = w * sqrt(8kbT ln(2)/Mc^2)
-    w0center = beatfit(peaks[0])
-    k3 =beatfit(properties["left_bases"])
-    k4 =beatfit(properties["right_bases"])
-    sig = (k4[0]-k3[0])/2.35482
-    weights = lm.models.gaussian(beatfit(indices),center=w0center,sigma=sig) + 1/(sig * np.sqrt(2 * pi))
-else:
-    peaks, properties = find_peaks(-scaledT,width=500, prominence=0.1)
-    p0=0.2 #scaledT power at top
-    Life = 1/34.791/2 #half of lifetime in GHz from Stek
-    wD = np.sqrt(288.15) * k1
-    w0center = beatfit((peaks[0]+peaks[1])/2)
-    k3 =beatfit(properties["left_bases"])
-    k4 =beatfit(properties["right_bases"])
-    sig = (np.max(k4)-np.min(k3))/10
-    weights = lm.models.gaussian(beatfit(indices),center=w0center,sigma=sig) + 1/(sig * np.sqrt(2 * pi)*20)
-guess = beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
-base  = np.mean(scaledT[5878:5980])
-
-etalon_ranges = [[200,3300],[7000,8000]]
-
-
-test = LinFit(etalon_ranges, beatfit(indices), scaledT)
-# test2 = quad(etalon_ranges, beatfit(indices), scaledT)
-print(test)
-# test2[1]=test2[1]/test2[0]
-# test2[2]=test2[2]/test2[0]
-params = lm.Parameters()
-
-# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
-
-params.add_many(('a', 5, True, 0, 10, None, None),
-                ('p0', test[1]-base, True, 0.7*(test[1]-base), 1.3*(test[1]-base), None, None),
-                ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
-                ('mv', guess, True, 0, 4, None, None),
-                ('T', 25, True, 0, 50, None, None),
-                ('gamma', Life/(2*pi), True, None, None, None, None),
-                ('base', base, True, base*0.4, base*2.5, None, None)) #seems like fit is very dependent on baseline matters more for 894 i think
-test1 = [6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447]
+    etalon_ranges = [[200,3300],[7000,8000]]
 
 
-z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
-if scan == '894':
-    # fun1 = lambda w,a,p0,k0,mv,sigma,gamma,base: p0*(1+k0*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
-    fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+voigt(w,hyp_weights[1],mv+hypsplit[1],np.sqrt(T+273.15)*k1*abs_freq[1],gamma))) + base
-    fun = lambda w,a,p0,k0,mv,wD, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),hyp_weights,hypsplit))),axis=0).real) + base
-    # lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
-# mod = lm.Model(fun1,['w'],['a','p0','k0','mv','sigma','gamma','base'])
-mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
+    test = LinFit(etalon_ranges, beatfit(indices), scaledT)
+    # test2 = quad(etalon_ranges, beatfit(indices), scaledT)
+    print(test)
+    # test2[1]=test2[1]/test2[0]
+    # test2[2]=test2[2]/test2[0]
+    params = lm.Parameters()
 
-# runningavg2 = np.convolve(scaledT, np.ones(5)/5, mode='same')  
+    # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
 
-init = mod.eval(params,w=beatfit(indices))
-# result = mod.fit(scaledT,params=params,weights=weights,method='basinhopping',w=beatfit(indices))
+    # params.add_many(('a', 5, True, 0, 10, None, None),
+    #                 ('p0', test[1]-base, True, 0.7*(test[1]-base), 1.3*(test[1]-base), None, None),
+    #                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
+    #                 ('mv', guess, True, 0, 4, None, None),
+    #                 ('T', 25, True, 0, 50, None, None),
+    #                 ('gamma', Life/(2*pi), True, None, None, None, None),
+    #                 ('base', base, True, base*0.4, base*2.5, None, None)) #seems like fit is very dependent on baseline matters more for 894 i think
 
-result2 = mod.fit(scaledT,params=params,w=beatfit(indices),method='leastsq')
-# print(result.fit_report())
-print(result2.fit_report())
-plt.plot(beatfit(indices), scaledT, '+')
-# plt.plot(beatfit(indices),weights,'-r')
-plt.plot(beatfit(indices), init, '--', label='initial fit')
-# plt.plot(beatfit(indices), result.best_fit, '-', label='best fit')
-plt.plot(beatfit(indices), result2.best_fit, '-r', label='best fit2')
-plt.legend()
-plt.show()
-
-# for key in result.params.keys():
-#     if result.params[key].vary:
-#         mini = min(result.params[key].value,result2.params[key].value) - max(result.params[key].stderr,result2.params[key].stderr)
-#         maxi = max(result.params[key].value,result2.params[key].value) + max(result.params[key].stderr,result2.params[key].stderr)
-
-#         params[key].set(min=mini)
-#         params[key].set(max=maxi)
-#         params[key].set(value=(result.params[key].value+result2.params[key].value)/2)
-#         params[key].set(brute_step=(maxi-mini)/10)
-# result3 = mod.fit(scaledT,params=params,w=beatfit(indices),method='brute')
-# print(result3.fit_report())
-# plt.plot(beatfit(indices), scaledT, '+')
-# plt.plot(beatfit(indices), result.best_fit, '-', label='best fit')
-# plt.plot(beatfit(indices), result2.best_fit, '-', label='best fit2')
-# plt.plot(beatfit(indices), result3.best_fit, '-', label='best fit3')
-# plt.legend()
-# plt.show()
+    if scan == '456':
+        #this is 456 scan
+        test = LinFit([[beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),beat_rng[1]]],beatfit(indices),scaledT)
+    else:
+        print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
+        test = LinFit([[beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),beat_rng[1]]], beatfit(indices),scaledT)
+    test1 = [6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447]
 
 
-# plt.plot(beatfit(indices), scaledT, '+')
-# plt.plot(beatfit(indices),test[1]+test[0]*beatfit(indices))
-# plt.plot(beatfit(indices),fun(beatfit(indices),6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447),'-r')
-# plt.plot(beatfit(indices),fun1(beatfit(indices),6.68280,0.1872,0.0021299356,3.040347,0.145481102,Life,0.0087447),'--g')
-# plt.show()
+    z = np.vectorize( lambda x,b:complex(x,b), excluded={'b'}, cache=True)
+    if scan == '894':
+        # fun1 = lambda w,a,p0,k0,mv,sigma,gamma,base: p0*(1+k0*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(lm.models.voigt(w,hyp_weights[0],mv,sigma*abs_freq[0],gamma)+lm.models.voigt(w,hyp_weights[1],mv+hypsplit[1],sigma*abs_freq[1],gamma))) + base
+        fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+voigt(w,hyp_weights[1],mv+hypsplit[1],np.sqrt(T+273.15)*k1*abs_freq[1],gamma))) + base
+        fun = lambda w,a,p0,k0,mv,wD, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),hyp_weights,hypsplit))),axis=0).real) + base
+        # lambda w,p0,a,wD,mv,k0, base: p0 * (1+k0*w) * np.exp(-a *((w-mv+self.abs_freq[0])/10**6)* np.sum(np.array(list(map(lambda x1,x2:x1*wofz(z(w-x2-mv, Life)/(np.sqrt(2)*wD))/(np.sqrt(2*pi)*wD),self.hyp_weights,self.hypsplit))),axis=0).real) + base
+    # mod = lm.Model(fun1,['w'],['a','p0','k0','mv','sigma','gamma','base'])
+    mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
+
+    # runningavg2 = np.convolve(scaledT, np.ones(5)/5, mode='same')  
+
+    init = mod.eval(params,w=beatfit(indices))
+    # result = mod.fit(scaledT,params=params,weights=weights,method='basinhopping',w=beatfit(indices))
+
+    result2 = mod.fit(scaledT,params=params,w=beatfit(indices),method='leastsq')
+    # print(result.fit_report())
+    print(result2.fit_report())
+    plt.plot(beatfit(indices), scaledT, '+')
+    # plt.plot(beatfit(indices),weights,'-r')
+    plt.plot(beatfit(indices), init, '--', label='initial fit')
+    # plt.plot(beatfit(indices), result.best_fit, '-', label='best fit')
+    plt.plot(beatfit(indices), result2.best_fit, '-r', label='best fit2')
+    plt.legend()
+    plt.show()
+
+    # for key in result.params.keys():
+    #     if result.params[key].vary:
+    #         mini = min(result.params[key].value,result2.params[key].value) - max(result.params[key].stderr,result2.params[key].stderr)
+    #         maxi = max(result.params[key].value,result2.params[key].value) + max(result.params[key].stderr,result2.params[key].stderr)
+
+    #         params[key].set(min=mini)
+    #         params[key].set(max=maxi)
+    #         params[key].set(value=(result.params[key].value+result2.params[key].value)/2)
+    #         params[key].set(brute_step=(maxi-mini)/10)
+    # result3 = mod.fit(scaledT,params=params,w=beatfit(indices),method='brute')
+    # print(result3.fit_report())
+    # plt.plot(beatfit(indices), scaledT, '+')
+    # plt.plot(beatfit(indices), result.best_fit, '-', label='best fit')
+    # plt.plot(beatfit(indices), result2.best_fit, '-', label='best fit2')
+    # plt.plot(beatfit(indices), result3.best_fit, '-', label='best fit3')
+    # plt.legend()
+    # plt.show()
+
+
+    # plt.plot(beatfit(indices), scaledT, '+')
+    # plt.plot(beatfit(indices),test[1]+test[0]*beatfit(indices))
+    # plt.plot(beatfit(indices),fun(beatfit(indices),6.68280,0.1872,0.0021299356,3.040347,0.145481102,0.0087447),'-r')
+    # plt.plot(beatfit(indices),fun1(beatfit(indices),6.68280,0.1872,0.0021299356,3.040347,0.145481102,Life,0.0087447),'--g')
+    # plt.show()
 

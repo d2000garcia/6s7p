@@ -1,0 +1,3 @@
+For Sat effect docs, the steps are the first col for each so i = 0, for i = (j+1)*3 is a new ND filter measuremet (ie. 1,4,7,10,13,16,19).
+The ND Pwr doc is the power transmitted through each respective ND filter combo, with the first col being 456 and the second col being 894.
+With rows instead of cols as in the measurement files.
