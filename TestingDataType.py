@@ -41,6 +41,96 @@ def vapor_pres(T):
         Pres = 2.881+4.165-3830/T
     return 10**(Pres)
 
+def delta(x):
+    return list(map(lambda m,n:m-n,x[1:],x))
+
+def get_frequency_steps(peaks, det_freq):
+    #input of peak indices as list
+    #assumption of any missing peak has at least 2 good peak pairs in between bad/missing peaks
+
+    #returns (frequency at peaks, frequency diff between peaks, bad peaks, bad peak types)
+    dX = delta(peaks)
+    avg = np.mean(dX)
+    good = []
+    good_rights=[]
+    freq = [0]
+    freq_diff = []
+    for i, dx in dX:
+        freq_diff(0)
+        if dx < avg:
+            good.append(i)
+            freq_diff[-1]= 2*det_freq
+            good_rights.append(i+1)
+            good.append(i+1)
+        elif freq_diff[-2] != 0:
+            freq_diff[-1] = 0.25 - 2*det_freq
+    og_set = np.arange(0,len(peaks),1).tolist()
+    bad = set(og_set).difference(set(good))
+    bad.sort()
+
+    bad_peak_type = []
+    for i in bad:
+        #-1 is begining of peaks #2 is last of peaks
+        #0 is only left peak, 1 is only right peak
+        if i == 0:
+            bad_peak_type.append(-1)
+        elif i == len(peaks)-1:
+            bad_peak_type.append(2)
+        else:
+            if dX[i-1] < dX[i]:
+                #Then peak we have is correct distance from the previous peak so left peak
+                bad_peak_type.append(0)
+                freq_diff[i] =0.25
+            else:
+                #Then peak is correct distance from next peak
+                bad_peak_type.append(1)
+                good_rights.remove(i-1)
+                good_rights.append(i)
+                freq_diff[i-1] = 0.25
+                freq_diff[i] = 0.250-2*det_freq
+    track=[[0,0],[0,0],[0,0]]
+    #tracking large gap averages on left and right ends of beatnote data so right peak
+    for i in good_rights:
+        if i < len(peaks)*0.25:
+            track[0][0]+= dX[i]
+            track[1][0]+=1
+        elif i > len(peaks) *0.65 and i<len(peaks)*0.9:
+            #exclude last one as could be corrupted by being too far from last peak
+            track[0][1]+=dX[i]
+            track[1][1]+=1
+    track[2][0] = track[0][0]/track[1][0]
+    track[2][1] = track[0][1]/track[1][1]
+    if bad[0] == 0:
+        if dX[0] < track[2][0]*1.15:
+            #then its the right peak because correct distance from next peak pair
+            bad_peak_type[0] = 1
+            freq_diff[0] = 0.250 - 2*det_freq
+        else:
+            bad_peak_type[0] = 0
+            freq_diff[0] = 0.250
+    if bad[-1] == len(peaks)-1:
+        if dX[-1] < track[2][1]*1.15:
+            #then its the left peak because correct distance from last peak pair
+            bad_peak_type[0] = 0
+            freq_diff[-1] = 0.250 - 2*det_freq
+        else:
+            bad_peak_type[0] = 1
+            freq_diff[-1] = 0.250
+    for i in range(len(dx)):
+        freq.append(freq[-1]+freq_diff[i])
+    
+    return (freq, freq_diff, bad, bad_peak_type)
+
+    # # freq_diff 
+    # if bad[0] == 0:
+    #     if bad_peak_type[0] ==1:
+    #         freq_diff[0] = 0.250 - 2*det_freq
+    #     else:
+    #         freq_diff[0] = 0.250
+    # if bad[-1] == len(peaks)-1:
+    #     if dX[-1] < track[2][1]:
+            
+
 def simple_dat_get(filename, skip_lines=0):
     file = open(filename, 'r')
     data = []
@@ -393,16 +483,16 @@ class data:
             (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy().tolist(), self.peak_val2.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
         else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
         # (self.cleared_indices, self.cleared_peaks)=(self.peak_indices2.copy(), self.peak_val2.copy())
-        self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
-        avg_diff = np.mean(self.differences)
-        self.freq = [0]
-        for diff in self.differences:
-            if diff < avg_diff:
-                self.freq.append(self.freq[-1] + self.beatnote_det_f*2)
-            else:
-                self.freq.append(self.freq[-1] + 0.250 - self.beatnote_det_f*2)
+        # self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
+        # avg_diff = np.mean(self.differences)
+        # self.freq = [0]
+        # for diff in self.differences:
+        #     if diff < avg_diff:
+        #         self.freq.append(self.freq[-1] + self.beatnote_det_f*2)
+        #     else:
+        #         self.freq.append(self.freq[-1] + 0.250 - self.beatnote_det_f*2)
         # print(self.freq)
-
+        (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f)
         
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
         beat_fit_param = self.beatfit.domain.tolist()
@@ -816,7 +906,10 @@ class data:
             # chi2 = resid**2
             self.alph_err=self.pcov[0]
             np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
-            np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
+            try:
+                np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
+            except:
+                self.pcov = np.zeros(len(self.fitted_param)).tolist()
             plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
             plt.plot(plotting_freq,result.best_fit, '-r',linewidth=0.2,marker='.')#, mew='0.05')
             plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_param[0]) + r', err='+ str(self.alph_err))
