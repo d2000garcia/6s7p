@@ -103,11 +103,18 @@ class analysis:
                     self.Temperature = [temp_0,temp_1,temp_2,temp_3,temp_4,temp_5]
                     self.Temperature.append(2)
                     np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
+            else:
+                if os.path.exists(self.folderpath +r'\Temperature.csv'):
+                    self.V_Temperature = 1
+                elif os.path.exists(self.folderpath +r'\TemperatureV2.csv'):
+                    self.V_Temperature = 2
             temps = np.loadtxt(self.folderpath+r'\Analysis\TempMeas.csv', delimiter=',')
             if  temps[-1] == 1:
+                self.Temperature = temps[:-1]
                 self.analysis456.set_temperature(np.mean(temps[:-1]),30)
                 self.analysis894.set_temperature(np.mean(temps[:-1]),30)
             elif temps[-1] == 2:
+                self.TemperatureV2 = temps[:-1]
                 self.analysis456.set_temperature(np.mean(temps[:3]),np.mean(temps[3:-1]))
                 self.analysis894.set_temperature(np.mean(temps[:3]),np.mean(temps[3:-1]))
 
@@ -359,11 +366,14 @@ first = True
 template_image = r".\Picture_template.png"
 switchlabelsat=5
 if __name__ == '__main__':
+    scale = 1.5
+    plot_w= int(500*scale)
+    plot_h= int(300*scale)
     root = tk.Tk()
     if first:
         first = False
         folder = analysis()
-        plot_sets= [plots(scan='456'),plots(scan='894')]
+        plot_sets= [plots(scan='456',plot_w=plot_w,plot_h=plot_h),plots(scan='894',plot_w=plot_w,plot_h=plot_h)]
         # plots456 = plots(scan='456')
         # plots894 = plots(scan='894')
         root.title("++FittingCalculations")

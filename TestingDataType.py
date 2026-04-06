@@ -55,68 +55,75 @@ def get_frequency_steps(peaks, det_freq):
     good_rights=[]
     freq = [0]
     freq_diff = []
-    for i, dx in dX:
-        freq_diff(0)
+    for i, dx in enumerate(dX):
+        freq_diff.append(0)
         if dx < avg:
             good.append(i)
             freq_diff[-1]= 2*det_freq
             good_rights.append(i+1)
             good.append(i+1)
-        elif freq_diff[-2] != 0:
-            freq_diff[-1] = 0.25 - 2*det_freq
+        else:
+            if len(freq_diff)>1:
+                if freq_diff[-2] != 0:
+                    freq_diff[-1] = 0.25 - 2*det_freq
     og_set = np.arange(0,len(peaks),1).tolist()
-    bad = set(og_set).difference(set(good))
+    bad = list(set(og_set).difference(set(good)))
     bad.sort()
-
-    bad_peak_type = []
-    for i in bad:
-        #-1 is begining of peaks #2 is last of peaks
-        #0 is only left peak, 1 is only right peak
-        if i == 0:
-            bad_peak_type.append(-1)
-        elif i == len(peaks)-1:
-            bad_peak_type.append(2)
-        else:
-            if dX[i-1] < dX[i]:
-                #Then peak we have is correct distance from the previous peak so left peak
-                bad_peak_type.append(0)
-                freq_diff[i] =0.25
+    if len(bad) !=0:
+        bad_peak_type = []
+        for i in range(len(bad)):
+            #-1 is begining of peaks #2 is last of peaks
+            #0 is only left peak, 1 is only right peak
+            if bad[i] == 0:
+                bad_peak_type.append(-1)
+            elif bad[i] == len(peaks)-1:
+                bad_peak_type.append(2)
             else:
-                #Then peak is correct distance from next peak
-                bad_peak_type.append(1)
-                good_rights.remove(i-1)
-                good_rights.append(i)
-                freq_diff[i-1] = 0.25
-                freq_diff[i] = 0.250-2*det_freq
-    track=[[0,0],[0,0],[0,0]]
-    #tracking large gap averages on left and right ends of beatnote data so right peak
-    for i in good_rights:
-        if i < len(peaks)*0.25:
-            track[0][0]+= dX[i]
-            track[1][0]+=1
-        elif i > len(peaks) *0.65 and i<len(peaks)*0.9:
-            #exclude last one as could be corrupted by being too far from last peak
-            track[0][1]+=dX[i]
-            track[1][1]+=1
-    track[2][0] = track[0][0]/track[1][0]
-    track[2][1] = track[0][1]/track[1][1]
-    if bad[0] == 0:
-        if dX[0] < track[2][0]*1.15:
-            #then its the right peak because correct distance from next peak pair
-            bad_peak_type[0] = 1
-            freq_diff[0] = 0.250 - 2*det_freq
-        else:
-            bad_peak_type[0] = 0
-            freq_diff[0] = 0.250
-    if bad[-1] == len(peaks)-1:
-        if dX[-1] < track[2][1]*1.15:
-            #then its the left peak because correct distance from last peak pair
-            bad_peak_type[0] = 0
-            freq_diff[-1] = 0.250 - 2*det_freq
-        else:
-            bad_peak_type[0] = 1
-            freq_diff[-1] = 0.250
-    for i in range(len(dx)):
+                if dX[i-1] < dX[i]:
+                    #Then peak we have is correct distance from the previous peak so left peak
+                    bad_peak_type.append(0)
+                    freq_diff[i] =0.25
+                else:
+                    #Then peak is correct distance from next peak
+                    if bad[i] != bad[i-1]+1:
+                        bad_peak_type.append(1)
+                        good_rights.remove(i-1)
+                        good_rights.append(i)
+                        freq_diff[i-1] = 0.25
+                        freq_diff[i] = 0.250-2*det_freq
+        track=[[0,0],[0,0],[0,0]]
+        #tracking large gap averages on left and right ends of beatnote data so right peak
+        for i in good_rights:
+            if i < len(peaks)*0.25:
+                track[0][0]+= dX[i]
+                track[1][0]+=1
+            elif i > len(peaks) *0.65 and i<len(peaks)*0.9:
+                #exclude last one as could be corrupted by being too far from last peak
+                track[0][1]+=dX[i]
+                track[1][1]+=1
+        track[2][0] = track[0][0]/track[1][0]
+        track[2][1] = track[0][1]/track[1][1]
+        print(bad)
+        if bad[0] == 0:
+            if dX[0] < track[2][0]*1.15:
+                #then its the right peak because correct distance from next peak pair
+                bad_peak_type[0] = 1
+                freq_diff[0] = 0.250 - 2*det_freq
+            else:
+                bad_peak_type[0] = 0
+                freq_diff[0] = 0.250
+        if bad[-1] == len(peaks)-1:
+            if dX[-1] < track[2][1]*1.15:
+                #then its the left peak because correct distance from last peak pair
+                bad_peak_type[0] = 0
+                freq_diff[-1] = 0.250 - 2*det_freq
+            else:
+                bad_peak_type[0] = 1
+                freq_diff[-1] = 0.250
+    else:
+        bad = []
+        bad_peak_type = []
+    for i in range(len(dX)):
         freq.append(freq[-1]+freq_diff[i])
     
     return (freq, freq_diff, bad, bad_peak_type)
@@ -252,7 +259,7 @@ class data:
                 if scan == '456':
                     self.set_transition(F1=4)
                 else:
-                    self.set_transition(F1=3)
+                    self.set_transition(F1=4)
 
             if scan == '456':
                 folder = par_folder + r'\Analysis\456'
@@ -321,7 +328,7 @@ class data:
                 if scan == '456':
                     self.set_transition(F1=4)
                 else:
-                    self.set_transition(F1=3)
+                    self.set_transition(F1=4)
             self.beatnote_det_f = beatnote_det_f
             self.folder = folder
             self.indices = np.loadtxt(folder+r'\indices.csv', dtype=int, delimiter=',')
