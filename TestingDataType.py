@@ -41,6 +41,105 @@ def vapor_pres(T):
         Pres = 2.881+4.165-3830/T
     return 10**(Pres)
 
+def delta(x):
+    return list(map(lambda m,n:m-n,x[1:],x))
+
+def get_frequency_steps(peaks, det_freq):
+    #input of peak indices as list
+    #assumption of any missing peak has at least 2 good peak pairs in between bad/missing peaks
+
+    #returns (frequency at peaks, frequency diff between peaks, bad peaks, bad peak types)
+    dX = delta(peaks)
+    avg = np.mean(dX)
+    good = []
+    good_rights=[]
+    freq = [0]
+    freq_diff = []
+    for i, dx in enumerate(dX):
+        freq_diff.append(0)
+        if dx < avg:
+            good.append(i)
+            freq_diff[-1]= 2*det_freq
+            good_rights.append(i+1)
+            good.append(i+1)
+        else:
+            if len(freq_diff)>1:
+                if freq_diff[-2] != 0:
+                    freq_diff[-1] = 0.25 - 2*det_freq
+    og_set = np.arange(0,len(peaks),1).tolist()
+    bad = list(set(og_set).difference(set(good)))
+    bad.sort()
+    if len(bad) !=0:
+        bad_peak_type = []
+        for i in range(len(bad)):
+            #-1 is begining of peaks #2 is last of peaks
+            #0 is only left peak, 1 is only right peak
+            if bad[i] == 0:
+                bad_peak_type.append(-1)
+            elif bad[i] == len(peaks)-1:
+                bad_peak_type.append(2)
+            else:
+                if dX[bad[i]-1] < dX[bad[i]]:
+                    #Then peak we have is correct distance from the previous peak so left peak
+                    bad_peak_type.append(0)
+                    freq_diff[bad[i]] =0.25
+                else:
+                    #Then peak is correct distance from next peak
+                    if bad[i] != bad[i-1]+1:
+                        bad_peak_type.append(1)
+                        if bad[i]-1 in good_rights:
+                            good_rights.remove(bad[i]-1)
+                        good_rights.append(bad[i])
+                        freq_diff[bad[i]-1] = 0.25
+                        freq_diff[bad[i]] = 0.250-2*det_freq
+        if (bad[0] == 0) or (bad[-1] == len(peaks)-1):
+            track=[[0,0],[0,0],[0,0]]
+            #tracking large gap averages on left and right ends of beatnote data so right peak
+            for i in good_rights:
+                if i < len(peaks)*0.25:
+                    track[0][0]+= dX[i]
+                    track[1][0]+=1
+                elif i > len(peaks) *0.65 and i<len(peaks)*0.9:
+                    #exclude last one as could be corrupted by being too far from last peak
+                    track[0][1]+=dX[i]
+                    track[1][1]+=1
+            track[2][0] = track[0][0]/track[1][0]
+            track[2][1] = track[0][1]/track[1][1]
+            print(bad)
+            if bad[0] == 0:
+                if dX[0] < track[2][0]*1.15:
+                    #then its the right peak because correct distance from next peak pair
+                    bad_peak_type[0] = 1
+                    freq_diff[0] = 0.250 - 2*det_freq
+                else:
+                    bad_peak_type[0] = 0
+                    freq_diff[0] = 0.250
+            if bad[-1] == len(peaks)-1:
+                if dX[-1] < track[2][1]*1.15:
+                    #then its the left peak because correct distance from last peak pair
+                    bad_peak_type[0] = 0
+                    freq_diff[-1] = 0.250 - 2*det_freq
+                else:
+                    bad_peak_type[0] = 1
+                    freq_diff[-1] = 0.250
+    else:
+        bad = []
+        bad_peak_type = []
+    for i in range(len(dX)):
+        freq.append(freq[-1]+freq_diff[i])
+    
+    return (freq, freq_diff, bad, bad_peak_type)
+
+    # # freq_diff 
+    # if bad[0] == 0:
+    #     if bad_peak_type[0] ==1:
+    #         freq_diff[0] = 0.250 - 2*det_freq
+    #     else:
+    #         freq_diff[0] = 0.250
+    # if bad[-1] == len(peaks)-1:
+    #     if dX[-1] < track[2][1]:
+            
+
 def simple_dat_get(filename, skip_lines=0):
     file = open(filename, 'r')
     data = []
@@ -160,9 +259,27 @@ class data:
             self.beat_height = 0
             if F == 0:
                 if scan == '456':
-                    self.set_transition(F1=4)
+                    if os.path.exists(self.par_folder+r'\PwrWigs456.csv'):
+                        pwrs = np.loadtxt(self.par_folder+r'\PwrWigs456.csv')
+                        if pwrs[1]/pwrs[0] >0.04:
+                            self.F1 = 4
+                            self.set_transition(F1=4)
+                        else:
+                            self.F1 = 3
+                            self.set_transition(F1=3)
+                    else:
+                        self.set_transition(F1=4)
+                        self.F1 = 4
                 else:
-                    self.set_transition(F1=3)
+                    peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                    if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
+                        #peak 2 is larger 
+                        self.set_transition(F1=3)
+                        self.F1 = 3
+                    else:
+                        #peak 1 is larger
+                        self.set_transition(F1=4)
+                        self.F1 = 4
 
             if scan == '456':
                 folder = par_folder + r'\Analysis\456'
@@ -227,11 +344,7 @@ class data:
                     beatnote_det_f = 0.045
                 else:
                     beatnote_det_f = 0.020
-            if F == 0:
-                if scan == '456':
-                    self.set_transition(F1=4)
-                else:
-                    self.set_transition(F1=3)
+            
             self.beatnote_det_f = beatnote_det_f
             self.folder = folder
             self.indices = np.loadtxt(folder+r'\indices.csv', dtype=int, delimiter=',')
@@ -242,6 +355,31 @@ class data:
             self.BeatRunAvgN = BeatRunAvgN
             self.par_folder = par_folder
             self.beat_height = 0
+
+            if F == 0:
+                if scan == '456':
+                    if os.path.exists(self.par_folder+r'\PwrWigs456.csv'):
+                        pwrs = np.loadtxt(self.par_folder+r'\PwrWigs456.csv')
+                        if pwrs[1]/pwrs[0] >0.04:
+                            self.set_transition(F1=4)
+                            self.F1 = 4
+                        else:
+                            self.set_transition(F1=3)
+                            self.F1 = 3
+                    else:
+                        self.set_transition(F1=4)
+                        self.F1 = 4
+                else:
+                    peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                    if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
+                        #peak 2 is larger 
+                        self.set_transition(F1=3)
+                        self.F1 = 3
+                    else:
+                        #peak 1 is larger
+                        self.set_transition(F1=4)
+                        self.F1 = 4
+
 
             if os.path.exists(self.folder+r'\fitting\processed\fitting_param.csv'):
                 self.fitted=True
@@ -327,8 +465,11 @@ class data:
         peak_val2 = peak_indices2[1]['peak_heights']
         peak_indices2 = peak_indices2[0]
         # (peak_indices2, peak_val2) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
+
         self.peak_indices2 = peak_indices2
         self.peak_val2 = peak_val2
+        np.savetxt(self.folder+r'\beatnote\processed\peak_indices.csv',self.peak_indices2, delimiter=',')
+        np.savetxt(self.folder+r'\beatnote\processed\peak_val.csv',self.peak_val2, delimiter=',')
 
     def calculate_T_shift(self):
         # self.backgoundFit = LinFit(self.back_rngs, self.indices, self.scaledT)
@@ -393,17 +534,17 @@ class data:
             (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy().tolist(), self.peak_val2.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
         else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
         # (self.cleared_indices, self.cleared_peaks)=(self.peak_indices2.copy(), self.peak_val2.copy())
-        self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
-        avg_diff = np.mean(self.differences)
-        self.freq = [0]
-        for diff in self.differences:
-            if diff < avg_diff:
-                self.freq.append(self.freq[-1] + self.beatnote_det_f*2)
-            else:
-                self.freq.append(self.freq[-1] + 0.250 - self.beatnote_det_f*2)
+        # self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
+        # avg_diff = np.mean(self.differences)
+        # self.freq = [0]
+        # for diff in self.differences:
+        #     if diff < avg_diff:
+        #         self.freq.append(self.freq[-1] + self.beatnote_det_f*2)
+        #     else:
+        #         self.freq.append(self.freq[-1] + 0.250 - self.beatnote_det_f*2)
         # print(self.freq)
-
-        
+        (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f)
+        print(self.freq)
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
         beat_fit_param = self.beatfit.domain.tolist()
         beat_fit_param.extend(self.beatfit.window.tolist())
@@ -761,7 +902,10 @@ class data:
                     hotcell= np.loadtxt(self.par_folder+'\\PwrWings456.csv', delimiter=',')
                     baseline = hotcell[1]
                 else:
-                    baseline = 0.008*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 0.8% power in wings for 456
+                    if self.F1 == 4:
+                        baseline = 0.15*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 15% power in wings for 456
+                    if self.F1 == 3:
+                        baseline = 0.008*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 0.8% power in wings for 456
             plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
             # if self.etalon_ranges[0][1] != 0:
             #     test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
@@ -814,9 +958,13 @@ class data:
             self.pcov = list(map(lambda key:result.params[key].stderr,result.params.keys()))
             # resid = self.fitting_eqn3(plotting_freq,*fitted_param3)-self.scaledT[self.beat_rng[0]:self.beat_rng[1]]
             # chi2 = resid**2
+            self.alpha = self.fitted_param[0]
             self.alph_err=self.pcov[0]
             np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
-            np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
+            try:
+                np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
+            except:
+                self.pcov = np.zeros(len(self.fitted_param)).tolist()
             plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
             plt.plot(plotting_freq,result.best_fit, '-r',linewidth=0.2,marker='.')#, mew='0.05')
             plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_param[0]) + r', err='+ str(self.alph_err))
@@ -838,7 +986,7 @@ class data:
             plt.xlabel('Freq [GHz]')
             plt.savefig(self.folder+r'\plots\FittedScanResid.png')
             plt.clf()
-
+            self.fitted = True
             if self.scan == '456':
                 lines = {}
                 date = self.par_folder[self.par_folder.rfind('/')+1:]
