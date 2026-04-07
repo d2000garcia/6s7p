@@ -271,15 +271,19 @@ class data:
                         self.set_transition(F1=4)
                         self.F1 = 4
                 else:
-                    peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
-                    if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
-                        #peak 2 is larger 
-                        self.set_transition(F1=3)
-                        self.F1 = 3
+                    if self.par_folder.find('BaselineMeas')==-1:
+                        #not baseline measurement
+                        peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                        if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
+                            #peak 2 is larger 
+                            self.set_transition(F1=3)
+                            self.F1 = 3
+                        else:
+                            #peak 1 is larger
+                            self.set_transition(F1=4)
+                            self.F1 = 4
                     else:
-                        #peak 1 is larger
                         self.set_transition(F1=4)
-                        self.F1 = 4
 
             if scan == '456':
                 folder = par_folder + r'\Analysis\456'
@@ -934,7 +938,7 @@ class data:
                 ('mv', guess, True, 0, 4, None, None),
                 ('T', self.hotbody, True, low, high, None, None),
                 ('gamma', Gamma*1.2, False, Gamma, Gamma*3, None, None),
-                ('base', baseline, False, baseline*0.5, baseline*2, None, None))
+                ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
             if self.scan == '456':
                 params['a'].set(value=1)
                 params['gamma'].set(vary=True)
