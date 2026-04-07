@@ -368,7 +368,7 @@ first = True
 template_image = r".\Picture_template.png"
 switchlabelsat=5
 if __name__ == '__main__':
-    scale = 1.7
+    scale = 1.2
     plot_w= int(500*scale)
     plot_h= int(300*scale)
     root = tk.Tk()
