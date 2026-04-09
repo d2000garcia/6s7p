@@ -10,6 +10,7 @@ from PIL import Image, ImageTk
 import TestingDataType
 from numpy import pi as pi
 from plotClass import plots
+from scipy.special import wofz as wofz
 
 s2pi = np.sqrt(2*pi)
 s2 = np.sqrt(2.0)

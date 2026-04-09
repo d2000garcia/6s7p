@@ -7,139 +7,219 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk
-import TestingDataType
 from numpy import pi as pi
-from plotClass import plots
-
-def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,entries2,switchlabelsat=5):
-    temporary = filedialog.askdirectory(
-        initialdir="/",  # Optional: set initial directory
-        title="Select a folder",
-        # filetypes=(("Text files", "*.txt"), ("All files", "*.*")) # Optional: filter file types
-    )
+from PIL import Image, ImageTk
 
 Day_folder = 'test'
+class plots:
+    def __init__(self,window,default_path = r".\Picture_template.png", plot_w = 500, plot_h = 300):
+        default_img = Image.open(default_path)
+        resized_default = default_img.resize((plot_w, plot_h), Image.LANCZOS)
+        #Save variables for reference
+        self.window = window
+        self.plot_w = plot_w
+        self.plot_h = plot_h
+        #labels to ref plot indices
+        self.plotslabs=['TAvg','TAll']
+        self.type=['Cold','Hot']
+        self.day_fold = ''
+        self.window_manager={}
+        i=-1
+        for type in self.type:
+            i+=1
+            self.window_manager[type]={}
+            self.window_manager[type]['Note']=ttk.Notebook(window)
+            self.window_manager[type]['Note'].grid(column=i,row=0,columnspan=1, sticky="nsew")
+            self.window_manager[type]['Imgs'] = {}
+            for name in self.plotslabs:
+                #getting default image to load
+                self.window_manager[type]['Imgs'][name] = {}
+                self.window_manager[type]['Imgs'][name]['TkImg']=ImageTk.PhotoImage(resized_default.copy())
+                self.window_manager[type]['Imgs'][name]['Label']= tk.Label(self.window_manager[type]['Note'],image=self.window_manager[type]['Imgs'][name]['TkImg'])
+                self.window_manager[type]['Imgs'][name]['Label'].image = self.window_manager[type]['Imgs'][name]['TkImg']
+                self.window_manager[type]['Imgs'][name]['Label'].pack()
+                self.window_manager[type]['Note'].add(self.window_manager[type]['Imgs'][name]['Label'],text=type+' '+name)
 
+        # self.window_manager = {'Cold':{'Note':ttk.Notebook(window)},'Hot':{'Note':ttk.Notebook(window)}}
+        # self.window_manager['Cold']['Note'].grid(column=0,row=0,columnspan=1, sticky="nsew")
+        # self.window_manager['Hot']['Note'].grid(column=1,row=0,columnspan=1, sticky="nsew")
+        # self.window_manager['Cold']['']    
+    
+    def update_working_dir(self, new_day_fold):
+        #to be called when picking new day data set
+        self.day_fold = new_day_fold
+        self.fold = self.day_fold + '\\TemperaturePlots'
+    
+    def change_Label_image(self,new,oldlabel):
+    #oldlabel is the label you want to change and
+    #new is new Tkimage to exchange
+        oldlabel.configure(image=new)
+        oldlabel.image = new
+    
+    def update_all_imgs(self):
+        for type in self.type:
+            for name in self.plotslabs:
+                if name != 'TBD':
+                    plot_path = self.fold + '\\' + type +name + '.png'
+                    temp = Image.open(plot_path)
+                    resized_temp = temp.resize((self.plot_w, self.plot_h), Image.LANCZOS)
+                    self.window_manager[type]['Imgs'][name]['TkImg'] = ImageTk.PhotoImage(resized_temp)
+                    self.change_Label_image(self.window_manager[type]['Imgs'][name]['TkImg'],self.window_manager[type]['Imgs'][name]['Label'])
+
+
+    # def update_image(self, tochange):
+    #     #way to update images after picking new folder or generating new pictures after they're saved
+    #     for whichone in tochange:
+    #         plot_path = self.fold + '\\' + whichone + '.png'
+    #         temp = Image.open(plot_path)
+    #         resized_temp = temp.resize((self.plot_w, self.plot_h), Image.LANCZOS)
+    #         if whichone == 'TColdAvg':
+    #             self.plots[0] = ImageTk.PhotoImage(resized_temp)
+    #         elif whichone == 'THotAvg':
+    #             self.plots[1] = ImageTk.PhotoImage(resized_temp)
+    #         # elif whichone == 'scaledT':
+    #         #     self.plots[2] = ImageTk.PhotoImage(resized_temp)
+    #         # elif whichone == 'FittedScan':
+    #         #     self.plots[3] = ImageTk.PhotoImage(resized_temp)
+
+
+class TempAnalysis:
+    def __init__(self,window,img_scale=1):
+        self.folderpath = ''
+        self.folderpath_tkvar = tk.StringVar()
+        self.window = window
+        self.plots = plots(window=window,plot_w=int(500*img_scale),plot_h=int(300*img_scale))
+
+    def print_path(self):
+        print(self.folderpath)
+
+    def checkforanalysis(self):
+        months = ['Apr','Mar','Sep','Oct','Nov','Aug']
+        found = -1
+        if not self.folderpath == '':
+            contents = os.listdir(path = self.folderpath)
+            for i,mon in enumerate(months):
+                found = self.folderpath.find(mon) + 1
+                if found:
+                    self.date = self.folderpath[found-1:found+10]
+            if 'TemperaturePlots' in contents:
+                #Then its been run for this day already
+                self.plots.update_working_dir(self.folderpath)
+                self.plots.update_all_imgs()
+
+            else:
+                self.work_folder = self.folderpath+'\\TemperaturePlots'
+                os.mkdir(self.work_folder)
+                colors = ['black','dodgerblue','crimson']
+                #Need to run temperatures analysis
+                # try:
+                MeanPlots = [[0,0],[0,0]]
+                MeanPlots[0][0] = plt.figure()
+                MeanPlots[0][1] = plt.figure()
+                MeanPlots[1][0] = MeanPlots[0][0].add_axes([0.1,0.1,0.8,0.8])
+                MeanPlots[1][1] = MeanPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
+                meanplotdat = [[0,0],[0,0]]
+
+                AllPtPlots = [[0,0],[0,0]]
+                AllPtPlots[0][0] = plt.figure()
+                AllPtPlots[0][1] = plt.figure()
+                AllPtPlots[1][0] = AllPtPlots[0][0].add_axes([0.1,0.1,0.8,0.8])
+                AllPtPlots[1][1] = AllPtPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
+
+                allptminmax = [[1000,-1000],[1000,-1000]]
+                tempminmac = [[0,0],[0,0]]
+                print(contents)
+                temp = len(contents)
+                for num in range(temp):
+                    if ('.tsv' in contents[temp-num-1]) or ('xlsx' in contents[temp-num-1]):
+                        contents.pop(temp-num-1)
+                print(contents)
+                for j,run in enumerate(contents):
+                    temp=np.loadtxt(self.folderpath+'\\'+run+'\\TemperatureV2.csv',delimiter=',')
+                    tempminmac[0][0] = np.min(temp[:,:3])
+                    tempminmac[0][1] = np.max(temp[:,:3])
+                    tempminmac[1][0] = np.min(temp[:,3:])
+                    tempminmac[1][1] = np.max(temp[:,3:])
+                    for k in range(2):
+                        if tempminmac[k][0] < allptminmax[k][0]:
+                            allptminmax[k][0] = tempminmac[k][0]
+                        if tempminmac[k][1] > allptminmax[k][1]:
+                            allptminmax[k][1] = tempminmac[k][1]
+                    #Assume for temperatureV2 for now
+                    shape = temp.shape[0]
+                    xallPt = np.linspace(j,j+1/3,shape)
+                    for i in range(3):
+                        meanplotdat[0][0] = np.mean(temp[:,i])
+                        meanplotdat[0][1] = np.std(temp[:,i])/np.sqrt(shape)
+                        meanplotdat[1][0] = np.mean(temp[:,i+3])
+                        meanplotdat[1][1] = np.std(temp[:,i+3])/np.sqrt(shape)
+                        #vline
+                        MeanPlots[1][0].plot([j+(1+2*i)/6,j+(1+2*i)/6],[meanplotdat[0][0]-meanplotdat[0][1],meanplotdat[0][0]+meanplotdat[0][1]],color=colors[i])
+                        MeanPlots[1][1].plot([j+(1+2*i)/6,j+(1+2*i)/6],[meanplotdat[1][0]-meanplotdat[1][1],meanplotdat[1][0]+meanplotdat[1][1]],color=colors[i])
+                        #hline
+                        MeanPlots[1][0].plot([j+i/3,j+(i+1)/3],[meanplotdat[0][0],meanplotdat[0][0]],color=colors[i])
+                        MeanPlots[1][1].plot([j+i/3,j+(i+1)/3],[meanplotdat[1][0],meanplotdat[1][0]],color=colors[i])
+
+                        AllPtPlots[1][0].plot(xallPt+i/3,temp[:,i],color=colors[i])
+                        AllPtPlots[1][1].plot(xallPt+i/3,temp[:,i+3],color=colors[i])
+                AllPtPlots[1][0].set_xlim(0,j)
+                AllPtPlots[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
+                AllPtPlots[1][0].set_title('ColdFinger All Points, '+self.date)
+                AllPtPlots[1][1].set_xlim(0,j)
+                AllPtPlots[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
+                AllPtPlots[1][1].set_title('MainCell All Points, '+self.date)
+                AllPtPlots[0][0].savefig(self.work_folder+'\\ColdTAll.png')
+                AllPtPlots[0][1].savefig(self.work_folder+'\\HotTAll.png')
+                AllPtPlots[0][0].clear()
+                AllPtPlots[0][1].clear()
+
+                MeanPlots[1][0].set_xlim(0,j)
+                MeanPlots[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
+                MeanPlots[1][0].set_title('ColdFinger Means, '+self.date)
+                MeanPlots[1][1].set_xlim(0,j)
+                MeanPlots[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
+                MeanPlots[1][1].set_title('MainCell Means, '+self.date)
+                MeanPlots[0][0].savefig(self.work_folder+'\\ColdTAvg.png')
+                MeanPlots[0][1].savefig(self.work_folder+'\\HotTAvg.png')
+                MeanPlots[0][0].clear()
+                MeanPlots[0][1].clear()
+                self.plots.update_working_dir(self.folderpath)
+                self.plots.update_all_imgs()
+                self.window.title(self.date)
+                # except:
+                #     print('Not all valid data!\n select different folder!')
+                
+
+
+
+    def open_file_dialog(self):
+        temporary = filedialog.askdirectory(
+            initialdir="/",  # Optional: set initial directory
+            title="Select a folder",
+            # filetypes=(("Text files", "*.txt"), ("All files", "*.*")) # Optional: filter file types
+        )
+        self.folderpath = temporary
+        if self.folderpath!='':
+            self.checkforanalysis()
+
+first = True
+scale = 1.2
 if __name__ == '__main__':
-    scale = 1.2
-    plot_w= int(500*scale)
-    plot_h= int(300*scale)
     root = tk.Tk()
     if first:
         first = False
-        folder = analysis()
-        plot_sets= [plots(scan='456',plot_w=plot_w,plot_h=plot_h),plots(scan='894',plot_w=plot_w,plot_h=plot_h)]
-        # plots456 = plots(scan='456')
-        # plots894 = plots(scan='894')
-        root.title("++FittingCalculations")
+        analysis = TempAnalysis(window=root,img_scale=scale)
+        root.title("Temperature Checking")
 
-        notebooks= [ttk.Notebook(root),ttk.Notebook(root),ttk.Notebook(root),ttk.Notebook(root)]
-        #notebooks = [456T,456Beat,894T,894Beat]
-        notebooks[0].grid(column=0,row=0,columnspan=3, sticky="nsew")
-        notebooks[1].grid(column=4,row=0,columnspan=3, sticky="nsew")
-        notebooks[2].grid(column=0,row=4,columnspan=3, sticky="nsew")
-        notebooks[3].grid(column=4,row=4,columnspan=3, sticky="nsew")
-
-
-        entry_lbl = [ttk.Label(root, text='456  Background Linear Fit Ranges'), ttk.Label(root, text='456 Beatnote Range')]
-        entry_lbl.append(ttk.Label(root, text='Upper-Baseline'))
-        entry_lbl.append(ttk.Label(root, text='Lower-Baseline'))
-        entry_lbl.append(ttk.Label(root, text='894 Background Linear Fit Rngs'))
-        entry_lbl.append(ttk.Label(root, text='894 Beatnote Range'))
-        entry_lbl.append(ttk.Label(root, text='Upper-Baseline'))
-        entry_lbl.append(ttk.Label(root, text='Lower-Baseline'))
-        entry_lbl.append(ttk.Label(root, text='Left Group'))
-        entry_lbl.append(ttk.Label(root, text='Right Group'))
-        entry_lbl.append(ttk.Label(root, text='456 fit etalon effect'))
-        entry_lbl.append(ttk.Label(root, text='894 etalon etalon effect'))
-
-        entry_lbl[0].grid(column=1,row=1,columnspan=2, sticky="nsew")
-        entry_lbl[1].grid(column=5,row=1,columnspan=2, sticky="nsew")
-        entry_lbl[2].grid(column=0,row=2)
-        entry_lbl[3].grid(column=0,row=3)
-        entry_lbl[4].grid(column=1,row=5,columnspan=2, sticky="nsew")
-        entry_lbl[5].grid(column=5,row=5,columnspan=2, sticky="nsew")
-        entry_lbl[6].grid(column=0,row=6)
-        entry_lbl[7].grid(column=0,row=7)
-        entry_lbl[8].grid(column=0,row=9)
-        entry_lbl[9].grid(column=0,row=10)
-        entry_lbl[10].grid(column=1,row=8,columnspan=2)
-        entry_lbl[11].grid(column=5,row=8,columnspan=2)
-
-
-        ent_wdth = 20
-        entries = [[[ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)],[ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)]]]
-        entries.append([[tk.StringVar(value="0"), tk.StringVar(value="0"), tk.StringVar(value="0"), tk.StringVar(value="0")],[tk.StringVar(value="0"), tk.StringVar(value="0")]])
-        entries[0].append([ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)])
-        entries[1].append([tk.StringVar(value="0"), tk.StringVar(value="0"), tk.StringVar(value="0"), tk.StringVar(value="0")])
-        entries[0].append([ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)])
-        entries[1].append([tk.StringVar(value="0"), tk.StringVar(value="0")])
-        for i in range(len(entries[0])):
-            for j in range(len(entries[0][i])):
-                entries[0][i][j].configure(textvariable=entries[1][i][j])
-
-        
-        temp = 0
-        for j in range(4):
-            if j>1:
-                temp=1
-            else:
-                entries[0][1][j].grid(column=5+j,row=2+temp)
-                entries[0][3][j].grid(column=5+j,row=6+temp)
-            entries[0][0][j].grid(column=j%2+1,row=2+temp)
-            entries[0][2][j].grid(column=j%2+1,row=6+temp)
-
-        #entries[0 & 2] = entries for background linear fitting of scaled T for 456 and 894 respectively
-        #entries [1 & 3] = entries for beatnote range to include in the fitting
-
-        labels = [[],[],[],[]]
-        #labels = [labels456T,labels456Beat, labels894T,labels894Beat]
-        
-        for i, lab in enumerate(plot_sets[0].plotslabs):
-            #Makes labels and includes plots in them
-            for j in [0,2]:
-                temp = ((j+1)%3+1)%2
-                k=0
-                if not i < switchlabelsat:
-                    k=1
-                labels[j+k].append(tk.Label(notebooks[j+k],image=plot_sets[temp].plots[i]))
-                labels[j+k][-1].image = plot_sets[temp].plots[i]
-                labels[j+k][-1].pack()
-                notebooks[j+k].add(labels[j+k][-1],text=plot_sets[temp].scan+' '+lab)
-
-
-        beat_mins = [[ttk.Entry(root,width=ent_wdth), ttk.Entry(root,width=ent_wdth)]]
-        beat_mins.append([tk.StringVar(value="0"), tk.StringVar(value="0")])
-        beat_mins[0][0].grid(column=5,row=3)
-        beat_mins[0][1].grid(column=5,row=7)
-        beat_mins[0][0].configure(textvariable=beat_mins[1][0])
-        beat_mins[0][1].configure(textvariable=beat_mins[1][1])
-
-        entry = ttk.Entry(root,width=ent_wdth)
-
-        etalon_entries = [[[ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth)],[ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth),ttk.Entry(root,width=ent_wdth)]]]
-        etalon_entries.append([[tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0")],[tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0"),tk.StringVar(value="0")]])
-        for i in range(2):
-            #i=0 is 456
-            for j in range(4):
-                etalon_entries[0][i][j].configure(textvariable=etalon_entries[1][i][j])
-                # print(etalon_entries[1][i][j].get())
-                # print(1+j%2+4*i,(j>1)+8)
-                etalon_entries[0][i][j].grid(column=1+j%2+4*i,row=(j>1)+9)
-
-        open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1],etalon_entries[1]))
-        open_button.grid(column=3,row=0)
-
-        open_button1 = ttk.Button(root, text="Calculate 456 baseline ratio", command= lambda: recalculate456T(folder,labels,entries,plot_sets[0]))
-        open_button1.grid(column=2,row=1)
+        open_button = ttk.Button(root, text="Data Folder", command= analysis.open_file_dialog)
+        open_button.grid(column=0,row=1)
         
         open_button5 = ttk.Button(root, text="Close", command= exit)
-        open_button5.grid(column=3,row=10)
+        open_button5.grid(column=1,row=1)
         
-        workingdir_txt = tk.StringVar()
-        workingdir_txt.set('hello')
-        workingdir = ttk.Label(root, textvariable=workingdir_txt)
-        workingdir.grid(column=3, row=11,columnspan=3, sticky="nsew")
-    print(folder.folderpath)
+        # workingdir_txt = tk.StringVar()
+        # workingdir_txt.set('hello')
+        # workingdir = ttk.Label(root, textvariable=workingdir_txt)
+        # workingdir.grid(column=3, row=11,columnspan=3, sticky="nsew")
     root.mainloop()
 	
