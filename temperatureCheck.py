@@ -11,6 +11,9 @@ from numpy import pi as pi
 from PIL import Image, ImageTk
 
 Day_folder = 'test'
+
+def numerisize_date(contents):
+    #Input list 
 class plots:
     def __init__(self,window,default_path = r".\Picture_template.png", plot_w = 500, plot_h = 300):
         default_img = Image.open(default_path)
@@ -128,12 +131,12 @@ class TempAnalysis:
 
                 allptminmax = [[1000,-1000],[1000,-1000]]
                 tempminmac = [[0,0],[0,0]]
-                print(contents)
+                # print(contents)
                 temp = len(contents)
                 for num in range(temp):
                     if ('.tsv' in contents[temp-num-1]) or ('xlsx' in contents[temp-num-1]):
                         contents.pop(temp-num-1)
-                print(contents)
+                # print(contents)
                 for j,run in enumerate(contents):
                     temp=np.loadtxt(self.folderpath+'\\'+run+'\\TemperatureV2.csv',delimiter=',')
                     tempminmac[0][0] = np.min(temp[:,:3])
