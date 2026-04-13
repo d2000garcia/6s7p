@@ -13,7 +13,35 @@ from PIL import Image, ImageTk
 Day_folder = 'test'
 
 def numerisize_date(contents):
-    #Input list 
+    #Input list for dates
+    temp = []
+    for meas in contents:
+        time =0
+        if 'PM' or 'AM' in meas:
+            dat = meas.split('+')[1].split('-')
+            if 'PM' in meas:
+                time = 12
+                time+= float(dat[2].split('PM')[0])/3600
+            else:
+                time+= float(dat[2].split('AM')[0])/3600
+            time += float(dat[0])
+            time += float(dat[1])/60
+        else:
+            time = float(meas.split('+')[1])
+        temp.append(time)
+    return temp
+
+
+def vapor_pres(T):
+    #T in Celsius
+    if T < 28.5:
+        T =T+273.15
+        Pres = 2.881+4.711-3999/T
+    else:
+        T =T+273.15
+        Pres = 2.881+4.165-3830/T
+    return Pres
+
 class plots:
     def __init__(self,window,default_path = r".\Picture_template.png", plot_w = 500, plot_h = 300):
         default_img = Image.open(default_path)
@@ -123,11 +151,23 @@ class TempAnalysis:
                 MeanPlots[1][1] = MeanPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
                 meanplotdat = [[0,0],[0,0]]
 
+                MeanPlotsTimeScale = [[0,0],[0,0]]
+                MeanPlotsTimeScale[0][0] = plt.figure()
+                MeanPlotsTimeScale[0][1] = plt.figure()
+                MeanPlotsTimeScale[1][0] = MeanPlots[0][0].add_axes([0.1,0.1,0.8,0.8])
+                MeanPlotsTimeScale[1][1] = MeanPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
+
                 AllPtPlots = [[0,0],[0,0]]
                 AllPtPlots[0][0] = plt.figure()
                 AllPtPlots[0][1] = plt.figure()
                 AllPtPlots[1][0] = AllPtPlots[0][0].add_axes([0.1,0.1,0.8,0.8])
                 AllPtPlots[1][1] = AllPtPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
+
+                vap_axis = [0,0,0]
+                vap_axis[0] = AllPtPlots[1][0].twinx()
+                vap_axis[1] = MeanPlots[1][0].twinx()
+                vap_axis[2] = MeanPlotsTimeScale[1][0].twinx()
+
 
                 allptminmax = [[1000,-1000],[1000,-1000]]
                 tempminmac = [[0,0],[0,0]]
@@ -137,6 +177,7 @@ class TempAnalysis:
                     if ('.tsv' in contents[temp-num-1]) or ('xlsx' in contents[temp-num-1]):
                         contents.pop(temp-num-1)
                 # print(contents)
+                times = numerisize_date(contents)
                 for j,run in enumerate(contents):
                     temp=np.loadtxt(self.folderpath+'\\'+run+'\\TemperatureV2.csv',delimiter=',')
                     tempminmac[0][0] = np.min(temp[:,:3])
@@ -162,6 +203,14 @@ class TempAnalysis:
                         #hline
                         MeanPlots[1][0].plot([j+i/3,j+(i+1)/3],[meanplotdat[0][0],meanplotdat[0][0]],color=colors[i])
                         MeanPlots[1][1].plot([j+i/3,j+(i+1)/3],[meanplotdat[1][0],meanplotdat[1][0]],color=colors[i])
+                        
+                        #Time correlated plot
+                        #vline
+                        MeanPlotsTimeScale[1][0].plot([times[j]-4/60,times[j]-4/60],[meanplotdat[0][0]-meanplotdat[0][1],meanplotdat[0][0]+meanplotdat[0][1]],color=colors[i])
+                        MeanPlotsTimeScale[1][1].plot([times[j]-4/60,times[j]-4/60],[meanplotdat[1][0]-meanplotdat[1][1],meanplotdat[1][0]+meanplotdat[1][1]],color=colors[i])
+                        #hline
+                        MeanPlotsTimeScale[1][0].plot([times[j]-8/60,times[j]],[meanplotdat[0][0],meanplotdat[0][0]],color=colors[i])
+                        MeanPlotsTimeScale[1][1].plot([times[j]-8/60,times[j]],[meanplotdat[1][0],meanplotdat[1][0]],color=colors[i])
 
                         AllPtPlots[1][0].plot(xallPt+i/3,temp[:,i],color=colors[i])
                         AllPtPlots[1][1].plot(xallPt+i/3,temp[:,i+3],color=colors[i])
