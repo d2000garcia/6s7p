@@ -51,7 +51,7 @@ class plots:
         self.plot_w = plot_w
         self.plot_h = plot_h
         #labels to ref plot indices
-        self.plotslabs=['TAvg','TAll']
+        self.plotslabs=['TAvg','TAll','Time']
         self.type=['Cold','Hot']
         self.day_fold = ''
         self.window_manager={}
@@ -235,6 +235,18 @@ class TempAnalysis:
                 MeanPlots[0][1].savefig(self.work_folder+'\\HotTAvg.png')
                 MeanPlots[0][0].clear()
                 MeanPlots[0][1].clear()
+
+                MeanPlotsTimeScale[1][0].set_xlim(0,j)
+                MeanPlotsTimeScale[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
+                MeanPlotsTimeScale[1][0].set_title('ColdFinger Means, '+self.date)
+                MeanPlotsTimeScale[1][1].set_xlim(0,j)
+                MeanPlotsTimeScale[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
+                MeanPlotsTimeScale[1][1].set_title('MainCell Means, '+self.date)
+                MeanPlotsTimeScale[0][0].savefig(self.work_folder+'\\ColdTime.png')
+                MeanPlotsTimeScale[0][1].savefig(self.work_folder+'\\HotTime.png')
+                MeanPlotsTimeScale[0][0].clear()
+                MeanPlotsTimeScale[0][1].clear()
+
                 self.plots.update_working_dir(self.folderpath)
                 self.plots.update_all_imgs()
                 self.window.title(self.date)
