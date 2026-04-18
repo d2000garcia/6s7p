@@ -941,7 +941,7 @@ class data:
                 ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
             if self.scan == '456':
                 params['a'].set(value=1)
-                params['gamma'].set(vary=True)
+                # params['gamma'].set(vary=False)
                 params['base'].set(vary=True)
                 fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
@@ -949,7 +949,7 @@ class data:
                 mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
                 result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
             else:
-                params['gamma'].set(vary=True)
+                # params['gamma'].set(vary=True)
                 params['base'].set(vary=True)
                 fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base

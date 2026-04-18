@@ -24,7 +24,7 @@ def numerisize_date(contents):
                 time+= float(dat[2].split('PM')[0])/3600
             else:
                 time+= float(dat[2].split('AM')[0])/3600
-            time += float(dat[0])
+            time += float(dat[0])%12
             time += float(dat[1])/60
         else:
             time = float(meas.split('+')[1])
@@ -147,20 +147,20 @@ class TempAnalysis:
                 MeanPlots = [[0,0],[0,0]]
                 MeanPlots[0][0] = plt.figure()
                 MeanPlots[0][1] = plt.figure()
-                MeanPlots[1][0] = MeanPlots[0][0].add_axes([0.1,0.1,0.8,0.8])
+                MeanPlots[1][0] = MeanPlots[0][0].add_axes([0.1,0.1,0.75,0.8])
                 MeanPlots[1][1] = MeanPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
                 meanplotdat = [[0,0],[0,0]]
 
                 MeanPlotsTimeScale = [[0,0],[0,0]]
                 MeanPlotsTimeScale[0][0] = plt.figure()
                 MeanPlotsTimeScale[0][1] = plt.figure()
-                MeanPlotsTimeScale[1][0] = MeanPlots[0][0].add_axes([0.1,0.1,0.8,0.8])
-                MeanPlotsTimeScale[1][1] = MeanPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
+                MeanPlotsTimeScale[1][0] = MeanPlotsTimeScale[0][0].add_axes([0.1,0.1,0.75,0.8])
+                MeanPlotsTimeScale[1][1] = MeanPlotsTimeScale[0][1].add_axes([0.1,0.1,0.8,0.8])
 
                 AllPtPlots = [[0,0],[0,0]]
                 AllPtPlots[0][0] = plt.figure()
                 AllPtPlots[0][1] = plt.figure()
-                AllPtPlots[1][0] = AllPtPlots[0][0].add_axes([0.1,0.1,0.8,0.8])
+                AllPtPlots[1][0] = AllPtPlots[0][0].add_axes([0.1,0.1,0.75,0.8])
                 AllPtPlots[1][1] = AllPtPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
 
                 vap_axis = [0,0,0]
@@ -168,7 +168,15 @@ class TempAnalysis:
                 vap_axis[1] = MeanPlots[1][0].twinx()
                 vap_axis[2] = MeanPlotsTimeScale[1][0].twinx()
 
-
+                for i in range(2):
+                    MeanPlots[1][i].set_xlabel('Measurment number')
+                    MeanPlots[1][i].set_ylabel('Temperature [C]')
+                    AllPtPlots[1][i].set_xlabel('Measurment number')
+                    AllPtPlots[1][i].set_ylabel('Temperature [C]')
+                    MeanPlotsTimeScale[1][i].set_xlabel('Time of Day')
+                    MeanPlotsTimeScale[1][i].set_ylabel('Temperature [C]')
+                    vap_axis[i].set_ylabel(r'log($P_v$) [log(Torr)]')
+                vap_axis[2].set_ylabel(r'log($P_v$) [log(Torr)]')
                 allptminmax = [[1000,-1000],[1000,-1000]]
                 tempminmac = [[0,0],[0,0]]
                 # print(contents)
@@ -216,6 +224,7 @@ class TempAnalysis:
                         AllPtPlots[1][1].plot(xallPt+i/3,temp[:,i+3],color=colors[i])
                 AllPtPlots[1][0].set_xlim(0,j)
                 AllPtPlots[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
+                vap_axis[0].set_ylim(vapor_pres(allptminmax[0][0]),vapor_pres(allptminmax[0][1]))
                 AllPtPlots[1][0].set_title('ColdFinger All Points, '+self.date)
                 AllPtPlots[1][1].set_xlim(0,j)
                 AllPtPlots[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
@@ -225,8 +234,9 @@ class TempAnalysis:
                 AllPtPlots[0][0].clear()
                 AllPtPlots[0][1].clear()
 
-                MeanPlots[1][0].set_xlim(0,j)
+                MeanPlots[1][0].set_xlim(0,j+1)
                 MeanPlots[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
+                vap_axis[1].set_ylim(vapor_pres(allptminmax[0][0]),vapor_pres(allptminmax[0][1]))
                 MeanPlots[1][0].set_title('ColdFinger Means, '+self.date)
                 MeanPlots[1][1].set_xlim(0,j)
                 MeanPlots[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
@@ -236,12 +246,13 @@ class TempAnalysis:
                 MeanPlots[0][0].clear()
                 MeanPlots[0][1].clear()
 
-                MeanPlotsTimeScale[1][0].set_xlim(0,j)
+                MeanPlotsTimeScale[1][0].set_xlim(np.floor(min(times)),np.ceil(max(times)))
                 MeanPlotsTimeScale[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
-                MeanPlotsTimeScale[1][0].set_title('ColdFinger Means, '+self.date)
-                MeanPlotsTimeScale[1][1].set_xlim(0,j)
+                vap_axis[2].set_ylim(vapor_pres(allptminmax[0][0]),vapor_pres(allptminmax[0][1]))
+                MeanPlotsTimeScale[1][0].set_title('ColdFinger Means vs time, '+self.date)
+                MeanPlotsTimeScale[1][1].set_xlim(np.floor(min(times)),np.ceil(max(times)))
                 MeanPlotsTimeScale[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
-                MeanPlotsTimeScale[1][1].set_title('MainCell Means, '+self.date)
+                MeanPlotsTimeScale[1][1].set_title('MainCell Means vs time, '+self.date)
                 MeanPlotsTimeScale[0][0].savefig(self.work_folder+'\\ColdTime.png')
                 MeanPlotsTimeScale[0][1].savefig(self.work_folder+'\\HotTime.png')
                 MeanPlotsTimeScale[0][0].clear()
@@ -252,7 +263,7 @@ class TempAnalysis:
                 self.window.title(self.date)
                 # except:
                 #     print('Not all valid data!\n select different folder!')
-                
+                plt.close('all')
 
 
 
@@ -267,7 +278,7 @@ class TempAnalysis:
             self.checkforanalysis()
 
 first = True
-scale = 1.2
+scale = 1.6
 if __name__ == '__main__':
     root = tk.Tk()
     if first:
