@@ -362,8 +362,10 @@ class data:
 
             if F == 0:
                 if scan == '456':
-                    if os.path.exists(self.par_folder+r'\PwrWigs456.csv'):
-                        pwrs = np.loadtxt(self.par_folder+r'\PwrWigs456.csv')
+                    print('transition')
+                    if os.path.exists(self.par_folder+r'\PwrWings456.csv'):
+                        
+                        pwrs = np.loadtxt(self.par_folder+r'\PwrWings456.csv')
                         if pwrs[1]/pwrs[0] >0.04:
                             self.set_transition(F1=4)
                             self.F1 = 4
