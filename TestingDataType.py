@@ -413,6 +413,13 @@ class data:
                 self.etalon_ranges = [[temp[0],temp[1]],[temp[2],temp[3]]]
             else:
                 self.etalon_ranges = [[0,0],[0,0]]
+            if os.path.exists(self.folder+r'\entries\beat_peak_min.csv'):
+                file = open(self.folder+r'\entries\beat_peak_min.csv','r')
+                temp = file.readline().strip()
+                file.close()
+                self.beat_height = float(temp)
+            else:
+                self.beat_height = 0
         
         self.use_cur_bot = False
         
@@ -937,7 +944,7 @@ class data:
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
                 ('T', self.hotbody, True, low, high, None, None),
-                ('gamma', Gamma*1.2, False, Gamma, Gamma*3, None, None),
+                ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
                 ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
             if self.scan == '456':
                 params['a'].set(value=1)
@@ -950,6 +957,7 @@ class data:
                 result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
             else:
                 # params['gamma'].set(vary=True)
+                params['gamma'].set(value=Gamma)
                 params['base'].set(vary=True)
                 fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
