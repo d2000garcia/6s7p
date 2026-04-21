@@ -142,8 +142,13 @@ def get_frequency_steps(peaks, det_freq):
                 else:
                     bad_peak_type[0] = 1
                     freq_diff[-1] = 0.250
-        for h in double_bad:
-            if dX[h[0]-1] < track[2][1]*1.15:
+        if len(double_bad) != 0:
+            w0 = 0.250
+            w1 = 2*det_freq
+            dw = w0-w1
+            freq_fix = [[dw,w0,w0],[dw,w0+w1,dw],[w0,dw,w0],[w0,w0,dw]]
+            for h in double_bad:
+                #4 opitions
                 #then its the left peak because correct distance from last peak pair
     else:
         bad = []
