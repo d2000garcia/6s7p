@@ -893,6 +893,8 @@ class data:
 
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
+                peaks[1] = int((properties['left_ips'][1]+properties['right_ips'][1])/2)
                 p0=0.2 #scaledT power at top
                 Gamma = 1/34.791/2/(2*pi) #half of lifetime in GHz from Stek
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
@@ -941,7 +943,7 @@ class data:
             params = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
             params.add_many(
-                ('a', 5, True, 0, None, None, None),
+                ('a', 6, True, 0, None, None, None),
                 ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
