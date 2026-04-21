@@ -69,6 +69,7 @@ def get_frequency_steps(peaks, det_freq):
     og_set = np.arange(0,len(peaks),1).tolist()
     bad = list(set(og_set).difference(set(good)))
     bad.sort()
+    double_bad = []
     if len(bad) !=0:
         bad_peak_type = []
         for i in range(len(bad)):
@@ -79,19 +80,38 @@ def get_frequency_steps(peaks, det_freq):
             elif bad[i] == len(peaks)-1:
                 bad_peak_type.append(2)
             else:
-                if dX[bad[i]-1] < dX[bad[i]]:
-                    #Then peak we have is correct distance from the previous peak so left peak
-                    bad_peak_type.append(0)
-                    freq_diff[bad[i]] =0.25
+                if bad[i] != bad[-1]:
+                    if bad[i+1] != bad[i]+1 and bad[i-1] !=bad[i]-1:
+                        if dX[bad[i]-1] < dX[bad[i]]:
+                            #Then peak we have is correct distance from the previous peak so left peak
+                            bad_peak_type.append(0)
+                            freq_diff[bad[i]] =0.25
+                        else:
+                            #Then peak is correct distance from next peak
+                            if bad[i] != bad[i-1]+1:
+                                bad_peak_type.append(1)
+                                if bad[i]-1 in good_rights:
+                                    good_rights.remove(bad[i]-1)
+                                good_rights.append(bad[i])
+                                freq_diff[bad[i]-1] = 0.25
+                                freq_diff[bad[i]] = 0.250-2*det_freq
+                    elif bad[i+1] == bad[i]+1:
+                        double_bad.append((bad[i],bad[i+1]))
                 else:
-                    #Then peak is correct distance from next peak
-                    if bad[i] != bad[i-1]+1:
-                        bad_peak_type.append(1)
-                        if bad[i]-1 in good_rights:
-                            good_rights.remove(bad[i]-1)
-                        good_rights.append(bad[i])
-                        freq_diff[bad[i]-1] = 0.25
-                        freq_diff[bad[i]] = 0.250-2*det_freq
+                    if dX[bad[i]-1] < dX[bad[i]]:
+                        #Then peak we have is correct distance from the previous peak so left peak
+                        bad_peak_type.append(0)
+                        freq_diff[bad[i]] =0.25
+                    else:
+                        #Then peak is correct distance from next peak
+                        if bad[i] != bad[i-1]+1:
+                            bad_peak_type.append(1)
+                            if bad[i]-1 in good_rights:
+                                good_rights.remove(bad[i]-1)
+                            good_rights.append(bad[i])
+                            freq_diff[bad[i]-1] = 0.25
+                            freq_diff[bad[i]] = 0.250-2*det_freq
+        
         if (bad[0] == 0) or (bad[-1] == len(peaks)-1):
             track=[[0,0],[0,0],[0,0]]
             #tracking large gap averages on left and right ends of beatnote data so right peak
@@ -122,6 +142,9 @@ def get_frequency_steps(peaks, det_freq):
                 else:
                     bad_peak_type[0] = 1
                     freq_diff[-1] = 0.250
+        for h in double_bad:
+            if dX[h[0]-1] < track[2][1]*1.15:
+                #then its the left peak because correct distance from last peak pair
     else:
         bad = []
         bad_peak_type = []
