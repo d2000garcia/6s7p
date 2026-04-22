@@ -250,11 +250,12 @@ def vapor_pres(T):
     Pres = 7.046-3830/T
     return Pres
 
-temp = np.array([25,25.2,25.4,25.6])
+temp = np.array([26.32,26.33,26.34,26.35])
 x = np.array([1,2,3,4])
 MeanPlots = plt.figure()
 ax1 = MeanPlots.add_axes([0.1,0.1,0.8,0.8])
 ax2 = ax1.twinx()
 ax1.plot(x,temp,'--')
-ax2.plot(x,vapor_pres(temp),'.',color='red')
+# ax2.plot(x,vapor_pres(temp),'.',color='red')
+ax2.set_ylim(vapor_pres(temp[0]),vapor_pres(temp[-1]))
 plt.show()

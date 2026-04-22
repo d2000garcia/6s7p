@@ -82,6 +82,12 @@ class analysis:
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0]/1000)
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000)
+                f = open(self.analysis456.folder+r'\entries\beat_peak_min.csv','w')
+                f.write(str(0))
+                f.close()
+                f = open(self.analysis894.folder+r'\entries\beat_peak_min.csv','w')
+                f.write(str(0))
+                f.close()
             if not os.path.exists(self.folderpath +r'\Analysis\TempMeas.csv'):
                 if os.path.exists(self.folderpath +r'\Temperature.csv'):
                     temps = TestingDataType.simple_dat_get(self.folderpath +r'\Temperature.csv',0)
@@ -209,7 +215,7 @@ class analysis:
 
         
 
-def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,entries2,switchlabelsat=5):
+def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,entries2,beatmins,switchlabelsat=5):
     temporary = filedialog.askdirectory(
         initialdir="/",  # Optional: set initial directory
         title="Select a folder",
@@ -253,8 +259,18 @@ def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,entries2,swit
             temp = np.loadtxt(analysis_dat.analysis894.folder+r'\entries\linfitrngs.csv',dtype=int)
             for i in range(4):
                 entries2[1][i].set(str(temp[i]))
-
-
+        if os.path.exists(analysis_dat.analysis456.folder+r'\entries\beat_peak_min.csv'):
+            file = open(analysis_dat.analysis456.folder+r'\entries\beat_peak_min.csv','r')
+            temp = file.readline().strip()
+            file.close()
+            beat_mins[1][0].set(temp)
+            analysis_dat.analysis456.beat_height = float(temp)
+        if os.path.exists(analysis_dat.analysis894.folder+r'\entries\beat_peak_min.csv'):
+            file = open(analysis_dat.analysis894.folder+r'\entries\beat_peak_min.csv','r')
+            temp = file.readline().strip()
+            file.close()
+            beat_mins[1][1].set(temp)
+            analysis_dat.analysis894.beat_height = float(temp)
 
 def update_path_label(text):
     workingdir_txt.set(value=text)
@@ -346,9 +362,15 @@ def set_beat_peak_min(analysis_dat, scan, vals):
     if scan == '456':
         analysis_dat.analysis456.beat_height = float(vals[1][0].get())
         analysis_dat.analysis456.reprocess_beatnote()
+        f = open(analysis_dat.analysis456.folder+r'\entries\beat_peak_min.csv','w')
+        f.write(vals[1][0].get())
+        f.close()
     else:
         analysis_dat.analysis894.beat_height = float(vals[1][1].get())
         analysis_dat.analysis894.reprocess_beatnote()
+        f = open(analysis_dat.analysis894.folder+r'\entries\beat_peak_min.csv', 'w')
+        f.write(vals[1][1].get())
+        f.close()
 
 def use_cur_baseline(analysis_dat):
     # analysis_dat.analysis894.back_rngs[0][i] = int(entries[1][2][i].get())
@@ -369,7 +391,10 @@ first = True
 template_image = r".\Picture_template.png"
 switchlabelsat=5
 if __name__ == '__main__':
-    scale = 1.2
+    if os.getlogin() == 'garci868':
+        scale = 1.2
+    else:
+        scale = 1.7
     plot_w= int(500*scale)
     plot_h= int(300*scale)
     root = tk.Tk()
@@ -475,7 +500,7 @@ if __name__ == '__main__':
                 # print(1+j%2+4*i,(j>1)+8)
                 etalon_entries[0][i][j].grid(column=1+j%2+4*i,row=(j>1)+9)
 
-        open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1],etalon_entries[1]))
+        open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1],etalon_entries[1],beat_mins))
         open_button.grid(column=3,row=0)
 
         open_button1 = ttk.Button(root, text="Calculate 456 baseline ratio", command= lambda: recalculate456T(folder,labels,entries,plot_sets[0]))

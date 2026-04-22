@@ -69,6 +69,7 @@ def get_frequency_steps(peaks, det_freq):
     og_set = np.arange(0,len(peaks),1).tolist()
     bad = list(set(og_set).difference(set(good)))
     bad.sort()
+    double_bad = []
     if len(bad) !=0:
         bad_peak_type = []
         for i in range(len(bad)):
@@ -79,19 +80,38 @@ def get_frequency_steps(peaks, det_freq):
             elif bad[i] == len(peaks)-1:
                 bad_peak_type.append(2)
             else:
-                if dX[bad[i]-1] < dX[bad[i]]:
-                    #Then peak we have is correct distance from the previous peak so left peak
-                    bad_peak_type.append(0)
-                    freq_diff[bad[i]] =0.25
+                if bad[i] != bad[-1]:
+                    if bad[i+1] != bad[i]+1 and bad[i-1] !=bad[i]-1:
+                        if dX[bad[i]-1] < dX[bad[i]]:
+                            #Then peak we have is correct distance from the previous peak so left peak
+                            bad_peak_type.append(0)
+                            freq_diff[bad[i]] =0.25
+                        else:
+                            #Then peak is correct distance from next peak
+                            if bad[i] != bad[i-1]+1:
+                                bad_peak_type.append(1)
+                                if bad[i]-1 in good_rights:
+                                    good_rights.remove(bad[i]-1)
+                                good_rights.append(bad[i])
+                                freq_diff[bad[i]-1] = 0.25
+                                freq_diff[bad[i]] = 0.250-2*det_freq
+                    elif bad[i+1] == bad[i]+1:
+                        double_bad.append((bad[i],bad[i+1]))
                 else:
-                    #Then peak is correct distance from next peak
-                    if bad[i] != bad[i-1]+1:
-                        bad_peak_type.append(1)
-                        if bad[i]-1 in good_rights:
-                            good_rights.remove(bad[i]-1)
-                        good_rights.append(bad[i])
-                        freq_diff[bad[i]-1] = 0.25
-                        freq_diff[bad[i]] = 0.250-2*det_freq
+                    if dX[bad[i]-1] < dX[bad[i]]:
+                        #Then peak we have is correct distance from the previous peak so left peak
+                        bad_peak_type.append(0)
+                        freq_diff[bad[i]] =0.25
+                    else:
+                        #Then peak is correct distance from next peak
+                        if bad[i] != bad[i-1]+1:
+                            bad_peak_type.append(1)
+                            if bad[i]-1 in good_rights:
+                                good_rights.remove(bad[i]-1)
+                            good_rights.append(bad[i])
+                            freq_diff[bad[i]-1] = 0.25
+                            freq_diff[bad[i]] = 0.250-2*det_freq
+        
         if (bad[0] == 0) or (bad[-1] == len(peaks)-1):
             track=[[0,0],[0,0],[0,0]]
             #tracking large gap averages on left and right ends of beatnote data so right peak
@@ -122,6 +142,14 @@ def get_frequency_steps(peaks, det_freq):
                 else:
                     bad_peak_type[0] = 1
                     freq_diff[-1] = 0.250
+        if len(double_bad) != 0:
+            w0 = 0.250
+            w1 = 2*det_freq
+            dw = w0-w1
+            freq_fix = [[dw,w0,w0],[dw,w0+w1,dw],[w0,dw,w0],[w0,w0,dw]]
+            for h in double_bad:
+                #4 opitions
+                #then its the left peak because correct distance from last peak pair
     else:
         bad = []
         bad_peak_type = []
@@ -362,8 +390,10 @@ class data:
 
             if F == 0:
                 if scan == '456':
-                    if os.path.exists(self.par_folder+r'\PwrWigs456.csv'):
-                        pwrs = np.loadtxt(self.par_folder+r'\PwrWigs456.csv')
+                    print('transition')
+                    if os.path.exists(self.par_folder+r'\PwrWings456.csv'):
+                        
+                        pwrs = np.loadtxt(self.par_folder+r'\PwrWings456.csv')
                         if pwrs[1]/pwrs[0] >0.04:
                             self.set_transition(F1=4)
                             self.F1 = 4
@@ -413,6 +443,13 @@ class data:
                 self.etalon_ranges = [[temp[0],temp[1]],[temp[2],temp[3]]]
             else:
                 self.etalon_ranges = [[0,0],[0,0]]
+            if os.path.exists(self.folder+r'\entries\beat_peak_min.csv'):
+                file = open(self.folder+r'\entries\beat_peak_min.csv','r')
+                temp = file.readline().strip()
+                file.close()
+                self.beat_height = float(temp)
+            else:
+                self.beat_height = 0
         
         self.use_cur_bot = False
         
@@ -884,6 +921,8 @@ class data:
 
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
+                peaks[1] = int((properties['left_ips'][1]+properties['right_ips'][1])/2)
                 p0=0.2 #scaledT power at top
                 Gamma = 1/34.791/2/(2*pi) #half of lifetime in GHz from Stek
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
@@ -932,16 +971,16 @@ class data:
             params = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
             params.add_many(
-                ('a', 5, True, 0, None, None, None),
+                ('a', 6, True, 0, None, None, None),
                 ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
                 ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
                 ('T', self.hotbody, True, low, high, None, None),
-                ('gamma', Gamma*1.2, False, Gamma, Gamma*3, None, None),
+                ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
                 ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
             if self.scan == '456':
                 params['a'].set(value=1)
-                params['gamma'].set(vary=True)
+                # params['gamma'].set(vary=False)
                 params['base'].set(vary=True)
                 fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
@@ -949,7 +988,8 @@ class data:
                 mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
                 result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
             else:
-                params['gamma'].set(vary=True)
+                # params['gamma'].set(vary=True)
+                params['gamma'].set(value=Gamma)
                 params['base'].set(vary=True)
                 fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
