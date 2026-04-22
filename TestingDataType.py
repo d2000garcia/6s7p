@@ -55,17 +55,20 @@ def get_frequency_steps(peaks, det_freq):
     good_rights=[]
     freq = [0]
     freq_diff = []
+    w0 = 0.250
+    w1 = 2*det_freq
+    dw = w0 - w1
     for i, dx in enumerate(dX):
         freq_diff.append(0)
         if dx < avg:
             good.append(i)
-            freq_diff[-1]= 2*det_freq
+            freq_diff[-1]= w1
             good_rights.append(i+1)
             good.append(i+1)
         else:
             if len(freq_diff)>1:
                 if freq_diff[-2] != 0:
-                    freq_diff[-1] = 0.25 - 2*det_freq
+                    freq_diff[-1] = dw
     og_set = np.arange(0,len(peaks),1).tolist()
     bad = list(set(og_set).difference(set(good)))
     bad.sort()
@@ -85,7 +88,7 @@ def get_frequency_steps(peaks, det_freq):
                         if dX[bad[i]-1] < dX[bad[i]]:
                             #Then peak we have is correct distance from the previous peak so left peak
                             bad_peak_type.append(0)
-                            freq_diff[bad[i]] =0.25
+                            freq_diff[bad[i]] =w0
                         else:
                             #Then peak is correct distance from next peak
                             if bad[i] != bad[i-1]+1:
@@ -93,15 +96,15 @@ def get_frequency_steps(peaks, det_freq):
                                 if bad[i]-1 in good_rights:
                                     good_rights.remove(bad[i]-1)
                                 good_rights.append(bad[i])
-                                freq_diff[bad[i]-1] = 0.25
-                                freq_diff[bad[i]] = 0.250-2*det_freq
+                                freq_diff[bad[i]-1] = w0
+                                freq_diff[bad[i]] = dw
                     elif bad[i+1] == bad[i]+1:
                         double_bad.append((bad[i],bad[i+1]))
                 else:
                     if dX[bad[i]-1] < dX[bad[i]]:
                         #Then peak we have is correct distance from the previous peak so left peak
                         bad_peak_type.append(0)
-                        freq_diff[bad[i]] =0.25
+                        freq_diff[bad[i]] =w0
                     else:
                         #Then peak is correct distance from next peak
                         if bad[i] != bad[i-1]+1:
@@ -109,8 +112,8 @@ def get_frequency_steps(peaks, det_freq):
                             if bad[i]-1 in good_rights:
                                 good_rights.remove(bad[i]-1)
                             good_rights.append(bad[i])
-                            freq_diff[bad[i]-1] = 0.25
-                            freq_diff[bad[i]] = 0.250-2*det_freq
+                            freq_diff[bad[i]-1] = w0
+                            freq_diff[bad[i]] = dw
         
         if (bad[0] == 0) or (bad[-1] == len(peaks)-1):
             track=[[0,0],[0,0],[0,0]]
@@ -130,26 +133,42 @@ def get_frequency_steps(peaks, det_freq):
                 if dX[0] < track[2][0]*1.15:
                     #then its the right peak because correct distance from next peak pair
                     bad_peak_type[0] = 1
-                    freq_diff[0] = 0.250 - 2*det_freq
+                    freq_diff[0] = dw
                 else:
                     bad_peak_type[0] = 0
-                    freq_diff[0] = 0.250
+                    freq_diff[0] = w0
             if bad[-1] == len(peaks)-1:
                 if dX[-1] < track[2][1]*1.15:
                     #then its the left peak because correct distance from last peak pair
                     bad_peak_type[0] = 0
-                    freq_diff[-1] = 0.250 - 2*det_freq
+                    freq_diff[-1] = dw
                 else:
                     bad_peak_type[0] = 1
-                    freq_diff[-1] = 0.250
+                    freq_diff[-1] = w0
         if len(double_bad) != 0:
-            w0 = 0.250
-            w1 = 2*det_freq
-            dw = w0-w1
             freq_fix = [[dw,w0,w0],[dw,w0+w1,dw],[w0,dw,w0],[w0,w0,dw]]
             for h in double_bad:
                 #4 opitions
-                #then its the left peak because correct distance from last peak pair
+                #[LL,LR,RL,RR] -> [freq_diff[h[0]-1],freq_diff[h[0],freq_diff[h[1]]]
+                if abs(dX[h[0]]-dX[h[1]]) < dX[h[0]] *0.08: #For explanation refer to notes, case 1
+                    freq_diff[h[0]-1] = freq_fix[0][0]
+                    freq_diff[h[0]] = freq_fix[0][1]
+                    freq_diff[h[1]] = freq_fix[0][2]
+                else:
+                    if abs(dX[h[0]-1]-dX[h[0]]) < dX[h[0]-1] *0.08:#Case 4
+                        freq_diff[h[0]-1] = freq_fix[3][0]
+                        freq_diff[h[0]] = freq_fix[3][1]
+                        freq_diff[h[1]] = freq_fix[3][2]
+                    else:
+                        if dX[h[0]] > dX[h[1]]: #case 2
+                            freq_diff[h[0]-1] = freq_fix[1][0]
+                            freq_diff[h[0]] = freq_fix[1][1]
+                            freq_diff[h[1]] = freq_fix[1][2]
+                        else:#case 3
+                            freq_diff[h[0]-1] = freq_fix[2][0]
+                            freq_diff[h[0]] = freq_fix[2][1]
+                            freq_diff[h[1]] = freq_fix[2][2]
+
     else:
         bad = []
         bad_peak_type = []
