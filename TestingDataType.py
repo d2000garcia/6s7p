@@ -128,7 +128,7 @@ def get_frequency_steps(peaks, det_freq):
                     track[1][1]+=1
             track[2][0] = track[0][0]/track[1][0]
             track[2][1] = track[0][1]/track[1][1]
-            print(bad)
+            # print(bad)
             if bad[0] == 0:
                 if dX[0] < track[2][0]*1.15:
                     #then its the right peak because correct distance from next peak pair
