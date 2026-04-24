@@ -128,7 +128,7 @@ def get_frequency_steps(peaks, det_freq):
                     track[1][1]+=1
             track[2][0] = track[0][0]/track[1][0]
             track[2][1] = track[0][1]/track[1][1]
-            print(bad)
+            # print(bad)
             if bad[0] == 0:
                 if dX[0] < track[2][0]*1.15:
                     #then its the right peak because correct distance from next peak pair
@@ -150,12 +150,12 @@ def get_frequency_steps(peaks, det_freq):
             for h in double_bad:
                 #4 opitions
                 #[LL,LR,RL,RR] -> [freq_diff[h[0]-1],freq_diff[h[0],freq_diff[h[1]]]
-                if abs(dX[h[0]]-dX[h[1]]) < dX[h[0]] *0.08: #For explanation refer to notes, case 1
+                if abs(dX[h[0]]-dX[h[1]]) < dX[h[0]] *0.15: #For explanation refer to notes, case 1
                     freq_diff[h[0]-1] = freq_fix[0][0]
                     freq_diff[h[0]] = freq_fix[0][1]
                     freq_diff[h[1]] = freq_fix[0][2]
                 else:
-                    if abs(dX[h[0]-1]-dX[h[0]]) < dX[h[0]-1] *0.08:#Case 4
+                    if abs(dX[h[0]-1]-dX[h[0]]) < dX[h[0]-1] *0.15:#Case 4
                         freq_diff[h[0]-1] = freq_fix[3][0]
                         freq_diff[h[0]] = freq_fix[3][1]
                         freq_diff[h[1]] = freq_fix[3][2]
@@ -331,7 +331,9 @@ class data:
                             self.F1 = 4
                     else:
                         self.set_transition(F1=4)
-
+            else:
+                self.F1 = F
+                self.set_transition(F1=F)
             if scan == '456':
                 folder = par_folder + r'\Analysis\456'
             else:
@@ -432,6 +434,9 @@ class data:
                         #peak 1 is larger
                         self.set_transition(F1=4)
                         self.F1 = 4
+            else:
+                self.F1 = F
+                self.set_transition(F1=F)
 
 
             if os.path.exists(self.folder+r'\fitting\processed\fitting_param.csv'):
@@ -604,7 +609,7 @@ class data:
         #         self.freq.append(self.freq[-1] + 0.250 - self.beatnote_det_f*2)
         # print(self.freq)
         (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f)
-        print(self.freq)
+        # print(self.freq)
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
         beat_fit_param = self.beatfit.domain.tolist()
         beat_fit_param.extend(self.beatfit.window.tolist())
@@ -977,10 +982,10 @@ class data:
                 #this is 456 scan
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
             else:
-                print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
+                # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
 
-            print(self.hotbody)
+            # print(self.hotbody)
             if self.hotbody == 30:
                 low = 20
                 high = None
