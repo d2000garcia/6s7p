@@ -98,7 +98,7 @@ def get_frequency_steps(peaks, det_freq):
                                 good_rights.append(bad[i])
                                 freq_diff[bad[i]-1] = w0
                                 freq_diff[bad[i]] = dw
-                    elif bad[i+1] == bad[i]+1:
+                    elif bad[i+1] == bad[i]+1 and bad[i+1] != len(dX):
                         double_bad.append((bad[i],bad[i+1]))
                 else:
                     if dX[bad[i]-1] < dX[bad[i]]:
@@ -265,6 +265,28 @@ def LinFit(data_bounds, indices, data):
     lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
     fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
     return fitted_param
+
+def LinFit2(data_bounds, indices, data):
+    #b = self.indices[-1]
+    #t = 2(x-a)/(b-a) -1 scales x in [a,b] to [-1,1]
+    #Fit becomes y = alpha1 t + alpha2
+    #alpha1 = k1 *a
+    #alpha2 = k1 *(b+a)/2 + k2
+    #truefit  y = k1 x + k2
+    # scaled_indices = 2*self.indices/b -1
+
+    ###         Note numpy.polynomial.Polynomial.fit offers built in scaling and shifting of data
+    ###                                 more numerically stable
+    new_data = []
+    new_indices = []
+    for bound in data_bounds:
+        new_data.extend(data[bound[0]:bound[1]])
+        new_indices.extend(indices[bound[0]:bound[1]])
+    upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]])
+    lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
+    fitted_param, pcov = opt.curve_fit(lambda x,k2,k,b:k2*x**2 + k*x+b, new_indices,new_data,[0.01,upper/lower,new_data[0]])
+    return fitted_param
+
 
 def cvt_abs_wav_to_diff(abs_wav):
     #assume units of wavnum are 1/cm
@@ -981,6 +1003,7 @@ class data:
                 #fitting slope of background
                 #this is 456 scan
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+                test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
             else:
                 # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
@@ -994,10 +1017,19 @@ class data:
                 high = self.hotbody+2
             params = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
+            # params.add_many(
+            #     ('a', 6, True, 0, None, None, None),
+            #     ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
+            #     ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
+            #     ('mv', guess, True, 0, 4, None, None),
+            #     ('T', self.hotbody, True, low, high, None, None),
+            #     ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
+            #     ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
             params.add_many(
                 ('a', 6, True, 0, None, None, None),
-                ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
-                ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
+                ('p0', test2[2]-baseline, True, 0.7*(test2[2]-baseline), 1.3*(test2[2]-baseline), None, None),
+                ('h1', test2[1], True, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test2[1])*0.2, None, None),
+                ('h2', test2[0], True, test2[0]-abs(test2[0])*0.2, test2[0]+abs(test2[0])*0.2, None, None),
                 ('mv', guess, True, 0, 4, None, None),
                 ('T', self.hotbody, True, low, high, None, None),
                 ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
@@ -1006,10 +1038,15 @@ class data:
                 params['a'].set(value=1)
                 # params['gamma'].set(vary=False)
                 params['base'].set(vary=True)
-                fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                # fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                #                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
+                #                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
+                # mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
+                # result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
+                fun1 = lambda w,a,p0,h1,h2,mv,T,gamma,base: p0*(1+h1*w+h2*w**2)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
-                mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
+                mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma','base'])
                 result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
             else:
                 # params['gamma'].set(vary=True)
@@ -1038,7 +1075,7 @@ class data:
             plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_param[0]) + r', err='+ str(self.alph_err))
             plt.xlabel('Freq [GHz]')
             # plt.show()
-            plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
+            plt.plot(plotting_freq,test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2],'-g')
 
             k3 =self.beatfit(properties["left_ips"])
             k4 = self.beatfit(properties["right_ips"])

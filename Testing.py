@@ -238,24 +238,70 @@
 # # plt.show()
 
 import numpy as np
+from numpy.polynomial import Polynomial as poly
 from matplotlib import pyplot as plt
-def vapor_pres(T):
-    #T in Celsius
-    # if T < 28.5:
-    #     T =T+273.15
-    #     Pres = 2.881+4.711-3999/T
-    # else:
-    #Returns ln(P), from Steck Cs
-    T =T+273.15
-    Pres = 7.046-3830/T
-    return Pres
+from scipy.signal import find_peaks
+from scipy.special import wofz as wofz
+from scipy.integrate import quad
+import scipy as sci
+from scipy import optimize as opt
+from matplotlib import lines as lines
+from numpy import pi as pi
+import os as os
+import lmfit as lm 
 
-temp = np.array([26.32,26.33,26.34,26.35])
-x = np.array([1,2,3,4])
-MeanPlots = plt.figure()
-ax1 = MeanPlots.add_axes([0.1,0.1,0.8,0.8])
-ax2 = ax1.twinx()
-ax1.plot(x,temp,'--')
-# ax2.plot(x,vapor_pres(temp),'.',color='red')
-ax2.set_ylim(vapor_pres(temp[0]),vapor_pres(temp[-1]))
+def LinFit2(data_bounds, indices, data):
+    #b = self.indices[-1]
+    #t = 2(x-a)/(b-a) -1 scales x in [a,b] to [-1,1]
+    #Fit becomes y = alpha1 t + alpha2
+    #alpha1 = k1 *a
+    #alpha2 = k1 *(b+a)/2 + k2
+    #truefit  y = k1 x + k2
+    # scaled_indices = 2*self.indices/b -1
+
+    ###         Note numpy.polynomial.Polynomial.fit offers built in scaling and shifting of data
+    ###                                 more numerically stable
+    new_data = []
+    new_indices = []
+    for bound in data_bounds:
+        new_data.extend(data[bound[0]:bound[1]])
+        new_indices.extend(indices[bound[0]:bound[1]])
+    upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]])
+    lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
+    fitted_param, pcov = opt.curve_fit(lambda x,k2,k,b:k2*x**2 + k*x+b, new_indices,new_data,[0.01,upper/lower,new_data[0]])
+    return fitted_param
+
+def LinFit(data_bounds, indices, data):
+    #b = self.indices[-1]
+    #t = 2(x-a)/(b-a) -1 scales x in [a,b] to [-1,1]
+    #Fit becomes y = alpha1 t + alpha2
+    #alpha1 = k1 *a
+    #alpha2 = k1 *(b+a)/2 + k2
+    #truefit  y = k1 x + k2
+    # scaled_indices = 2*self.indices/b -1
+
+    ###         Note numpy.polynomial.Polynomial.fit offers built in scaling and shifting of data
+    ###                                 more numerically stable
+    new_data = []
+    new_indices = []
+    for bound in data_bounds:
+        new_data.extend(data[bound[0]:bound[1]])
+        new_indices.extend(indices[bound[0]:bound[1]])
+    upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]])
+    lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
+    fitted_param, pcov = opt.curve_fit(lambda x,k,b:k*x+b, new_indices,new_data,[upper/lower,new_data[0]])
+    return fitted_param
+
+folder = r"D:\Diego\git\6s7p\BeatnotePostCombFix\Apr16,2026\Apr16,2026+4-15-07PM\Analysis\456"
+temp = np.loadtxt(folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',') 
+            #Save as domain, window, coef
+beatfit = poly(temp[4:], temp[0:2], temp[2:4])
+indices = np.loadtxt(folder+r'\indices.csv', dtype=int, delimiter=',')
+scaledT = np.loadtxt(folder+r'\fitting\processed\scaledT.csv', delimiter=',')
+test = LinFit([[1000,2500],[5500,8000]], beatfit(indices), scaledT)
+test2 = LinFit2([[1000,2500],[5500,8000]], beatfit(indices), scaledT)
+plotting_freq = beatfit(np.array(indices[1000:8000]))
+plt.plot(plotting_freq,test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2],'-r')
+plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
+plt.scatter(plotting_freq,scaledT[1000:8000])
 plt.show()
