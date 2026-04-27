@@ -152,6 +152,7 @@ class plots:
 
 class ResidAnalysis:
     def __init__(self,window,img_scale=1):
+        self.day_folder = ''
         self.folderpath = ''
         self.folderpath_tkvar = tk.StringVar()
         self.window = window
@@ -167,6 +168,10 @@ class ResidAnalysis:
         self.fit_rng = [0,0]
         self.plotting_freq = [0,0]
         self.functions = [0,0]
+        self.peaks = [0,0]
+        self.properties = [0,0]
+        self.peak_fwhm = [0,0]
+        self.resid_stat = [[0,0,0],[0,0,0]]
 
     def print_path(self):
         print(self.folderpath)
@@ -174,149 +179,22 @@ class ResidAnalysis:
     def checkforanalysis(self):
         months = ['Apr','Mar','Sep','Oct','Nov','Aug']
         found = -1
-        if not self.folderpath == '':
-            if os.path.exists(self.folderpath):
-                if os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\fitting_param.csv') and os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\fitting_param.csv'):
-                    self.read_in_data()
-                    self.set_transition()
-                    self.calculate_residuals()
-
-            # contents = os.listdir(path = self.folderpath)
-            # for i,mon in enumerate(months):
-            #     found = self.folderpath.find(mon) + 1
-            #     if found:
-            #         self.date = self.folderpath[found-1:found+10]
-            # if 'TemperaturePlots' in contents:
-            #     #Then its been run for this day already
-            #     self.plots.update_working_dir(self.folderpath)
-            #     self.plots.update_all_imgs()
-
-            # else:
-            #     self.work_folder = self.folderpath+'\\TemperaturePlots'
-            #     os.mkdir(self.work_folder)
-            #     colors = ['black','dodgerblue','crimson']
-            #     #Need to run temperatures analysis
-            #     # try:
-            #     MeanPlots = [[0,0],[0,0]]
-            #     MeanPlots[0][0] = plt.figure()
-            #     MeanPlots[0][1] = plt.figure()
-            #     MeanPlots[1][0] = MeanPlots[0][0].add_axes([0.1,0.1,0.75,0.8])
-            #     MeanPlots[1][1] = MeanPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
-            #     meanplotdat = [[0,0],[0,0]]
-
-            #     MeanPlotsTimeScale = [[0,0],[0,0]]
-            #     MeanPlotsTimeScale[0][0] = plt.figure()
-            #     MeanPlotsTimeScale[0][1] = plt.figure()
-            #     MeanPlotsTimeScale[1][0] = MeanPlotsTimeScale[0][0].add_axes([0.1,0.1,0.75,0.8])
-            #     MeanPlotsTimeScale[1][1] = MeanPlotsTimeScale[0][1].add_axes([0.1,0.1,0.8,0.8])
-
-            #     AllPtPlots = [[0,0],[0,0]]
-            #     AllPtPlots[0][0] = plt.figure()
-            #     AllPtPlots[0][1] = plt.figure()
-            #     AllPtPlots[1][0] = AllPtPlots[0][0].add_axes([0.1,0.1,0.75,0.8])
-            #     AllPtPlots[1][1] = AllPtPlots[0][1].add_axes([0.1,0.1,0.8,0.8])
-
-            #     vap_axis = [0,0,0]
-            #     vap_axis[0] = AllPtPlots[1][0].twinx()
-            #     vap_axis[1] = MeanPlots[1][0].twinx()
-            #     vap_axis[2] = MeanPlotsTimeScale[1][0].twinx()
-
-            #     for i in range(2):
-            #         MeanPlots[1][i].set_xlabel('Measurment number')
-            #         MeanPlots[1][i].set_ylabel('Temperature [C]')
-            #         AllPtPlots[1][i].set_xlabel('Measurment number')
-            #         AllPtPlots[1][i].set_ylabel('Temperature [C]')
-            #         MeanPlotsTimeScale[1][i].set_xlabel('Time of Day')
-            #         MeanPlotsTimeScale[1][i].set_ylabel('Temperature [C]')
-            #         vap_axis[i].set_ylabel(r'log($P_v$) [log(Torr)]')
-            #     vap_axis[2].set_ylabel(r'log($P_v$) [log(Torr)]')
-            #     allptminmax = [[1000,-1000],[1000,-1000]]
-            #     tempminmac = [[0,0],[0,0]]
-            #     # print(contents)
-            #     temp = len(contents)
-            #     for num in range(temp):
-            #         if ('.tsv' in contents[temp-num-1]) or ('xlsx' in contents[temp-num-1]):
-            #             contents.pop(temp-num-1)
-            #     # print(contents)
-            #     times = numerisize_date(contents)
-            #     for j,run in enumerate(contents):
-            #         temp=np.loadtxt(self.folderpath+'\\'+run+'\\TemperatureV2.csv',delimiter=',')
-            #         tempminmac[0][0] = np.min(temp[:,:3])
-            #         tempminmac[0][1] = np.max(temp[:,:3])
-            #         tempminmac[1][0] = np.min(temp[:,3:])
-            #         tempminmac[1][1] = np.max(temp[:,3:])
-            #         for k in range(2):
-            #             if tempminmac[k][0] < allptminmax[k][0]:
-            #                 allptminmax[k][0] = tempminmac[k][0]
-            #             if tempminmac[k][1] > allptminmax[k][1]:
-            #                 allptminmax[k][1] = tempminmac[k][1]
-            #         #Assume for temperatureV2 for now
-            #         shape = temp.shape[0]
-            #         xallPt = np.linspace(j,j+1/3,shape)
-            #         for i in range(3):
-            #             meanplotdat[0][0] = np.mean(temp[:,i])
-            #             meanplotdat[0][1] = np.std(temp[:,i])/np.sqrt(shape)
-            #             meanplotdat[1][0] = np.mean(temp[:,i+3])
-            #             meanplotdat[1][1] = np.std(temp[:,i+3])/np.sqrt(shape)
-            #             #vline
-            #             MeanPlots[1][0].plot([j+(1+2*i)/6,j+(1+2*i)/6],[meanplotdat[0][0]-meanplotdat[0][1],meanplotdat[0][0]+meanplotdat[0][1]],color=colors[i])
-            #             MeanPlots[1][1].plot([j+(1+2*i)/6,j+(1+2*i)/6],[meanplotdat[1][0]-meanplotdat[1][1],meanplotdat[1][0]+meanplotdat[1][1]],color=colors[i])
-            #             #hline
-            #             MeanPlots[1][0].plot([j+i/3,j+(i+1)/3],[meanplotdat[0][0],meanplotdat[0][0]],color=colors[i])
-            #             MeanPlots[1][1].plot([j+i/3,j+(i+1)/3],[meanplotdat[1][0],meanplotdat[1][0]],color=colors[i])
+        if not self.day_folder == '':
+            if os.path.exists(self.day_folder):
+                contents = os.listdir(path = self.day_folder)
+                self.data = []
+                for content in contents:
+                    self.folderpath = self.day_folder+ '\\' +content
+                    if os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\fitting_param.csv') and os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\fitting_param.csv'):
+                        #its been fit previously
+                        if (not os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\Residuals.csv')) or (not os.path.exists(self.folderpath+r'\Analysis\894\fitting\processed\Residuals.csv')):
+                            self.read_in_data()
+                            self.set_transition()
+                            self.calculate_residuals()
+                        self.get_peaks()
+                        self.RMSE()
+                self.save_stats()    
                         
-            #             #Time correlated plot
-            #             #vline
-            #             MeanPlotsTimeScale[1][0].plot([times[j]-4/60,times[j]-4/60],[meanplotdat[0][0]-meanplotdat[0][1],meanplotdat[0][0]+meanplotdat[0][1]],color=colors[i])
-            #             MeanPlotsTimeScale[1][1].plot([times[j]-4/60,times[j]-4/60],[meanplotdat[1][0]-meanplotdat[1][1],meanplotdat[1][0]+meanplotdat[1][1]],color=colors[i])
-            #             #hline
-            #             MeanPlotsTimeScale[1][0].plot([times[j]-8/60,times[j]],[meanplotdat[0][0],meanplotdat[0][0]],color=colors[i])
-            #             MeanPlotsTimeScale[1][1].plot([times[j]-8/60,times[j]],[meanplotdat[1][0],meanplotdat[1][0]],color=colors[i])
-
-            #             AllPtPlots[1][0].plot(xallPt+i/3,temp[:,i],color=colors[i])
-            #             AllPtPlots[1][1].plot(xallPt+i/3,temp[:,i+3],color=colors[i])
-            #     AllPtPlots[1][0].set_xlim(0,j)
-            #     AllPtPlots[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
-            #     vap_axis[0].set_ylim(vapor_pres(allptminmax[0][0]),vapor_pres(allptminmax[0][1]))
-            #     AllPtPlots[1][0].set_title('ColdFinger All Points, '+self.date)
-            #     AllPtPlots[1][1].set_xlim(0,j)
-            #     AllPtPlots[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
-            #     AllPtPlots[1][1].set_title('MainCell All Points, '+self.date)
-            #     AllPtPlots[0][0].savefig(self.work_folder+'\\ColdTAll.png')
-            #     AllPtPlots[0][1].savefig(self.work_folder+'\\HotTAll.png')
-            #     AllPtPlots[0][0].clear()
-            #     AllPtPlots[0][1].clear()
-
-            #     MeanPlots[1][0].set_xlim(0,j+1)
-            #     MeanPlots[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
-            #     vap_axis[1].set_ylim(vapor_pres(allptminmax[0][0]),vapor_pres(allptminmax[0][1]))
-            #     MeanPlots[1][0].set_title('ColdFinger Means, '+self.date)
-            #     MeanPlots[1][1].set_xlim(0,j)
-            #     MeanPlots[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
-            #     MeanPlots[1][1].set_title('MainCell Means, '+self.date)
-            #     MeanPlots[0][0].savefig(self.work_folder+'\\ColdTAvg.png')
-            #     MeanPlots[0][1].savefig(self.work_folder+'\\HotTAvg.png')
-            #     MeanPlots[0][0].clear()
-            #     MeanPlots[0][1].clear()
-
-            #     MeanPlotsTimeScale[1][0].set_xlim(np.floor(min(times)),np.ceil(max(times)))
-            #     MeanPlotsTimeScale[1][0].set_ylim(allptminmax[0][0],allptminmax[0][1])
-            #     vap_axis[2].set_ylim(vapor_pres(allptminmax[0][0]),vapor_pres(allptminmax[0][1]))
-            #     MeanPlotsTimeScale[1][0].set_title('ColdFinger Means vs time, '+self.date)
-            #     MeanPlotsTimeScale[1][1].set_xlim(np.floor(min(times)),np.ceil(max(times)))
-            #     MeanPlotsTimeScale[1][1].set_ylim(allptminmax[1][0],allptminmax[1][1])
-            #     MeanPlotsTimeScale[1][1].set_title('MainCell Means vs time, '+self.date)
-            #     MeanPlotsTimeScale[0][0].savefig(self.work_folder+'\\ColdTime.png')
-            #     MeanPlotsTimeScale[0][1].savefig(self.work_folder+'\\HotTime.png')
-            #     MeanPlotsTimeScale[0][0].clear()
-            #     MeanPlotsTimeScale[0][1].clear()
-
-            #     self.plots.update_working_dir(self.folderpath)
-            #     self.plots.update_all_imgs()
-            #     self.window.title(self.date)
-            #     # except:
-            #     #     print('Not all valid data!\n select different folder!')
-            #     plt.close('all')
 
     def set_transition(self):
         #Can be used to verify i some fashion if need be of the coefficient
@@ -380,7 +258,7 @@ class ResidAnalysis:
                     hyp_weights2 = [7/8,5/8]
                     hypsplit2 = [0,1.167680]
                     #Lower frequency because father F=4->F=3,4 
-                self.functions[i] = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(voigt(w,hyp_weights2[0],mv,np.sqrt(T+273.15)*k1*abs_freq2[0],gamma)+
+                self.functions[i] = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq2[0])/10**6)*(voigt(w,hyp_weights2[0],mv,np.sqrt(T+273.15)*k1*abs_freq2[0],gamma)+
                                                                                                             voigt(w,hyp_weights2[1],mv+hypsplit2[1],np.sqrt(T+273.15)*k1*abs_freq2[1],gamma))) + base
     def read_in_data(self):
         for i in [0,1]:
@@ -392,15 +270,67 @@ class ResidAnalysis:
             self.fitted_params[i] = np.loadtxt(self.scan_folder[i]+r'\fitting\processed\fitting_param.csv', delimiter=',').tolist()
             self.fit_rng[i] = np.loadtxt(self.scan_folder[i]+r'\entries\beat_rng.csv', dtype=int, delimiter=',').tolist()
             self.plotting_freq[i] = self.beatfit[i](np.array(self.indices[i][self.fit_rng[i][0]:self.fit_rng[i][1]]))
-            if i == 1:
-                np.savetxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\temp1.csv',self.plotting_freq[1])
-            
+            # print(self.fitted_params[i])
+            # if i == 1:
+                # np.savetxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\temp1.csv',self.plotting_freq[1])
+    
     def calculate_residuals(self):
         for i in [0,1]:
-            self.resid[i] = self.functions[i](self.plotting_freq[i],*self.fitted_params[i]) - self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]]
-            plt.scatter(self.plotting_freq[i],self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]])
-            plt.plot(self.plotting_freq[i],self.functions[i](self.plotting_freq[i],*self.fitted_params[i]),'-r')
-            plt.show()
+            fit = self.functions[i](self.plotting_freq[i],*self.fitted_params[i])
+            np.savetxt(self.scan_folder[i]+r'\fitting\processed\Fit.csv', fit, delimiter=',')
+            np.savetxt(self.scan_folder[i]+r'\fitting\processed\plotting_freq.csv', self.plotting_freq[i], delimiter=',')
+            self.resid[i] = fit - self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]]
+            # plt.scatter(self.plotting_freq[i],self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]])
+            # plt.plot(self.plotting_freq[i],self.functions[i](self.plotting_freq[i],*self.fitted_params[i]),'-r')
+            # plt.show()
+            # plt.plot(self.plotting_freq[i],self.resid[i],'-b')
+            # plt.show()
+            # plt.plot(self.plotting_freq[i],self.resid[i],'-b')
+            np.savetxt(self.scan_folder[i]+r'\fitting\processed\Residuals.csv', self.resid[i], delimiter=',')
+
+    def get_peaks(self):
+        for i in [0,1]:
+            self.scan_folder[i] = self.folderpath + '\\Analysis\\' + self.scans[i]
+            self.scaledT[i] = np.loadtxt(self.scan_folder[i]+r'\fitting\processed\scaledT.csv', delimiter=',').tolist()
+            self.fit_rng[i] = np.loadtxt(self.scan_folder[i]+r'\entries\beat_rng.csv', dtype=int, delimiter=',').tolist()
+            self.peaks[i], self.properties[i] = find_peaks(-self.scaledT[i][self.fit_rng[0]:self.fit_rng[1]],width=500,prominence=0.02)
+            if i == 0:
+                self.peak_fwhm[i] = int(self.properties[i]['right_ips'][0]-self.properties[i]['left_ips'][0])
+            elif i == 1:
+                self.peak_fwhm[i] = int(self.properties[i]['right_ips'][1]-self.properties[i]['left_ips'][0])
+            
+    def RMSE(self):
+        #Root mean squared error
+        for i in [0,1]:
+            self.resid[i] = np.loadtxt(self.scan_folder[i]+r'\fitting\processed\Residuals.csv', delimiter=',')
+            temp = self.resid[i]**2
+            if i == 0:
+                around_peak = [self.peaks[i][0]-int(self.peak_fwhm[i]*1.5),self.peaks[i][0]+int(self.peak_fwhm[i]*1.5)]
+                self.resid_stat[i][0] = np.sqrt(np.sum(temp)/(temp.size-8))
+                temp2 = temp[around_peak[0]:around_peak[1]]
+                self.resid_stat[i][1] = np.sqrt(np.sum(temp2)/(temp2.size-8))
+                self.resid_stat[i][2] = max(abs(self.resid[i]))
+            else:
+                around_peak = [(self.peaks[i][0]+self.peaks[i][1])/2-int(self.peak_fwhm[i]*1.5),(self.peaks[i][0]+self.peaks[i][1])/2+int(self.peak_fwhm[i]*1.5)]
+                self.resid_stat[i][0] = np.sqrt(np.sum(temp)/(temp.size-7))
+                temp2 = temp[around_peak[0]:around_peak[1]]
+                self.resid_stat[i][1] = np.sqrt(np.sum(temp2)/(temp2.size-7))
+                self.resid_stat[i][2] = max(abs(self.resid[i]))
+        print(self.resid_stat)
+        date = self.folderpath[self.folderpath.rfind('/')+1:]
+        self.data.append([date])
+        self.data[-1].extend(list(map(str,self.resid_stat[0])))
+        self.data[-1].extend(list(map(str,self.resid_stat[1])))
+    
+    def save_stats(self):
+        file = open(self.day_folder +r'\fit_resid.tsv' )
+        file.write('date \t 456 RMSE \t 456 peak RMSE \t 456 max resid \t 894 RMSE \t 894 peak RMSE \t 894 max resid \n')
+        for line in self.data:
+            for thing in line:
+                file.write(thing + '\t')
+            file.write('\n')
+        file.close()
+
         
     def open_file_dialog(self):
         temporary = filedialog.askdirectory(
@@ -408,9 +338,9 @@ class ResidAnalysis:
             title="Select a folder",
             # filetypes=(("Text files", "*.txt"), ("All files", "*.*")) # Optional: filter file types
         )
-        self.folderpath = temporary
-        if self.folderpath!='':
-            date = self.folderpath[:self.folderpath.rfind('/')]
+        self.day_folder = temporary
+        if self.day_folder!='':
+            date = self.day_folder[self.day_folder.rfind('/')+1:]
             if os.path.exists(date+r'\Fine.txt'):
                 file = open(date+r'\Fine.txt','r')
                 Fine = list(map(int,file.readline().split(',')))

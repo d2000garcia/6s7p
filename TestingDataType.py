@@ -910,18 +910,17 @@ class data:
             else:
                 plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
                 plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
+                # print(self.fitted_param)
 
             k3 =self.beatfit(properties["left_ips"])
             k4 = self.beatfit(properties["right_ips"])
             plt.vlines(x=self.beatfit(peaks), ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "blue")
             plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
+            plt.savefig(self.folder+r'\plots\FittedScan.png')
             # plt.show()
-            # plt.savefig(self.folder+r'\plots\FittedScan.png')
-            plt.show()
             plt.clf()
 
             plt.scatter(plotting_freq,resid)
-            np.savetxt(r'C:\Users\Wolfwalker\Documents\git\6s7p\temp2.csv',plotting_freq)
             # # plt.show()
             plt.title(self.scan+ 'Fitted plot residuals')
             plt.xlabel('Freq [GHz]')
