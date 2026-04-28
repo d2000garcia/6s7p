@@ -430,35 +430,35 @@ class data:
             self.BeatRunAvgN = BeatRunAvgN
             self.par_folder = par_folder
             self.beat_height = 0
-
-            if F == 0:
-                if scan == '456':
-                    print('transition')
-                    if os.path.exists(self.par_folder+r'\PwrWings456.csv'):
-                        
-                        pwrs = np.loadtxt(self.par_folder+r'\PwrWings456.csv')
-                        if pwrs[1]/pwrs[0] >0.04:
+            if not 'Baseline' in self.folder:
+                if F == 0:
+                    if scan == '456':
+                        print('transition')
+                        if os.path.exists(self.par_folder+r'\PwrWings456.csv'):
+                            
+                            pwrs = np.loadtxt(self.par_folder+r'\PwrWings456.csv')
+                            if pwrs[1]/pwrs[0] >0.04:
+                                self.set_transition(F1=4)
+                                self.F1 = 4
+                            else:
+                                self.set_transition(F1=3)
+                                self.F1 = 3
+                        else:
                             self.set_transition(F1=4)
                             self.F1 = 4
-                        else:
+                    else:
+                        peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                        if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
+                            #peak 2 is larger 
                             self.set_transition(F1=3)
                             self.F1 = 3
-                    else:
-                        self.set_transition(F1=4)
-                        self.F1 = 4
+                        else:
+                            #peak 1 is larger
+                            self.set_transition(F1=4)
+                            self.F1 = 4
                 else:
-                    peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
-                    if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
-                        #peak 2 is larger 
-                        self.set_transition(F1=3)
-                        self.F1 = 3
-                    else:
-                        #peak 1 is larger
-                        self.set_transition(F1=4)
-                        self.F1 = 4
-            else:
-                self.F1 = F
-                self.set_transition(F1=F)
+                    self.F1 = F
+                    self.set_transition(F1=F)
 
 
             if os.path.exists(self.folder+r'\fitting\processed\fitting_param.csv'):
@@ -612,7 +612,10 @@ class data:
             # print(poly.fit(self.indices[temp[0][0]-250:temp[0][0]+250],self.scaledT[temp[0][0]-250:temp[0][0]+250],1))
             # np.savetxt(self.par_folder+r'\PwrWings'+self.scan+'.csv',self.scaledT[temp[0][0]-250:temp[0][0]+250])
             for i in os.listdir(self.par_folder[:self.par_folder.rfind('/')]):
-                np.savetxt( self.par_folder[:self.par_folder.rfind('/')] +'/'+ i + '/PwrWings'+self.scan+'.csv', temp, delimiter=',')
+                try:
+                    np.savetxt( self.par_folder[:self.par_folder.rfind('/')] +'/'+ i + '/PwrWings'+self.scan+'.csv', temp, delimiter=',')
+                except:
+                    pass
             
             
     
