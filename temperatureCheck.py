@@ -18,7 +18,10 @@ def numerisize_date(contents):
     for meas in contents:
         time =0
         if 'PM' or 'AM' in meas:
-            dat = meas.split('+')[1].split('-')
+            try:
+                dat = meas.split('+')[1].split('-')
+            except:
+                print(meas)
             if 'PM' in meas:
                 time = 12
                 time+= float(dat[2].split('PM')[0])/3600
@@ -182,7 +185,7 @@ class TempAnalysis:
                 # print(contents)
                 temp = len(contents)
                 for num in range(temp):
-                    if ('.tsv' in contents[temp-num-1]) or ('xlsx' in contents[temp-num-1]):
+                    if ('.tsv' in contents[temp-num-1]) or ('xlsx' in contents[temp-num-1]) or ('txt' in contents[temp-num-1]):
                         contents.pop(temp-num-1)
                 # print(contents)
                 times = numerisize_date(contents)
