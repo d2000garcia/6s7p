@@ -910,6 +910,7 @@ class data:
             # plt.show()
             if self.scan == '456':
                 plt.plot(plotting_freq,test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2],'-g')
+                plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
             else:
                 plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
                 plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
