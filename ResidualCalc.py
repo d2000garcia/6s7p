@@ -185,7 +185,7 @@ class ResidAnalysis:
                 self.data = []
                 for content in contents:
                     self.folderpath = self.day_folder+ '\\' +content
-                    if os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\fitting_param.csv') and os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\fitting_param.csv'):
+                    if os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\fitting_param.csv') and os.path.exists(self.folderpath+r'\Analysis\894\fitting\processed\fitting_param.csv'):
                         #its been fit previously
                         if (not os.path.exists(self.folderpath+r'\Analysis\456\fitting\processed\Residuals.csv')) or (not os.path.exists(self.folderpath+r'\Analysis\894\fitting\processed\Residuals.csv')):
                             self.read_in_data()
@@ -193,7 +193,8 @@ class ResidAnalysis:
                             self.calculate_residuals()
                         self.get_peaks()
                         self.RMSE()
-                self.save_stats()    
+                self.save_stats()
+                print('Done Saving')
                         
 
     def set_transition(self):
@@ -229,7 +230,12 @@ class ResidAnalysis:
                     hypsplit = list(map(lambda x: x-abs_freq[0],abs_freq)) 
                     hyp_weights = [7/48,7/16,5/16]
                     #Lower frequency because father F=4->F=3,4,5
-                self.functions[i] = lambda w,a,p0,h1,h2,mv,T,gamma,base: p0*(1+h1*w+h2*w**2)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+
+                if len(self.fitted_params) == 8:
+                    self.functions[i] = lambda w,a,p0,h1,h2,mv,T,gamma,base: p0*(1+h1*w+h2*w**2)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+
+                                                                            voigt(w,hyp_weights[1],mv+hypsplit[1],np.sqrt(T+273.15)*k1*abs_freq[1],gamma)+
+                                                                            voigt(w,hyp_weights[2],mv+hypsplit[2],np.sqrt(T+273.15)*k1*abs_freq[2],gamma))) + base
+                else:
+                    self.functions[i] = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+abs_freq[0])/10**6)*(voigt(w,hyp_weights[0],mv,np.sqrt(T+273.15)*k1*abs_freq[0],gamma)+
                                                                             voigt(w,hyp_weights[1],mv+hypsplit[1],np.sqrt(T+273.15)*k1*abs_freq[1],gamma)+
                                                                             voigt(w,hyp_weights[2],mv+hypsplit[2],np.sqrt(T+273.15)*k1*abs_freq[2],gamma))) + base
             elif self.scans[i] == '894':
@@ -293,7 +299,7 @@ class ResidAnalysis:
             self.scan_folder[i] = self.folderpath + '\\Analysis\\' + self.scans[i]
             self.scaledT[i] = np.loadtxt(self.scan_folder[i]+r'\fitting\processed\scaledT.csv', delimiter=',').tolist()
             self.fit_rng[i] = np.loadtxt(self.scan_folder[i]+r'\entries\beat_rng.csv', dtype=int, delimiter=',').tolist()
-            self.peaks[i], self.properties[i] = find_peaks(-self.scaledT[i][self.fit_rng[0]:self.fit_rng[1]],width=500,prominence=0.02)
+            self.peaks[i], self.properties[i] = find_peaks(-np.array(self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]]),width=500,prominence=0.02)
             if i == 0:
                 self.peak_fwhm[i] = int(self.properties[i]['right_ips'][0]-self.properties[i]['left_ips'][0])
             elif i == 1:
@@ -311,19 +317,19 @@ class ResidAnalysis:
                 self.resid_stat[i][1] = np.sqrt(np.sum(temp2)/(temp2.size-8))
                 self.resid_stat[i][2] = max(abs(self.resid[i]))
             else:
-                around_peak = [(self.peaks[i][0]+self.peaks[i][1])/2-int(self.peak_fwhm[i]*1.5),(self.peaks[i][0]+self.peaks[i][1])/2+int(self.peak_fwhm[i]*1.5)]
+                around_peak = [int((self.peaks[i][0]+self.peaks[i][1])/2-self.peak_fwhm[i]*1.5),int((self.peaks[i][0]+self.peaks[i][1])/2+self.peak_fwhm[i]*1.5)]
                 self.resid_stat[i][0] = np.sqrt(np.sum(temp)/(temp.size-7))
                 temp2 = temp[around_peak[0]:around_peak[1]]
                 self.resid_stat[i][1] = np.sqrt(np.sum(temp2)/(temp2.size-7))
                 self.resid_stat[i][2] = max(abs(self.resid[i]))
         print(self.resid_stat)
-        date = self.folderpath[self.folderpath.rfind('/')+1:]
+        date = self.folderpath[self.folderpath.rfind('\\')+1:]
         self.data.append([date])
         self.data[-1].extend(list(map(str,self.resid_stat[0])))
         self.data[-1].extend(list(map(str,self.resid_stat[1])))
     
     def save_stats(self):
-        file = open(self.day_folder +r'\fit_resid.tsv' )
+        file = open(self.day_folder +r'\fit_resid.tsv','w')
         file.write('date \t 456 RMSE \t 456 peak RMSE \t 456 max resid \t 894 RMSE \t 894 peak RMSE \t 894 max resid \n')
         for line in self.data:
             for thing in line:
@@ -341,8 +347,8 @@ class ResidAnalysis:
         self.day_folder = temporary
         if self.day_folder!='':
             date = self.day_folder[self.day_folder.rfind('/')+1:]
-            if os.path.exists(date+r'\Fine.txt'):
-                file = open(date+r'\Fine.txt','r')
+            if os.path.exists(self.day_folder+r'\Fine.txt'):
+                file = open(self.day_folder+r'\Fine.txt','r')
                 Fine = list(map(int,file.readline().split(',')))
                 file.close()
             else:
