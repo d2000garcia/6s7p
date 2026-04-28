@@ -192,7 +192,9 @@ class ResidAnalysis:
                             self.set_transition()
                             self.calculate_residuals()
                         self.get_peaks()
-                        self.RMSE()
+                        try:
+                            self.RMSE()
+                        except:pass
                 self.save_stats()
                 print('Done Saving')
                         
@@ -282,17 +284,19 @@ class ResidAnalysis:
     
     def calculate_residuals(self):
         for i in [0,1]:
-            fit = self.functions[i](self.plotting_freq[i],*self.fitted_params[i])
-            np.savetxt(self.scan_folder[i]+r'\fitting\processed\Fit.csv', fit, delimiter=',')
-            np.savetxt(self.scan_folder[i]+r'\fitting\processed\plotting_freq.csv', self.plotting_freq[i], delimiter=',')
-            self.resid[i] = fit - self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]]
-            # plt.scatter(self.plotting_freq[i],self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]])
-            # plt.plot(self.plotting_freq[i],self.functions[i](self.plotting_freq[i],*self.fitted_params[i]),'-r')
-            # plt.show()
-            # plt.plot(self.plotting_freq[i],self.resid[i],'-b')
-            # plt.show()
-            # plt.plot(self.plotting_freq[i],self.resid[i],'-b')
-            np.savetxt(self.scan_folder[i]+r'\fitting\processed\Residuals.csv', self.resid[i], delimiter=',')
+            try:
+                fit = self.functions[i](self.plotting_freq[i],*self.fitted_params[i])
+                np.savetxt(self.scan_folder[i]+r'\fitting\processed\Fit.csv', fit, delimiter=',')
+                np.savetxt(self.scan_folder[i]+r'\fitting\processed\plotting_freq.csv', self.plotting_freq[i], delimiter=',')
+                self.resid[i] = fit - self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]]
+                # plt.scatter(self.plotting_freq[i],self.scaledT[i][self.fit_rng[i][0]:self.fit_rng[i][1]])
+                # plt.plot(self.plotting_freq[i],self.functions[i](self.plotting_freq[i],*self.fitted_params[i]),'-r')
+                # plt.show()
+                # plt.plot(self.plotting_freq[i],self.resid[i],'-b')
+                # plt.show()
+                # plt.plot(self.plotting_freq[i],self.resid[i],'-b')
+                np.savetxt(self.scan_folder[i]+r'\fitting\processed\Residuals.csv', self.resid[i], delimiter=',')
+            except:pass
 
     def get_peaks(self):
         for i in [0,1]:
