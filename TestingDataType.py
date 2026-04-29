@@ -364,6 +364,8 @@ class data:
             #Transition clean up 
 
             self.calculate_T_shift() 
+            if scan == '456':
+                BeatRunAvgN = 75
             (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
             #beatnoteClean
             try:
@@ -465,7 +467,7 @@ class data:
                 self.fitted=True
             else:
                 self.fitted = False
-
+            
             temp = np.loadtxt(folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',') 
             #Save as domain, window, coef
             self.beatfit = poly(temp[4:], temp[0:2], temp[2:4])
