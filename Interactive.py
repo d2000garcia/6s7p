@@ -44,6 +44,13 @@ class analysis:
     def checkforanalysis(self):
         if not self.folderpath == '':
             contents = os.listdir(path = self.folderpath)
+            date = self.folderpath[:self.folderpath.rfind('/')]
+            if os.path.exists(date+r'\Fine.txt'):
+                file = open(date+r'\Fine.txt','r')
+                Fine = list(map(int,file.readline().split(',')))
+                file.close()
+            else:
+                Fine = [0,0]
             if os.path.exists(self.folderpath+r'\beatnote_det_f.csv'):
                 file = open(self.folderpath+r'\beatnote_det_f.csv','r')
                 temp2 = list(map(float,file.readline().strip().split(',')))
@@ -52,8 +59,8 @@ class analysis:
                 temp2 = [0,0]
             if 'Analysis' in contents:
                 print('Analysis exists, continue')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=temp2[0]/1000)
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=temp2[1]/1000)
+                self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=temp2[0]/1000,F=Fine[0])
+                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=temp2[1]/1000,F=Fine[1])
             else:
                 print('Analysis does not exist ')
                 os.mkdir(self.folderpath+r'\Analysis')
@@ -80,8 +87,8 @@ class analysis:
                 temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0]/1000)
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000)
+                self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=temp2[0]/1000,F=Fine[0])
+                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=temp2[1]/1000,F=Fine[1])
                 f = open(self.analysis456.folder+r'\entries\beat_peak_min.csv','w')
                 f.write(str(0))
                 f.close()
@@ -215,7 +222,7 @@ class analysis:
 
         
 
-def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,entries2,beatmins,switchlabelsat=5):
+def open_file_dialog(window,analysis_dat,labels,entries,plots456,plots894,entries2,beatmins,switchlabelsat=5):
     temporary = filedialog.askdirectory(
         initialdir="/",  # Optional: set initial directory
         title="Select a folder",
@@ -223,6 +230,8 @@ def open_file_dialog(analysis_dat,labels,entries,plots456,plots894,entries2,beat
     )
     analysis_dat.folderpath = temporary
     if analysis_dat.folderpath:
+        date_time = analysis_dat.folderpath[analysis_dat.folderpath.rfind('/')+1:]
+        window.title(date_time + ' Fiting Analysis')
         print(f"Selected folder: {analysis_dat.folderpath}")
         analysis_dat.checkforanalysis()
         plots456.update_working_dir(analysis_dat.folderpath)
@@ -500,7 +509,7 @@ if __name__ == '__main__':
                 # print(1+j%2+4*i,(j>1)+8)
                 etalon_entries[0][i][j].grid(column=1+j%2+4*i,row=(j>1)+9)
 
-        open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(folder,labels,entries,plot_sets[0],plot_sets[1],etalon_entries[1],beat_mins))
+        open_button = ttk.Button(root, text="Data Folder", command= lambda: open_file_dialog(root,folder,labels,entries,plot_sets[0],plot_sets[1],etalon_entries[1],beat_mins))
         open_button.grid(column=3,row=0)
 
         open_button1 = ttk.Button(root, text="Calculate 456 baseline ratio", command= lambda: recalculate456T(folder,labels,entries,plot_sets[0]))
