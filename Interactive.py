@@ -50,7 +50,7 @@ class analysis:
                 Fine = list(map(int,file.readline().split(',')))
                 file.close()
             else:
-                Fine = [0,0]
+                Fine = [0,0] 
             if os.path.exists(self.folderpath+r'\beatnote_det_f.csv'):
                 file = open(self.folderpath+r'\beatnote_det_f.csv','r')
                 temp2 = list(map(float,file.readline().strip().split(',')))

@@ -882,7 +882,7 @@ class data:
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
                 mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma','base'])
-                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
+                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='basinhopping')
             else:
                 # params['gamma'].set(vary=True)
                 params['gamma'].set(value=Gamma)
