@@ -626,10 +626,39 @@ class data:
     def calculate_baseline_ratio(self):
         if self.par_folder.find('BaselineMeas')!=-1:
             #If this is the baseline measurement folder
-            ceiling = self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]]
-            ceil_avg = np.mean(ceiling)
-            floor = self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]]
-            floor_avg = np.mean(floor)
+            # ceiling = self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]]
+            # ceil_avg = np.mean(ceiling)
+            # floor = self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]]
+            # floor_avg = np.mean(floor)
+
+            if self.scan == '456':
+                peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
+
+            else:
+                peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
+                peaks[1] = int((properties['left_ips'][1]+properties['right_ips'][1])/2)
+            if self.scan == '456':
+                left_side = [int(self.indices[int(properties['left_bases'][0])]), int(self.indices[int(properties['left_bases'][0]*0.75 + 0.25 * properties['left_ips'][0])])]
+                right_side = [int(self.indices[int(properties['right_bases'][0]*0.75 + 0.25 * properties['right_ips'][0])]), int(self.indices[int(properties['right_bases'][0])])]
+                ys = [np.mean(self.scaledT[left_side[0]:left_side[1]]), np.mean(self.scaledT[right_side[0]:right_side[1]])]
+                xs = [(left_side[0]+left_side[1])/2, (right_side[0]+right_side[1])/2]
+                m = (ys[1]-ys[0])/(xs[1]-xs[0])
+                b = ys[0]-m*xs[0]
+                x = np.linspace(left_side[0],right_side[1],10000)
+                lin = lambda x,k,b: k*x+b
+                # plt.plot(self.indices,self.scaledT,'-b')
+                # plt.plot(self.indices,self.scaledT,'-b')
+                # plt.vlines(x=self.indices[int(properties["left_ips"]*0.25+properties["left_bases"]*0.75)], ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "red")
+                # plt.vlines(x=self.indices[int(properties["right_ips"]*0.25+properties["right_bases"]*0.75)], ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "red")
+                # plt.hlines(y=properties['prominences']+self.scaledT[peaks], xmin=self.indices[int(properties["left_bases"])],xmax=self.indices[int(properties["right_bases"])], color = "red")
+                # plt.hlines(y=-properties["width_heights"], xmin=self.indices[int(properties["left_ips"])],xmax=self.indices[int(properties["right_ips"])], color = "blue")
+                # plt.plot(x,lin(x,m,b),'-g')
+                # plt.show()
+
+                ceil_avg = lin(peaks[0],m,b)
+                floor_avg = np.mean(self.scaledT[int(peaks[0]-125):int(peaks[0]+125)])
+
             print('The ceiling and floor are:(',ceil_avg,';',floor_avg,')')
             temp = np.array([ceil_avg,floor_avg])
             # print(self.scan+ ' Pwr in wings mean: ' +str(np.mean(self.scaledT[temp[0][0]-250:temp[0][0]+250])))
@@ -806,7 +835,8 @@ class data:
             m=2.2069484567911638
             kB=1.3806503
             k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
-                
+
+
             if self.scan == '456':
                 peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
                 p0 = 0.37 #scaledT pwr at top
@@ -821,6 +851,32 @@ class data:
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
             coeff = self.hyp_weights
             
+            plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+            plotting_scaledT = self.scaledT[self.indices[self.beat_rng[0]]:self.indices[self.beat_rng[1]]]
+            weights1 = plotting_freq.copy()
+            weights1 = weights1.tolist()
+            dist = 1000
+            for i in range(len(weights1)):
+                if i < dist:
+                    weights1[i] = np.std(plotting_scaledT[0:dist])
+                elif i > len(weights1) - dist-1:
+                    weights1[i] = np.std(plotting_scaledT[len(weights1)-dist:len(weights1)-1])
+                else:
+                    weights1[i] = np.std(plotting_scaledT[i-int(dist/2):i+int(dist/2)])
+            plt.plot(plotting_freq,weights1)
+            plt.show()
+            # if self.etalon_ranges[0][1] != 0:
+            #     test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
+            # else:
+            if self.scan == '456':
+                #fitting slope of background
+                #this is 456 scan
+                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+                test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+                test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+            else:
+                # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
+                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
             if self.scan == '894':
                 if self.use_cur_bot:
                     # ceiling = np.mean(self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]])
@@ -836,26 +892,14 @@ class data:
             else:
                 if os.path.exists(self.par_folder+'\\PwrWings456.csv'):
                     hotcell= np.loadtxt(self.par_folder+'\\PwrWings456.csv', delimiter=',')
-                    baseline = hotcell[1]
+                    bottom = hotcell[1]
+                    top = hotcell[0]
+                    baseline = (test3[2]*(self.beatfit(int(self.indices[peaks[0]]))-test3[1])**2+test3[0])*bottom/top
                 else:
                     if self.F1 == 4:
                         baseline = 0.15*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 15% power in wings for 456
                     if self.F1 == 3:
                         baseline = 0.008*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 0.8% power in wings for 456
-            plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-            # if self.etalon_ranges[0][1] != 0:
-            #     test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
-            # else:
-            if self.scan == '456':
-                #fitting slope of background
-                #this is 456 scan
-                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-                test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-                test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-            else:
-                # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
-                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-
             # print(self.hotbody)
             if self.hotbody == 30:
                 low = 20
@@ -874,6 +918,16 @@ class data:
             #     ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
             #     ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
             if self.scan == '456':
+                params.add_many(
+                    # ('a', 6, True, 0, None, None, None),
+                    # ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
+                    # ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
+                    # ('mv', guess, True, 0, 4, None, None),
+                    # ('T', self.hotbody, True, low, high, None, None),
+                    # ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
+                    # ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
+
+
                 # params.add_many( #Uses test2
                 #     ('a', 6, True, 0, None, None, None),
                 #     ('p0', test2[2]-baseline, True, 0.7*(test2[2]-baseline), 1.3*(test2[2]-baseline), None, None),
@@ -884,15 +938,15 @@ class data:
                 #     ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
                 #     ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
                 
-                params.add_many( #using Test 3
+                # params.add_many( #using Test 3
                     ('a', 6, True, 0, None, None, None),
-                    ('p0', test3[0]-baseline, True, 0.7*(test3[0]-baseline), 1.3*(test3[0]-baseline), None, None),
-                    ('h1', test3[1], True, test3[1]-abs(test3[1])*0.2, test3[1]+abs(test3[1])*0.2, None, None),
-                    ('h2', test3[2], True, test3[2]-abs(test3[2])*0.2, test3[2]+abs(test3[2])*0.2, None, None),
+                    ('p0', test3[0]-baseline, False, 0.7*(test3[0]-baseline), 1.3*(test3[0]-baseline), None, None),
+                    ('h1', test3[1], False, test3[1]-abs(test3[1])*0.2, test3[1]+abs(test3[1])*0.2, None, None),
+                    ('h2', test3[2], False, test3[2]-abs(test3[2])*0.2, test3[2]+abs(test3[2])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
                     ('gamma', Gamma*1.3, True, Gamma, Gamma*3, None, None),
-                    ('base', baseline, True, baseline*0.5, baseline*1.4, None, None))
+                    ('base', baseline, False, baseline*0.7, baseline*1.3, None, None))
                     
             else:
                 params.add_many(
@@ -906,7 +960,7 @@ class data:
             if self.scan == '456':
                 params['a'].set(value=0.35)
                 # params['gamma'].set(vary=False)
-                params['base'].set(vary=True)
+                params['base'].set(vary=False)
                 # fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                 #                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                 #                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
@@ -924,7 +978,7 @@ class data:
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
                 mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma','base'])
-                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
+                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo',weights=weights1)
             else:
                 # params['gamma'].set(vary=True)
                 params['gamma'].set(value=Gamma)
