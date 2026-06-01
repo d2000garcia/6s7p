@@ -856,15 +856,13 @@ class data:
             weights1 = plotting_freq.copy()
             weights1 = weights1.tolist()
             dist = 1000
-            for i in range(len(weights1)):
-                if i < dist:
-                    weights1[i] = np.std(plotting_scaledT[0:dist])
-                elif i > len(weights1) - dist-1:
-                    weights1[i] = np.std(plotting_scaledT[len(weights1)-dist:len(weights1)-1])
-                else:
-                    weights1[i] = np.std(plotting_scaledT[i-int(dist/2):i+int(dist/2)])
-            plt.plot(plotting_freq,weights1)
-            plt.show()
+            # for i in range(len(weights1)):
+            #     if i < dist:
+            #         weights1[i] = np.std(plotting_scaledT[0:dist])
+            #     elif i > len(weights1) - dist-1:
+            #         weights1[i] = np.std(plotting_scaledT[len(weights1)-dist:len(weights1)-1])
+            #     else:
+            #         weights1[i] = np.std(plotting_scaledT[i-int(dist/2):i+int(dist/2)])
             # if self.etalon_ranges[0][1] != 0:
             #     test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
             # else:
@@ -874,6 +872,11 @@ class data:
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
                 test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
                 test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+
+                gauss1 = lambda x,peak,cen,s: peak * np.exp(-((x-cen)/s)**2/2) + 1
+                weights1 = gauss1(plotting_freq,6,self.beatfit(peaks[0]),0.15)
+                plt.plot(plotting_freq,weights1)
+                plt.show()
             else:
                 # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
@@ -1007,7 +1010,7 @@ class data:
             plt.xlabel('Freq [GHz]')
             # plt.show()
             if self.scan == '456':
-                plt.plot(plotting_freq,test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2],'-g')
+                # plt.plot(plotting_freq,test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2],'-g')
                 plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
             else:
                 plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
@@ -1018,6 +1021,7 @@ class data:
             k4 = self.beatfit(properties["right_ips"])
             plt.vlines(x=self.beatfit(peaks), ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "blue")
             plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
+            # plt.plot(plotting_freq,weights1)
             plt.savefig(self.folder+r'\plots\FittedScan.png')
             plt.show()
             plt.clf()
