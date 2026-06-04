@@ -58,12 +58,30 @@ class window:
                     self.window_manager[scan]['Imgs'][j][name]['Label'].pack()
                     self.window_manager[scan]['Notes'][-1].add(self.window_manager[scan]['Imgs'][j][name]['Label'],text=scan+' '+name)
 
-        close = ttk.Button(self.window, text="Close", command= exit)
-        close.grid(column=3,row=10)
+        self.window_manager['clickable']={'456':{'calcTFit':{},'calcBeatFit':{},'show':{}},
+                                          '894':{'calcTFit':{},'calcBeatFit':{},'show':{}},
+                                          'both':{'open_fold':{},'save':{},'exit':{}}}
+        i=-2
+        for key1 in self.window_manager['clickable'].keys():
+            for key2 in self.window_manager['clickable'][key1].keys():
+                self.window_manager['clickable'][key1][key2]['func'] = lambda : print('Pick a data set for analysis!')
+                self.window_manager['clickable'][key1][key2]['button'] = ttk.Button(self.window,text=key2,command=self.window_manager['clickable'][key1][key2]['func'])
+                if key1 == 'both':
+                    i+=2
+                    self.window_manager['clickable'][key1][key2]['button'].grid(column=3,row=i)
+                else:
+                    self.window_manager['clickable'][key1][key2]['button'].configure(text=key1+' '+key2)
+                    if key2 == 'show':
+                        pass
+                    else:
+                        self.window_manager['clickable'][key1][key2]['button'].grid(row=1+2*int(key1=='894'),column=3+3*int(key2=='calcBeatFit'))
+        self.window_manager['clickable']['both']['exit']['button'].configure(command=exit)
+        # close = ttk.Button(self.window, text="Close", command= exit)
+        # close.grid(column=3,row=10)
 
         self.window_manager['work_dir'] = {'path':'Pick Directory','tk_var':tk.StringVar()}
         self.window_manager['work_dir']['tk_var'].set('Pick Directory')
-        self.window_manager['work_dir']['lab'] = ttk.Label(self.window, textvariable=self.workingdir['tk_var'])
+        self.window_manager['work_dir']['lab'] = ttk.Label(self.window, textvariable=self.window_manager['work_dir']['tk_var'])
         self.window_manager['work_dir']['lab'].grid(column=3, row=11,columnspan=3, sticky="nsew")
 
     def update_work_dir(self,new_par_fold):
@@ -106,73 +124,82 @@ class analysisV2:
     def __init__(self,root,img_scale):
         self.root =  root
         self.wind = window(root, plot_w=int(500*img_scale),plot_h=int(300*img_scale))
+        # temp = lambda:print('Pick Folder')
+        # open_button = ttk.Button(root, text="Data Folder", command= self.open_file_dialog)
+        # open_button.grid(column=3,row=0)
         self.folderpath = ''
     
     def checkforanalysis(self):
         if not self.folderpath == '':
-            contents = os.listdir(path = self.folderpath)
-            date = self.folderpath[:self.folderpath.rfind('/')]
+            # contents = os.listdir(path = self.folderpath)
+            # date = self.folderpath[:self.folderpath.rfind('/')]
 
-            if os.path.exists(date+r'\Fine.txt'):
-                file = open(date+r'\Fine.txt','r')
-                Fine = list(map(int,file.readline().split(',')))
-                file.close()
-            else:
-                Fine = [0,0] 
+            # if os.path.exists(date+r'\Fine.txt'):
+            #     file = open(date+r'\Fine.txt','r')
+            #     Fine = list(map(int,file.readline().split(',')))
+            #     file.close()
+            # else:
+            #     Fine = [0,0] 
 
-            file = open(self.folderpath+r'\beatnote_det_f.csv','r')
-            beat_det_f = list(map(float,file.readline().strip().split(',')))
-            file.close()
+            # file = open(self.folderpath+r'\beatnote_det_f.csv','r')
+            # beat_det_f = list(map(float,file.readline().strip().split(',')))
+            # file.close()
 
-            if 'Analysis' in contents:
-                print('Analysis exists, continue')
-                self.Temperature = np.loadtxt(self.folderpath+r'\Analysis\TempMeas.csv', delimiter=',')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
-            else:
-                print('Analysis does not exist ')
-                os.mkdir(self.folderpath+r'\Analysis')
-                os.mkdir(self.folderpath+r'\Analysis\456')
-                os.mkdir(self.folderpath+r'\Analysis\456\beatnote')
-                os.mkdir(self.folderpath+r'\Analysis\456\beatnote\original')
-                os.mkdir(self.folderpath+r'\Analysis\456\beatnote\processed')
-                os.mkdir(self.folderpath+r'\Analysis\456\fitting')
-                os.mkdir(self.folderpath+r'\Analysis\456\fitting\original')
-                os.mkdir(self.folderpath+r'\Analysis\456\fitting\processed')
-                os.mkdir(self.folderpath+r'\Analysis\456\plots')
-                os.mkdir(self.folderpath+r'\Analysis\456\entries')
-                os.mkdir(self.folderpath+r'\Analysis\894')
-                os.mkdir(self.folderpath+r'\Analysis\894\beatnote')
-                os.mkdir(self.folderpath+r'\Analysis\894\beatnote\original')
-                os.mkdir(self.folderpath+r'\Analysis\894\beatnote\processed')
-                os.mkdir(self.folderpath+r'\Analysis\894\fitting')
-                os.mkdir(self.folderpath+r'\Analysis\894\fitting\original')
-                os.mkdir(self.folderpath+r'\Analysis\894\fitting\processed')
-                os.mkdir(self.folderpath+r'\Analysis\894\plots')
-                os.mkdir(self.folderpath+r'\Analysis\894\entries')
-                temp = Image.open(r".\Picture_template.png")
-                temp.save(self.folderpath+r'\Analysis\456\plots\FittedScan.png')
-                temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
-                temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
-                temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
-                f = open(self.analysis456.folder+r'\entries\beat_peak_min.csv','w')
-                f.write(str(0))
-                f.close()
-                f = open(self.analysis894.folder+r'\entries\beat_peak_min.csv','w')
-                f.write(str(0))
-                f.close()
+            # if 'Analysis' in contents:
+            #     print('Analysis exists, continue')
+            #     self.Temperature = np.loadtxt(self.folderpath+r'\Analysis\TempMeas.csv', delimiter=',')
+            #     self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
+            #     self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
+            # else:
+            #     print('Analysis does not exist ')
+            #     os.mkdir(self.folderpath+r'\Analysis')
+            #     os.mkdir(self.folderpath+r'\Analysis\456')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\beatnote')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\beatnote\original')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\beatnote\processed')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\fitting')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\fitting\original')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\fitting\processed')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\plots')
+            #     os.mkdir(self.folderpath+r'\Analysis\456\entries')
+            #     os.mkdir(self.folderpath+r'\Analysis\894')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\beatnote')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\beatnote\original')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\beatnote\processed')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\fitting')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\fitting\original')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\fitting\processed')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\plots')
+            #     os.mkdir(self.folderpath+r'\Analysis\894\entries')
+            #     temp = Image.open(r".\Picture_template.png")
+            #     temp.save(self.folderpath+r'\Analysis\456\plots\FittedScan.png')
+            #     temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
+            #     temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
+            #     temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
+            #     f = open(self.analysis456.folder+r'\entries\beat_peak_min.csv','w')
+            #     f.write(str(0))
+            #     f.close()
+            #     f = open(self.analysis894.folder+r'\entries\beat_peak_min.csv','w')
+            #     f.write(str(0))
+            #     f.close()
 
-                temps = TestingDataType.simple_dat_get(self.folderpath +r'\TemperatureV2.csv',0)
-                self.Temperature = []
-                for i in range(6):
-                    self.Temperature.append(np.mean(temps[:,i]))
-                np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
+            #     temps = TestingDataType.simple_dat_get(self.folderpath +r'\TemperatureV2.csv',0)
+            #     self.Temperature = []
+            #     for i in range(6):
+            #         self.Temperature.append(np.mean(temps[:,i]))
+            #     np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
+            #     self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
+            #     self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
 
             self.wind.window_manager['work_dir']['tk_var'].set(self.folderpath)
-            
+            print('here')
+            self.functs[0] = self.test
+            self.but.configure(command=self.functs[0])
 
+
+            
+    def test(self):
+        print(2+2)
 
     def open_file_dialog(self):
         temporary = filedialog.askdirectory(
@@ -189,23 +216,14 @@ class analysisV2:
 
 
 first = True
-img_scale = 1.6
+template_image = r".\Picture_template.png"
+if os.getlogin() == 'garci868':
+        scale = 1.2
+else:
+    scale = 1.7
 if __name__ == '__main__':
-    root = tk.Tk()
     if first:
+        root = tk.Tk()
         first = False
-        test = window(root,plot_w=int(500*img_scale),plot_h=int(300*img_scale))
-        # analysis = ResidAnalysis(window=root,img_scale=scale)
-        # root.title("Residual Calculations")
-
-        # open_button = ttk.Button(root, text="Data Folder", command= analysis.open_file_dialog)
-        # open_button.grid(column=0,row=1)
-        
-        # open_button5 = ttk.Button(root, text="Close", command= exit)
-        # open_button5.grid(column=1,row=1)
-        
-        # workingdir_txt = tk.StringVar()
-        # workingdir_txt.set('hello')
-        # workingdir = ttk.Label(root, textvariable=workingdir_txt)
-        # workingdir.grid(column=3, row=11,columnspan=3, sticky="nsew")
+        test = analysisV2(root,img_scale=scale)
     root.mainloop()
