@@ -58,13 +58,12 @@ class window:
                     self.window_manager[scan]['Imgs'][j][name]['Label'].pack()
                     self.window_manager[scan]['Notes'][-1].add(self.window_manager[scan]['Imgs'][j][name]['Label'],text=scan+' '+name)
 
-        self.window_manager['button']={'456':{'calcTFit':[],'calcBeatFit':[],'show':[]},
-                                          '894':{'calcTFit':[],'calcBeatFit':[],'show':[]},
-                                          'both':{'open_fold':[],'save':[],'exit':[]}}
+        self.window_manager['button']={'456':{'calcTFit':1,'calcBeatFit':1,'show':1},
+                                          '894':{'calcTFit':1,'calcBeatFit':1,'show':1},
+                                          'both':{'open_fold':1,'save':1,'exit':1}}
         i=-2
         for key1 in self.window_manager['button'].keys():
             for key2 in self.window_manager['button'][key1].keys():
-                self.window_manager['button'][key1][key2] = lambda : print('Pick a data set for analysis!')
                 self.window_manager['button'][key1][key2] = ttk.Button(self.window,text=key2,command=lambda : print('Pick a data set for analysis!'))
                 if key1 == 'both':
                     i+=2
@@ -75,6 +74,7 @@ class window:
                         pass
                     else:
                         self.window_manager['button'][key1][key2].grid(row=1+2*int(key1=='894'),column=3+3*int(key2=='calcBeatFit'))
+
         self.window_manager['button']['both']['exit'].configure(command=exit)
 
         self.window_manager['work_dir'] = {'path':'Pick Directory','tk_var':tk.StringVar()}
@@ -98,9 +98,6 @@ class window:
                 self.window_manager[scan]['Imgs'][temp-1][name]['TkImg'] = ImageTk.PhotoImage(resized_temp2)
                 self.window_manager[scan]['Imgs'][temp-1][name]['Label'].configure(image=self.window_manager[scan]['Imgs'][temp-1][name]['TkImg'])
                 self.window_manager[scan]['Imgs'][temp-1][name]['Label'].image = self.window_manager[scan]['Imgs'][temp-1][name]['TkImg']
-        
-
-    
     # def change_Label_image(self,new,oldlabel):
     # #oldlabel is the label you want to change and
     # #new is new Tkimage to exchange
@@ -186,8 +183,13 @@ class analysisV2:
                 np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
-            self.wind.window_manager[][]
+            self.wind.window_manager['button']['both']
             self.wind.window_manager['work_dir']['tk_var'].set(self.folderpath)
+            self.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
+            for s in ['456','894']:
+                self.window_manager['button'][s]['calculateTFit'].configure(command=lambda:self.calculateTFit(self,s))
+                self.window_manager['button'][s]['calcBeatFit'].configure(command=lambda:self.calculateBeatFit(self,s))
+                self.window_manager['button'][s]['show'].configure(command=lambda:self.show_plot(self,s))
 
     def calculateTFit(self,scan):
         pass
@@ -210,7 +212,6 @@ class analysisV2:
             self.root.title(date_time + ' Fiting Analysis')
             print(f"Selected folder: {self.folderpath}")
             self.checkforanalysis()
-
 
 first = True
 template_image = r".\Picture_template.png"
