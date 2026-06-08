@@ -330,6 +330,28 @@ class data:
         else:
             self.folder = par_folder + r'\Analysis\894'
         temp = np.loadtxt(par_folder+'\\TemperatureV2.csv')
+        if not exists:
+            pure_dat = np.loadtxt(par_folder+'\\'+scan+'.csv', delimiter=',')
+            background = np.loadtxt(par_folder+"\\Background.csv",delimiter=',').mean(0)
+            shape = pure_dat.shape[1]
+            n = int((shape-2)/3)
+            self.indices = pure_dat[:,shape-1]
+            self.indices = self.indices - self.indices.min()
+            Tavg = pure_dat[:,:n].mean(1)
+            Pavg = pure_dat[:,n:2*n].mean(1)
+            Havg = pure_dat[:,2*n:3*n].mean(1)
+            ogbeat = pure_dat[:,n-2]
+
+            self.beat_rng = [0,8000]
+            self.beat_height=0
+            (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
+            #beatnoteClean
+            try:
+                self.calculate_beat_fit()
+            except:
+                print("Error in calculating fit for beatnote")
+        else:
+            
         if scan == '894':
             self.beatnote_det_f = temp[1]
             peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
@@ -347,21 +369,63 @@ class data:
                 self.F1 = 3
             else:
                 self.F1 = F1
-        if not exists:
-            pure_dat = np.loadtxt(par_folder+'\\'+scan+'.csv', delimiter=',')
-            background = np.loadtxt(par_folder+"\\Background.csv",delimiter=',')
-            shape = pure_dat.shape[1]
-            n = int((shape-2)/3)
-            self.indices= pure_dat[:,shape-1]
-            Tavg = pure_dat[:,:n]
-            Pavg = pure_dat[:,n:2*n]
-            Havg = pure_dat[:,2*n:3*n]
-            ogbeat = pure_dat[:,n-2]
-            self.beat_rng = [0,8000]
-            self.beat_height=0
-        else:
-            
-    
+
+    def make_init_plots(self):
+        pure_dat = np.loadtxt(self.par_folder+'\\'+self.scan+'.csv', delimiter=',')
+        background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
+        shape = pure_dat.shape[1]
+        n = int((shape-2)/3)
+        self.indices = pure_dat[:,shape-1]
+        self.indices = self.indices - self.indices.min()
+        np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
+        
+        Tavg = pure_dat[:,:n].mean(1)
+        Pavg = pure_dat[:,n:2*n].mean(1)
+        Havg = pure_dat[:,2*n:3*n].mean(1)
+
+        plt.plot(self.indices, Tavg)
+        plt.plot([self.indices[0],self.indices[-1]],[background[0],background[0]],'-r')
+        plt.title(r'Averaged Transmission Measurements')
+        plt.savefig(folder+r'\plots\Tavg.png')
+        plt.clf()
+
+        plt.plot(self.indices, Pavg)
+        plt.plot([self.indices[0],self.indices[-1]],[background[1],background[1]],'-r')
+        plt.title(r'Averaged Laser Power Measurements')
+        plt.savefig(folder+r'\plots\Pavg.png')
+        plt.clf()
+
+        plt.plot(self.indices, Havg)
+        plt.plot([self.indices[0],self.indices[-1]],[background[2],background[2]],'-r')
+        plt.title(r'Averaged Hot Cell Measurements')
+        plt.savefig(folder+r'\plots\Havg.png')
+        plt.clf()
+
+        self.scaledT = (Tavg-background[0])/(Pavg-background[1])
+        self.scaledH = (Havg-background[2])/(Pavg-background[1])
+        
+        np.savetxt(folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
+        np.savetxt(folder+r'\fitting\processed\scaledH.csv', self.scaledH, delimiter=',')
+
+        plt.plot(self.indices, self.scaledT)
+        plt.title(r'Averaged Laser Power Measurements')
+        plt.savefig(folder+r'\plots\Pavg.png')
+        plt.clf()
+
+        plt.plot(self.indices, self.scaledH)
+        plt.plot([self.indices[0],self.indices[-1]],[background[2],background[2]],'-r')
+        plt.title(r'Averaged Hot Cell Measurements')
+        plt.savefig(folder+r'\plots\Havg.png')
+        plt.clf()
+
+        ogbeat = pure_dat[:,n-2]
+        
+        plt.scatter(self.indices, ogbeat)
+        plt.title('Original Beanote')
+        plt.scatter(peak_indices,peak_val, color='red', marker='x')
+        plt.savefig(folder+r'\plots\ogbeat.png')
+        plt.clf()
+
     def find_pairs(self, peak_indices, peak_val):
         differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
         close_pairs = []
