@@ -23,7 +23,7 @@ class window:
         self.plot_w = plot_w
         self.plot_h = plot_h
         #labels to ref plot indices
-        self.plotslabs = [['Tavg','Pavg','HotAvg','scaledHot','scaledT','FittedScan','FittedScanResid'],['ogbeat','filteredbeat','fitted_beat','unscaledresiduals','VapPres']]
+        self.plotslabs = [['Tavg','Pavg','HotAvg','scaledHot','scaledT','FittedScan','FittedScanResid'],['ogbeat','filteredbeat','fitted_beat','unscaledresiduals',]]
         self.scans=['456','894']
         self.day_fold = ''
         self.window_manager={}
@@ -140,7 +140,7 @@ class analysisV2:
             file.close()
             if 'Analysis' in contents:
                 print('Analysis exists, continue')
-                self.Temperature = np.loadtxt(self.folderpath+r'\Analysis\TempMeas.csv', delimiter=',')
+                # self.Temperature = np.loadtxt(self.folderpath+r'\Analysis\TempMeas.csv', delimiter=',')
                 self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
                 self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
             else:

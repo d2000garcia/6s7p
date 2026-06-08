@@ -322,7 +322,6 @@ def cvt_abs_wav_to_diff(abs_wav):
 class data:
     def __init__(self, par_folder,BeatRunAvgN=100, beatnote_det_f=0, beat_rng=[0,8000], back_rngs=[[0,0],[6300,8000]], file_skip_lines=0, scan='456', F =0, exists = False):
         self.fitted = False
-        
         if not exists:
             if scan == '456':
                 filename = par_folder + r"\456Scan.csv"
@@ -428,10 +427,6 @@ class data:
             plt.savefig(folder+r'\plots\ogbeat.png')
             plt.clf()
             # plt.show()
-            
-
-
-
         else:
             self.scan = scan
             if scan == '456':
