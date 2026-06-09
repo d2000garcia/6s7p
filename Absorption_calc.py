@@ -336,7 +336,7 @@ class data:
         else:
             self.F1 = 3
             self.set_transition(F1=3)
-        temp = np.loadtxt(par_folder+'\\TemperatureV2.csv').mean(0)
+        temp = np.loadtxt(par_folder+'\\TemperatureV2.csv',delimiter=',').mean(0)
         if self.scan == '456':
             self.coldfinger = temp[0:2].mean()
             self.hotbody = temp[3:5].mean()
@@ -346,7 +346,7 @@ class data:
 
     def make_init_plots(self):
         self.beat_height = np.savetxt(self.folder+'\\entries\\beat_peak_min.csv',[0],delimiter=',')
-        pure_dat = np.loadtxt(self.par_folder+'\\'+self.scan+'.csv', delimiter=',')
+        pure_dat = np.loadtxt(self.par_folder+'\\'+self.scan+'ScanV2.csv', delimiter=',')
         background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
         shape = pure_dat.shape[1]
         n = int((shape-2)/3)
@@ -385,16 +385,16 @@ class data:
 
         plt.plot(self.indices, self.scaledT)
         plt.title(r'Scaled Transmission')
-        plt.savefig(self.folder+r'\plots\Pavg.png')
+        plt.savefig(self.folder+r'\plots\scaledT.png')
         plt.clf()
 
         plt.plot(self.indices, self.scaledH)
         plt.plot([self.indices[0],self.indices[-1]],[background[2],background[2]],'-r')
         plt.title(r'Scaled Hot Cell')
-        plt.savefig(self.folder+r'\plots\Havg.png')
+        plt.savefig(self.folder+r'\plots\scaledH.png')
         plt.clf()
 
-        ogbeat = pure_dat[:,n-2]
+        ogbeat = pure_dat[:,3*n]
         self.init_process_beatnote(self.indices,ogbeat,self.BeatRunAvgN)
 
     def init_process_beatnote(self,indices,ogBeat,run_avg_num):
@@ -421,11 +421,11 @@ class data:
         np.savetxt(self.folder+r'\beatnote\processed\filteredBeat.csv', self.filteredBeat, delimiter=',')
         np.savetxt(self.folder+r'\beatnote\processed\peak_indices.csv', self.peak_indices, fmt='%i', delimiter=',')
         np.savetxt(self.folder+r'\beatnote\processed\peak_val.csv', self.peak_val, delimiter=',')
-        self.beat_height = 0
         self.filter_beatnote()
 
     def filter_beatnote(self):
-        self.beat_height = np.loadtxt(self.folder+'\\entries\\beat_peak_min.csv',delimiter=',')[0]
+        self.beat_height = np.loadtxt(self.folder+'\\entries\\beat_peak_min.csv',delimiter=',')
+        print(self.beat_height)
         if self.beat_height == 0:
             standard_peak_min = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
         else:
@@ -468,6 +468,8 @@ class data:
         self.filteredBeat = np.loadtxt(self.folder+r'\beatnote\processed\filteredBeat.csv', delimiter=',')
         self.peak_indices = np.loadtxt(self.folder+r'\beatnote\processed\peak_indices.csv', dtype=int, delimiter=',').tolist()
         self.peak_val = np.loadtxt(self.folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
+        if os.path.exists(self.folder+r'\beatnote\processed\beat_fit_param.csv'):
+            self.beat_fit_param = np.loadtxt(self.folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',').tolist()
 
     def find_pairs(self, peak_indices, peak_val):
         differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
@@ -500,47 +502,36 @@ class data:
                     bads_far.append([i-1,i,i+1])
 
     def calculate_beat_fit(self):
-        if not type(self.peak_indices2) == list:
-            (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy().tolist(), self.peak_val2.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
-        else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices2.copy(), self.peak_val2.copy(), self.beat_rng[0], self.beat_rng[1])
-        # (self.cleared_indices, self.cleared_peaks)=(self.peak_indices2.copy(), self.peak_val2.copy())
-        # self.differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
-        # avg_diff = np.mean(self.differences)
-        # self.freq = [0]
-        # for diff in self.differences:
-        #     if diff < avg_diff:
-        #         self.freq.append(self.freq[-1] + self.beatnote_det_f*2)
-        #     else:
-        #         self.freq.append(self.freq[-1] + 0.250 - self.beatnote_det_f*2)
-        # print(self.freq)
+        if not type(self.peak_indices) == list:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy().tolist(), self.peak_val.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
+        else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy(), self.peak_val.copy(), self.beat_rng[0], self.beat_rng[1])
         (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f)
         # print(self.freq)
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
-        beat_fit_param = self.beatfit.domain.tolist()
-        beat_fit_param.extend(self.beatfit.window.tolist())
-        beat_fit_param.extend(self.beatfit.coef.tolist())
+        self.beat_fit_param = self.beatfit.domain.tolist()
+        self.beat_fit_param.extend(self.beatfit.window.tolist())
+        self.beat_fit_param.extend(self.beatfit.coef.tolist())
         
-        np.savetxt(self.folder+r'\entries\beat_rng.csv', self.beat_rng, fmt='%i', delimiter=',')
-        np.savetxt(self.folder+r'\beatnote\processed\beat_fit_param.csv', beat_fit_param, delimiter=',')
+        # np.savetxt(self.folder+r'\entries\beat_rng.csv', self.beat_rng, fmt='%i', delimiter=',')
+        np.savetxt(self.folder+r'\beatnote\processed\beat_fit_param.csv', self.beat_fit_param, delimiter=',')
         self.resid = self.freq-self.beatfit(np.array(self.cleared_indices))
         self.scaled_residuals = self.resid**2
         self.scaled_residuals[1:] = self.scaled_residuals[1:]/self.freq[1:]
         np.savetxt(self.folder+r'\beatnote\processed\scaled_residuals.csv', self.scaled_residuals, delimiter=',')
-        print(self.scaled_residuals[1:].mean())
-        plt.scatter(self.cleared_indices[1:],self.scaled_residuals[1:])
-        plt.title(self.scan + 'Scaled Residuals, Mean='+str(np.mean(self.scaled_residuals[1:])))
-        # plt.show()
-        plt.savefig(self.folder+r'\plots\ScaledResiduals.png')
-        plt.clf()
+        print('Sacled Residial beatfit',self.scaled_residuals[1:].mean())
+        # plt.scatter(self.cleared_indices[1:],self.scaled_residuals[1:])
+        # plt.title(self.scan + 'Scaled Residuals, Mean='+str(np.mean(self.scaled_residuals[1:])))
+        # # plt.show()
+        # plt.savefig(self.folder+r'\plots\ScaledResiduals.png')
+        # plt.clf()
 
         plt.title(self.scan+' Filtered Beatnote with identified Peaks')
         plt.plot(self.indices, self.filteredBeat,linewidth=0.5,marker='.', mew='0.05')
-        plt.scatter(self.peak_indices2,self.peak_val2,color='red', marker='x')
+        plt.scatter(self.peak_indices,self.peak_val,color='red', marker='x')
         plt.xlim(0,len(self.indices))
-        if max(self.peak_val2)<25:
-            plt.ylim(0, max(self.peak_val2)+0.1)
+        if max(self.peak_val)<25:
+            plt.ylim(0, max(self.peak_val)+0.1)
         else:
-            plt.ylim(0, np.std(self.peak_val2)*2)
+            plt.ylim(0, np.std(self.peak_val)*2)
         if self.beat_height == 0:
             temp = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
         else:
@@ -563,10 +554,10 @@ class data:
         plt.savefig(self.folder+r'\plots\unscaledresiduals.png')
         plt.clf()
 
-        plt.plot(self.beatfit(self.indices[self.beat_rng[0]:self.beat_rng[1]]),self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
-        plt.title(self.scan+' beat fit scaledT')
-        plt.savefig(self.folder+r'\plots\beatScaledT.png')
-        plt.clf()
+        # plt.plot(self.beatfit(self.indices[self.beat_rng[0]:self.beat_rng[1]]),self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
+        # plt.title(self.scan+' beat fit scaledT')
+        # plt.savefig(self.folder+r'\plots\beatScaledT.png')
+        # plt.clf()
         
         plt.plot(self.indices,self.scaledT)
         plt.title(r'$\frac{Transmission}{Laser Power}$')
@@ -575,6 +566,12 @@ class data:
         plt.savefig(self.folder+r'\plots\scaledT.png')
         plt.clf()
 
+        plt.plot(self.indices,self.scaledH)
+        plt.title(r'$\frac{Hot Cell}{Laser Power}$')
+        plt.axvspan(0,self.beat_rng[0],alpha=0.2,color='grey')
+        plt.axvspan(self.beat_rng[1],len(self.indices),alpha=0.2,color='grey')
+        plt.savefig(self.folder+r'\plots\scaledH.png')
+        plt.clf()
 
     def set_transition(self, F1):
         #Can be used to verify i some fashion if need be of the coefficient

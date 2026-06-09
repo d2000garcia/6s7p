@@ -7,9 +7,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk
-import TestingDataType
+import Absorption_calc
 from numpy import pi as pi
-from plotClass import plots
 from scipy.special import wofz as wofz
 
 
@@ -23,7 +22,7 @@ class window:
         self.plot_w = plot_w
         self.plot_h = plot_h
         #labels to ref plot indices
-        self.plotslabs = [['Tavg','Pavg','HotAvg','scaledHot','scaledT','FittedScan','FittedScanResid'],['ogbeat','filteredbeat','fitted_beat','unscaledresiduals',]]
+        self.plotslabs = [['Tavg','Pavg','Havg','scaledH','scaledT','FittedScan','FittedScanResid'],['ogbeat','filteredbeat','fitted_beat','unscaledresiduals']]
         self.scans=['456','894']
         self.day_fold = ''
         self.window_manager={}
@@ -71,9 +70,9 @@ class window:
                 else:
                     self.window_manager['button'][key1][key2].configure(text=key1+' '+key2)
                     if key2 == 'show':
-                        pass
+                        self.window_manager['button'][key1][key2].configure(text=key1+' '+key2)
                     else:
-                        self.window_manager['button'][key1][key2].grid(row=1+2*int(key1=='894'),column=3+3*int(key2=='calcBeatFit'))
+                        self.window_manager['button'][key1][key2].grid(row=4,column=2+2*int(key1=='894'))
 
         self.window_manager['button']['both']['exit'].configure(command=exit)
 
@@ -136,8 +135,8 @@ class analysisV2:
                 Fine = [0,0] 
             if 'Analysis' in contents:
                 print('Analysis exists, continue')
-                self.analysis.append(TestingDataType.data(self.folderpath,exists=True))
-                self.analysis.append(TestingDataType.data(self.folderpath,scan='894',exists=True))
+                self.analysis.append(Absorption_calc.data(self.folderpath,exists=True))
+                self.analysis.append(Absorption_calc.data(self.folderpath,scan='894',exists=True))
             else:
                 print('Analysis does not exist ')
                 os.mkdir(self.folderpath+r'\Analysis')
@@ -160,22 +159,31 @@ class analysisV2:
                 os.mkdir(self.folderpath+r'\Analysis\894\plots')
                 os.mkdir(self.folderpath+r'\Analysis\894\entries')
                 temp = Image.open(r".\Picture_template.png")
+                
                 temp.save(self.folderpath+r'\Analysis\456\plots\FittedScan.png')
                 temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
+                temp.save(self.folderpath+r'\Analysis\456\plots\fitted_beat.png')
+                temp.save(self.folderpath+r'\Analysis\456\plots\unscaledresiduals.png')
+
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
+                temp.save(self.folderpath+r'\Analysis\894\plots\fitted_beat.png')
+                temp.save(self.folderpath+r'\Analysis\894\plots\unscaledresiduals.png')
                 np.savetxt(self.folderpath+'\\Analysis\\456\\entries\\beat_peak_min.csv',[0],delimiter=',')
                 np.savetxt(self.folderpath+'\\Analysis\\894\\entries\\beat_peak_min.csv',[0],delimiter=',')
-                np.savetxt(self.folderpath+'\\Analysis\\456\\entries\\fit_rng.csv',[0,8000],delimiter=',')
-                np.savetxt(self.folderpath+'\\Analysis\\894\\entries\\fit_rng.csv',[0,8000],delimiter=',')
-                self.analysis.append(TestingDataType.data(self.folderpath,exists=False))
-                self.analysis.append(TestingDataType.data(self.folderpath,scan='894',exists=False))
+                np.savetxt(self.folderpath+'\\Analysis\\456\\entries\\fit_rng.csv',[0,8000],delimiter=',',fmt='%i')
+                np.savetxt(self.folderpath+'\\Analysis\\894\\entries\\fit_rng.csv',[0,8000],delimiter=',',fmt='%i')
+                self.analysis.append(Absorption_calc.data(self.folderpath,exists=False))
+                self.analysis.append(Absorption_calc.data(self.folderpath,scan='894',exists=False))
             self.wind.window_manager['work_dir']['tk_var'].set(self.folderpath)
             self.wind.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
+            self.wind.update_work_dir(self.folderpath)
             for s in ['456','894']:
-                self.window_manager['button'][s]['calculateTFit'].configure(command=lambda:self.calculateTFit(self,s))
-                self.window_manager['button'][s]['calcBeatFit'].configure(command=lambda:self.calculateBeatFit(self,s))
-                self.window_manager['button'][s]['show'].configure(command=lambda:self.show_plot(self,s))
+                self.wind.window_manager['button'][s]['calcTFit'].configure(command=lambda:self.calculateTFit(s))
+                self.wind.window_manager['button'][s]['calcBeatFit'].configure(command=lambda:self.calculateBeatFit(s))
+                self.wind.window_manager['button'][s]['show'].configure(command=lambda:self.show_plot(s))
+                for pic in ['Tavg','Pavg','Havg','scaledH','scaledT','FittedScan','FittedScanResid','ogbeat','filteredbeat','fitted_beat','unscaledresiduals']:
+                    self.wind.update_image(s,pic)
 
     def calculateTFit(self,scan):
         if scan == '456':
@@ -185,20 +193,30 @@ class analysisV2:
 
     def calculateBeatFit(self,scan):
         temp = float(self.wind.window_manager[scan]['entries']['beat_min']['val'][0].get())
-        temp2 = float(np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',delimiter=',')[0])
+        temp2 = float(np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',delimiter=','))
         if temp != temp2:
             np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',temp,delimiter=',')
 
-        temp = [float(self.wind.window_manager[scan]['entries']['fit_rng']['val'][0].get())]
-        temp.append(float(self.wind.window_manager[scan]['entries']['fit_rng']['val'][1].get()))
-        temp2 = np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',delimiter=',')
-        if (temp[0] != float(temp2[0])) or (temp[1] != float(temp2[1])):
-            np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',temp,delimiter=',')
+        temp = [int(self.wind.window_manager[scan]['entries']['fit_rng']['val'][0].get())]
+        temp.append(int(self.wind.window_manager[scan]['entries']['fit_rng']['val'][1].get()))
+        temp2 = np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',delimiter=',',dtype=int)
+        if (temp[0] != int(temp2[0])) or (temp[1] != int(temp2[1])):
+            np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',temp,delimiter=',',fmt='%i')
+            self.analysis[int(scan!=456)].self.beat_rng = temp.copy()
         self.analysis[int(scan!=456)].filter_beatnote()
-        self.
+        to_update = ['scaledH','scaledT','filteredbeat','fitted_beat','unscaledresiduals']
+        try:
+            self.analysis[int(scan!=456)].calculate_beat_fit()
+            plot = True
+        except:print('Not able to fitbeatnote')
+        for pic in to_update:
+            self.wind.update_image(scan,pic)
+
+
 
     def show_plot(self,scan):
-        pass
+        plt.plot(self.analysis[int(scan!=456)].indices,self.analysis[int(scan!=456)].scaledT)
+        plt.show()
 
     def open_file_dialog(self):
         temporary = filedialog.askdirectory(
