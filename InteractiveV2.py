@@ -122,27 +122,22 @@ class analysisV2:
         self.wind.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
         self.folderpath = ''
         self.analysis = []
+        self.beatmin = [0,0]
     
     def checkforanalysis(self):
         if not self.folderpath == '':
             contents = os.listdir(path = self.folderpath)
             date = self.folderpath[:self.folderpath.rfind('/')]
-
             if os.path.exists(date+r'\Fine.txt'):
                 file = open(date+r'\Fine.txt','r')
                 Fine = list(map(int,file.readline().split(',')))
                 file.close()
             else:
                 Fine = [0,0] 
-
-            file = open(self.folderpath+r'\beatnote_det_f.csv','r')
-            beat_det_f = list(map(float,file.readline().strip().split(',')))
-            file.close()
             if 'Analysis' in contents:
                 print('Analysis exists, continue')
-                # self.Temperature = np.loadtxt(self.folderpath+r'\Analysis\TempMeas.csv', delimiter=',')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=True,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=True,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
+                self.analysis.append(TestingDataType.data(self.folderpath,exists=True))
+                self.analysis.append(TestingDataType.data(self.folderpath,scan='894',exists=True))
             else:
                 print('Analysis does not exist ')
                 os.mkdir(self.folderpath+r'\Analysis')
@@ -169,33 +164,38 @@ class analysisV2:
                 temp.save(self.folderpath+r'\Analysis\456\plots\FittedScanResid.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScan.png')
                 temp.save(self.folderpath+r'\Analysis\894\plots\FittedScanResid.png')
-                f = open(self.analysis456.folder+r'\entries\beat_peak_min.csv','w')
-                f.write(str(0))
-                f.close()
-                f = open(self.analysis894.folder+r'\entries\beat_peak_min.csv','w')
-                f.write(str(0))
-                f.close()
-
-                temps = TestingDataType.simple_dat_get(self.folderpath +r'\TemperatureV2.csv',0)
-                self.Temperature = []
-                for i in range(6):
-                    self.Temperature.append(np.mean(temps[:,i]))
-                np.savetxt(self.folderpath+r'\Analysis\TempMeas.csv', self.Temperature, delimiter=',')
-                self.analysis456 = TestingDataType.data(self.folderpath,exists=False,beatnote_det_f=beat_det_f[0]/1000,F=Fine[0])
-                self.analysis894 = TestingDataType.data(self.folderpath,scan='894',exists=False,beatnote_det_f=beat_det_f[1]/1000,F=Fine[1])
-            self.wind.window_manager['button']['both']
+                np.savetxt(self.folderpath+'\\Analysis\\456\\entries\\beat_peak_min.csv',[0],delimiter=',')
+                np.savetxt(self.folderpath+'\\Analysis\\894\\entries\\beat_peak_min.csv',[0],delimiter=',')
+                np.savetxt(self.folderpath+'\\Analysis\\456\\entries\\fit_rng.csv',[0,8000],delimiter=',')
+                np.savetxt(self.folderpath+'\\Analysis\\894\\entries\\fit_rng.csv',[0,8000],delimiter=',')
+                self.analysis.append(TestingDataType.data(self.folderpath,exists=False))
+                self.analysis.append(TestingDataType.data(self.folderpath,scan='894',exists=False))
             self.wind.window_manager['work_dir']['tk_var'].set(self.folderpath)
-            self.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
+            self.wind.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
             for s in ['456','894']:
                 self.window_manager['button'][s]['calculateTFit'].configure(command=lambda:self.calculateTFit(self,s))
                 self.window_manager['button'][s]['calcBeatFit'].configure(command=lambda:self.calculateBeatFit(self,s))
                 self.window_manager['button'][s]['show'].configure(command=lambda:self.show_plot(self,s))
 
     def calculateTFit(self,scan):
-        pass
+        if scan == '456':
+            pass
+        else:
+            pass
 
     def calculateBeatFit(self,scan):
-        pass
+        temp = float(self.wind.window_manager[scan]['entries']['beat_min']['val'][0].get())
+        temp2 = float(np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',delimiter=',')[0])
+        if temp != temp2:
+            np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',temp,delimiter=',')
+
+        temp = [float(self.wind.window_manager[scan]['entries']['fit_rng']['val'][0].get())]
+        temp.append(float(self.wind.window_manager[scan]['entries']['fit_rng']['val'][1].get()))
+        temp2 = np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',delimiter=',')
+        if (temp[0] != float(temp2[0])) or (temp[1] != float(temp2[1])):
+            np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',temp,delimiter=',')
+        self.analysis[int(scan!=456)].filter_beatnote()
+        self.
 
     def show_plot(self,scan):
         pass
