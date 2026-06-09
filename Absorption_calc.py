@@ -199,24 +199,6 @@ def simple_dat_get(filename, skip_lines=0):
     file.close()
     return np.array(data)
 
-def process_beatnote(indices,ogBeat,run_avg_num):
-    #Initial Peak Finding with base data
-    peak_indices = find_peaks(ogBeat, height=-50, distance=50)
-    peak_val = peak_indices[1]['peak_heights']
-    peak_indices = peak_indices[0]
-    #filtering data
-    runningavg = np.convolve(ogBeat, np.ones(run_avg_num)/run_avg_num, mode='same')
-    filteredBeat=ogBeat-runningavg
-    #Peak finding filtered data
-    standard_peak_min = np.std(filteredBeat[run_avg_num+1:len(indices)-run_avg_num-1])*2
-    peak_indices2 = find_peaks(filteredBeat, height=standard_peak_min,distance=20)
-    peak_indices = peak_indices.tolist()
-    peak_val = peak_val.tolist()
-    peak_val2 = peak_indices2[1]['peak_heights']
-    peak_indices2 = peak_indices2[0]
-    (peak_indices2, peak_val2) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
-    return (peak_indices, peak_val, peak_indices2, peak_val2, filteredBeat)
-
 def correct_peaks(peak_indices, peak_val):
     #Taking out edge peaks
     itterations = 0 
@@ -325,33 +307,22 @@ class data:
         self.par_folder = par_folder
         self.BeatRunAvgN = BeatRunAvgN
         self.beat_height = 0
+        temp = np.loadtxt(self.par_folder+'\\beatnote_det_f.csv',delimiter=',')
         if scan == '456':
             self.folder = par_folder + r'\Analysis\456'
+            self.BeatRunAvgN=75
+            self.beatnote_det_f=temp[0]
         else:
             self.folder = par_folder + r'\Analysis\894'
+            self.BeatRunAvgN=100
+            self.beatnote_det_f=temp[1]
         temp = np.loadtxt(par_folder+'\\TemperatureV2.csv')
         if not exists:
-            pure_dat = np.loadtxt(par_folder+'\\'+scan+'.csv', delimiter=',')
-            background = np.loadtxt(par_folder+"\\Background.csv",delimiter=',').mean(0)
-            shape = pure_dat.shape[1]
-            n = int((shape-2)/3)
-            self.indices = pure_dat[:,shape-1]
-            self.indices = self.indices - self.indices.min()
-            Tavg = pure_dat[:,:n].mean(1)
-            Pavg = pure_dat[:,n:2*n].mean(1)
-            Havg = pure_dat[:,2*n:3*n].mean(1)
-            ogbeat = pure_dat[:,n-2]
-
             self.beat_rng = [0,8000]
-            self.beat_height=0
-            (peak_indices,peak_val,self.peak_indices2,self.peak_val2, self.filteredBeat) = process_beatnote(self.indices,ogbeat,BeatRunAvgN)
-            #beatnoteClean
-            try:
-                self.calculate_beat_fit()
-            except:
-                print("Error in calculating fit for beatnote")
+            self.make_init_plots()
         else:
-            
+            self.load_dat()
+
         if scan == '894':
             self.beatnote_det_f = temp[1]
             peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
@@ -371,14 +342,16 @@ class data:
                 self.F1 = F1
 
     def make_init_plots(self):
+        self.beat_height = np.savetxt(self.folder+'\\entries\\beat_peak_min.csv',[0],delimiter=',')
         pure_dat = np.loadtxt(self.par_folder+'\\'+self.scan+'.csv', delimiter=',')
         background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
         shape = pure_dat.shape[1]
         n = int((shape-2)/3)
         self.indices = pure_dat[:,shape-1]
         self.indices = self.indices - self.indices.min()
-        np.savetxt(folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
-        
+        np.savetxt(self.folder+r'\indices.csv', self.indices, fmt='%i', delimiter=',')
+        self.indices=self.indices.tolist()
+
         Tavg = pure_dat[:,:n].mean(1)
         Pavg = pure_dat[:,n:2*n].mean(1)
         Havg = pure_dat[:,2*n:3*n].mean(1)
@@ -386,45 +359,112 @@ class data:
         plt.plot(self.indices, Tavg)
         plt.plot([self.indices[0],self.indices[-1]],[background[0],background[0]],'-r')
         plt.title(r'Averaged Transmission Measurements')
-        plt.savefig(folder+r'\plots\Tavg.png')
+        plt.savefig(self.folder+r'\plots\Tavg.png')
         plt.clf()
 
         plt.plot(self.indices, Pavg)
         plt.plot([self.indices[0],self.indices[-1]],[background[1],background[1]],'-r')
         plt.title(r'Averaged Laser Power Measurements')
-        plt.savefig(folder+r'\plots\Pavg.png')
+        plt.savefig(self.folder+r'\plots\Pavg.png')
         plt.clf()
 
         plt.plot(self.indices, Havg)
         plt.plot([self.indices[0],self.indices[-1]],[background[2],background[2]],'-r')
         plt.title(r'Averaged Hot Cell Measurements')
-        plt.savefig(folder+r'\plots\Havg.png')
+        plt.savefig(self.folder+r'\plots\Havg.png')
         plt.clf()
 
         self.scaledT = (Tavg-background[0])/(Pavg-background[1])
         self.scaledH = (Havg-background[2])/(Pavg-background[1])
         
-        np.savetxt(folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
-        np.savetxt(folder+r'\fitting\processed\scaledH.csv', self.scaledH, delimiter=',')
+        np.savetxt(self.folder+r'\fitting\processed\scaledT.csv', self.scaledT, delimiter=',')
+        np.savetxt(self.folder+r'\fitting\processed\scaledH.csv', self.scaledH, delimiter=',')
 
         plt.plot(self.indices, self.scaledT)
         plt.title(r'Averaged Laser Power Measurements')
-        plt.savefig(folder+r'\plots\Pavg.png')
+        plt.savefig(self.folder+r'\plots\Pavg.png')
         plt.clf()
 
         plt.plot(self.indices, self.scaledH)
         plt.plot([self.indices[0],self.indices[-1]],[background[2],background[2]],'-r')
         plt.title(r'Averaged Hot Cell Measurements')
-        plt.savefig(folder+r'\plots\Havg.png')
+        plt.savefigself.folder+r'\plots\Havg.png')
         plt.clf()
 
         ogbeat = pure_dat[:,n-2]
-        
-        plt.scatter(self.indices, ogbeat)
+        self.init_process_beatnote(self.indices,ogbeat,self.BeatRunAvgN)
+
+    def init_process_beatnote(self,indices,ogBeat,run_avg_num):
+        #Initial Peak Finding with base data
+        peak_indices = find_peaks(ogBeat, height=-50, distance=50)
+        peak_val = peak_indices[1]['peak_heights']
+        peak_indices = peak_indices[0]
+        #filtering data
+        runningavg = np.convolve(ogBeat, np.ones(run_avg_num)/run_avg_num, mode='same')
+        self.filteredBeat=ogBeat-runningavg
+        #Peak finding filtered data
+        standard_peak_min = np.std(self.filteredBeat[run_avg_num+1:len(indices)-run_avg_num-1])*2
+        peak_indices2 = find_peaks(self.filteredBeat, height=standard_peak_min,distance=20)
+        peak_indices = peak_indices.tolist()
+        peak_val = peak_val.tolist()
+        peak_val2 = peak_indices2[1]['peak_heights']
+        peak_indices2 = peak_indices2[0]
+        plt.plot(indices, ogBeat,linewidth=0.5,marker='.', mew='0.05')
         plt.title('Original Beanote')
         plt.scatter(peak_indices,peak_val, color='red', marker='x')
-        plt.savefig(folder+r'\plots\ogbeat.png')
+        plt.savefig(self.folder+r'\plots\ogbeat.png')
         plt.clf()
+        (self.peak_indices, self.peak_val) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
+        np.savetxt(self.folder+r'\beatnote\processed\filteredBeat.csv', self.filteredBeat, delimiter=',')
+        np.savetxt(self.folder+r'\beatnote\processed\peak_indices.csv', self.peak_indices, fmt='%i', delimiter=',')
+        np.savetxt(self.folder+r'\beatnote\processed\peak_val.csv', self.peak_val, delimiter=',')
+        self.beat_height = 0
+        self.filter_beatnote()
+
+    def filter_beatnote(self):
+        self.beat_height = np.loadtxt(self.folder+'\\entries\\beat_peak_min.csv',delimiter=',')[0]
+        if self.beat_height == 0:
+            standard_peak_min = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
+        else:
+            standard_peak_min = self.beat_height
+        peak_indices2 = find_peaks(self.filteredBeat, height=standard_peak_min,distance=20)
+        peak_val2 = peak_indices2[1]['peak_heights']
+        peak_indices2 = peak_indices2[0]
+        # (peak_indices2, peak_val2) = correct_peaks(peak_indices=peak_indices2.tolist(), peak_val=peak_val2.tolist())
+
+        self.peak_indices = peak_indices2
+        self.peak_val = peak_val2
+        np.savetxt(self.folder+r'\beatnote\processed\peak_indices.csv',self.peak_indices, delimiter=',')
+        np.savetxt(self.folder+r'\beatnote\processed\peak_val.csv',self.peak_val, delimiter=',')
+        if not type(self.peak_indices) == list:
+            (self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy().tolist(), self.peak_val.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
+        else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy(), self.peak_val.copy(), self.beat_rng[0], self.beat_rng[1])
+        
+        plt.title(self.scan+' Filtered Beatnote with identified Peaks')
+        plt.plot(self.indices, self.filteredBeat,linewidth=0.5,marker='.', mew='0.05')
+        plt.scatter(self.peak_indices,self.peak_val,color='red', marker='x')
+        plt.xlim(0,len(self.indices))
+        if max(self.peak_val)<25:
+            plt.ylim(0, max(self.peak_val)+0.1)
+        else:
+            plt.ylim(0, np.std(self.peak_val)*2)
+        if self.beat_height == 0:
+            temp = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
+        else:
+            temp = self.beat_height
+        plt.axvspan(0,self.beat_rng[0],alpha=0.2,color='grey')
+        plt.axvspan(self.beat_rng[1],len(self.indices),alpha=0.2,color='grey')
+        plt.plot([0,len(self.indices)],[temp, temp], '-r')
+        plt.savefig(self.folder+r'\plots\filteredbeat.png')
+        plt.clf()
+
+    def loaddat(self):
+        self.indices = np.loadtxt(self.folder+r'\indices.csv', dtype=int, delimiter=',')
+        self.scaledT = np.loadtxt(self.folder+r'\fitting\processed\scaledT.csv', delimiter=',')
+        self.scaledH = np.loadtxt(self.folder+r'\fitting\processed\scaledH.csv', delimiter=',')
+        self.filteredBeat = np.loadtxt(self.folder+r'\beatnote\processed\filteredBeat.csv', delimiter=',')
+        self.peak_indices = np.loadtxt(self.folder+r'\beatnote\processed\peak_indices.csv', dtype=int, delimiter=',').tolist()
+        self.peak_val = np.loadtxt(self.folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
 
     def find_pairs(self, peak_indices, peak_val):
         differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
