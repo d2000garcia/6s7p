@@ -40,15 +40,15 @@ class window:
             self.window_manager[scan]['entries']['fit_rng']['entry'][1].grid(column=2,row=1+2*int(scan=='894'))
 
             self.window_manager[scan]['entries']['beat_min']={'entry':[ttk.Entry(self.window,width=ent_wdth)],'val':[tk.StringVar(value="0")]}
-            self.window_manager[scan]['entries']['beat_min']['entry'][0].configure(textvariable=self.window_manager[scan]['entries']['fit_rng']['val'][0])
-            self.window_manager[scan]['entries']['beat_min']['entry'][0].grid(column=5,row=1+2*int(scan=='894'))
+            self.window_manager[scan]['entries']['beat_min']['entry'][0].configure(textvariable=self.window_manager[scan]['entries']['beat_min']['val'][0])
+            self.window_manager[scan]['entries']['beat_min']['entry'][0].grid(column=7,row=1+2*int(scan=='894'))
 
             self.window_manager[scan]['labels'] = [ttk.Label(self.window,text='Fit Range'),ttk.Label(self.window,text='Beat min')]
             self.window_manager[scan]['labels'][0].grid(column=0,row=1+2*int(scan=='894'))
-            self.window_manager[scan]['labels'][1].grid(column=4,row=1+2*int(scan=='894'))
+            self.window_manager[scan]['labels'][1].grid(column=6,row=1+2*int(scan=='894'))
             for j in [0,1]:
                 self.window_manager[scan]['Notes'].append(ttk.Notebook(window))
-                self.window_manager[scan]['Notes'][-1].grid(column=j*4,row=int(scan=='894')*2,columnspan=3, sticky="nsew")
+                self.window_manager[scan]['Notes'][-1].grid(column=j*5,row=int(scan=='894')*2,columnspan=4, sticky="nsew")
                 for name in self.plotslabs[j]:
                     self.window_manager[scan]['Imgs'][j][name] = {}
                     self.window_manager[scan]['Imgs'][j][name]['TkImg']=ImageTk.PhotoImage(resized_default.copy())
@@ -66,13 +66,13 @@ class window:
                 self.window_manager['button'][key1][key2] = ttk.Button(self.window,text=key2,command=lambda : print('Pick a data set for analysis!'))
                 if key1 == 'both':
                     i+=2
-                    self.window_manager['button'][key1][key2].grid(column=3,row=i)
+                    self.window_manager['button'][key1][key2].grid(column=4,row=i)
                 else:
                     self.window_manager['button'][key1][key2].configure(text=key1+' '+key2)
                     if key2 == 'show':
-                        self.window_manager['button'][key1][key2].configure(text=key1+' '+key2)
+                        self.window_manager['button'][key1][key2].grid(row=1+2*int(key1=='894'),column=4)
                     else:
-                        self.window_manager['button'][key1][key2].grid(row=4,column=2+2*int(key1=='894'))
+                        self.window_manager['button'][key1][key2].grid(row=1+2*int(key1=='894'),column=3+2*int(key2=='calcBeatFit'))
 
         self.window_manager['button']['both']['exit'].configure(command=exit)
 
@@ -178,10 +178,16 @@ class analysisV2:
             self.wind.window_manager['work_dir']['tk_var'].set(self.folderpath)
             self.wind.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
             self.wind.update_work_dir(self.folderpath)
+
+            self.wind.window_manager['button']['456']['calcTFit'].configure(command=lambda:self.calculateTFit('456'))
+            self.wind.window_manager['button']['456']['calcBeatFit'].configure(command=lambda:self.calculateBeatFit('456'))
+            self.wind.window_manager['button']['456']['show'].configure(command=lambda:self.show_plot('456'))
+
+            self.wind.window_manager['button']['894']['calcTFit'].configure(command=lambda:self.calculateTFit('894'))
+            self.wind.window_manager['button']['894']['calcBeatFit'].configure(command=lambda:self.calculateBeatFit('894'))
+            self.wind.window_manager['button']['894']['show'].configure(command=lambda:self.show_plot('894'))
+
             for s in ['456','894']:
-                self.wind.window_manager['button'][s]['calcTFit'].configure(command=lambda:self.calculateTFit(s))
-                self.wind.window_manager['button'][s]['calcBeatFit'].configure(command=lambda:self.calculateBeatFit(s))
-                self.wind.window_manager['button'][s]['show'].configure(command=lambda:self.show_plot(s))
                 for pic in ['Tavg','Pavg','Havg','scaledH','scaledT','FittedScan','FittedScanResid','ogbeat','filteredbeat','fitted_beat','unscaledresiduals']:
                     self.wind.update_image(s,pic)
 
@@ -194,19 +200,20 @@ class analysisV2:
     def calculateBeatFit(self,scan):
         temp = float(self.wind.window_manager[scan]['entries']['beat_min']['val'][0].get())
         temp2 = float(np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',delimiter=','))
+        print(temp)
+        print(temp2)
         if temp != temp2:
-            np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',temp,delimiter=',')
-
+            np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',[temp],delimiter=',')
         temp = [int(self.wind.window_manager[scan]['entries']['fit_rng']['val'][0].get())]
         temp.append(int(self.wind.window_manager[scan]['entries']['fit_rng']['val'][1].get()))
         temp2 = np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',delimiter=',',dtype=int)
         if (temp[0] != int(temp2[0])) or (temp[1] != int(temp2[1])):
             np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',temp,delimiter=',',fmt='%i')
-            self.analysis[int(scan!=456)].self.beat_rng = temp.copy()
-        self.analysis[int(scan!=456)].filter_beatnote()
+            self.analysis[int(scan!='456')].beat_rng = temp.copy()
+        self.analysis[int(scan!='456')].filter_beatnote()
         to_update = ['scaledH','scaledT','filteredbeat','fitted_beat','unscaledresiduals']
         try:
-            self.analysis[int(scan!=456)].calculate_beat_fit()
+            self.analysis[int(scan!='456')].calculate_beat_fit()
             plot = True
         except:print('Not able to fitbeatnote')
         for pic in to_update:
@@ -215,7 +222,8 @@ class analysisV2:
 
 
     def show_plot(self,scan):
-        plt.plot(self.analysis[int(scan!=456)].indices,self.analysis[int(scan!=456)].scaledT)
+        print(';g')
+        plt.plot(self.analysis[int(scan!='456')].indices,self.analysis[int(scan!='456')].scaledT)
         plt.show()
 
     def open_file_dialog(self):

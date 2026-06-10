@@ -308,7 +308,7 @@ class data:
         self.BeatRunAvgN = BeatRunAvgN
         self.beat_height = 0
 
-        temp = np.loadtxt(self.par_folder+'\\beatnote_det_f.csv',delimiter=',')
+        temp = np.loadtxt(self.par_folder+'\\beatnote_det_f.csv',delimiter=',')/1000
         if scan == '456':
             self.folder = par_folder + r'\Analysis\456'
             self.BeatRunAvgN=75
@@ -321,7 +321,7 @@ class data:
             self.beat_rng = [0,8000]
             self.make_init_plots()
         else:
-            self.load_dat()
+            self.loaddat()
 
         if scan == '894':
             peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
@@ -424,7 +424,7 @@ class data:
         self.filter_beatnote()
 
     def filter_beatnote(self):
-        self.beat_height = np.loadtxt(self.folder+'\\entries\\beat_peak_min.csv',delimiter=',')
+        self.beat_height = np.loadtxt(self.folder+'\\entries\\beat_peak_min.csv',delimiter=',').tolist()
         print(self.beat_height)
         if self.beat_height == 0:
             standard_peak_min = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
@@ -505,6 +505,7 @@ class data:
         if not type(self.peak_indices) == list:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy().tolist(), self.peak_val.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
         else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy(), self.peak_val.copy(), self.beat_rng[0], self.beat_rng[1])
         (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f)
+        print(self.freq)
         # print(self.freq)
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
         self.beat_fit_param = self.beatfit.domain.tolist()
