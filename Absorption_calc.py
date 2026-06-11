@@ -326,6 +326,8 @@ class data:
 
         if scan == '894':
             peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+            # print('peaks',peaks)
+            # print(properties)
             if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
                             #peak 2 is larger 
                             self.set_transition(F1=3)
@@ -349,6 +351,19 @@ class data:
         self.beat_height = np.savetxt(self.folder+'\\entries\\beat_peak_min.csv',[0],delimiter=',')
         pure_dat = np.loadtxt(self.par_folder+'\\'+self.scan+'ScanV2.csv', delimiter=',')
         background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
+        fix = False
+        if type(background)==np.ndarray:
+            for i in background:
+                if i > 1:
+                    fix = True
+                    r".\Picture_template.png"
+        else:
+            fix = True
+        if fix:
+            p = os.getcwd()
+            p.find
+            background = np.loadtxt(p[:p.find('\\6s7p')]+'\\6s7p\\Background_default.csv',delimiter=',').mean(0)
+        # print('background',background)
         shape = pure_dat.shape[1]
         n = int((shape-2)/3)
         self.indices = pure_dat[:,shape-1]
@@ -426,7 +441,7 @@ class data:
 
     def filter_beatnote(self):
         self.beat_height = np.loadtxt(self.folder+'\\entries\\beat_peak_min.csv',delimiter=',').tolist()
-        print(self.beat_height)
+        # print(self.beat_height)
         if self.beat_height == 0:
             standard_peak_min = np.std(self.filteredBeat[self.BeatRunAvgN+1:len(self.indices)-self.BeatRunAvgN-1])*2
         else:
@@ -671,7 +686,7 @@ class data:
                 test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
 
                 gauss1 = lambda x,peak,cen,s: peak * np.exp(-((x-cen)/s)**2/2) + 1
-                weights1 = gauss1(plotting_freq,6,self.beatfit(peaks[0]),0.15)
+                weights1 = gauss1(plotting_freq,4,self.beatfit(peaks[0]),0.15)
                 plt.plot(plotting_freq,weights1)
                 plt.show()
             else:

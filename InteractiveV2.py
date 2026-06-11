@@ -188,6 +188,17 @@ class analysisV2:
             self.wind.window_manager['button']['894']['show'].configure(command=lambda:self.show_plot('894'))
 
             for s in ['456','894']:
+                temp = np.loadtxt(self.folderpath+'\\Analysis\\'+s+'\\entries\\beat_peak_min.csv',delimiter=',').tolist()
+                temp2 = np.loadtxt(self.folderpath+'\\Analysis\\'+s+'\\entries\\fit_rng.csv',delimiter=',',dtype=int)
+
+                self.wind.window_manager[s]['entries']['beat_min']['val'][0].set(str(temp))
+                self.wind.window_manager[s]['entries']['fit_rng']['val'][0].set(str(temp2[0]))
+                self.wind.window_manager[s]['entries']['fit_rng']['val'][1].set(str(temp2[1]))
+
+                self.wind.window_manager[s]['entries']['beat_min']['entry'][0].configure(textvariable=self.wind.window_manager[s]['entries']['beat_min']['val'][0])
+                self.wind.window_manager[s]['entries']['fit_rng']['entry'][0].configure(textvariable=self.wind.window_manager[s]['entries']['fit_rng']['val'][0])
+                self.wind.window_manager[s]['entries']['fit_rng']['entry'][1].configure(textvariable=self.wind.window_manager[s]['entries']['fit_rng']['val'][1])
+
                 for pic in ['Tavg','Pavg','Havg','scaledH','scaledT','FittedScan','FittedScanResid','ogbeat','filteredbeat','fitted_beat','unscaledresiduals']:
                     self.wind.update_image(s,pic)
 
@@ -201,8 +212,8 @@ class analysisV2:
     def calculateBeatFit(self,scan):
         temp = float(self.wind.window_manager[scan]['entries']['beat_min']['val'][0].get())
         temp2 = float(np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',delimiter=','))
-        print(temp)
-        print(temp2)
+        # print(temp)
+        # print(temp2)
         if temp != temp2:
             np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\beat_peak_min.csv',[temp],delimiter=',')
         temp = [int(self.wind.window_manager[scan]['entries']['fit_rng']['val'][0].get())]
@@ -210,7 +221,7 @@ class analysisV2:
         temp2 = np.loadtxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',delimiter=',',dtype=int)
         if (temp[0] != int(temp2[0])) or (temp[1] != int(temp2[1])):
             np.savetxt(self.folderpath+'\\Analysis\\'+scan+'\\entries\\fit_rng.csv',temp,delimiter=',',fmt='%i')
-            self.analysis[int(scan!='456')].beat_rng = temp.copy()
+        self.analysis[int(scan!='456')].beat_rng = temp.copy()
         self.analysis[int(scan!='456')].filter_beatnote()
         to_update = ['scaledH','scaledT','filteredbeat','fitted_beat','unscaledresiduals']
         try:
