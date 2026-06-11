@@ -307,6 +307,7 @@ class data:
         self.par_folder = par_folder
         self.BeatRunAvgN = BeatRunAvgN
         self.beat_height = 0
+        self.isbeatfitted = False
 
         temp = np.loadtxt(self.par_folder+'\\beatnote_det_f.csv',delimiter=',')/1000
         if scan == '456':
@@ -470,6 +471,8 @@ class data:
         self.peak_val = np.loadtxt(self.folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
         if os.path.exists(self.folder+r'\beatnote\processed\beat_fit_param.csv'):
             self.beat_fit_param = np.loadtxt(self.folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',').tolist()
+            self.beatfit = poly(temp[4:], temp[0:2], temp[2:4])
+            self.isbeatfitted = True
 
     def find_pairs(self, peak_indices, peak_val):
         differences = list(map(lambda x1,x2:x1-x2, self.cleared_indices[1:], self.cleared_indices[:len(self.cleared_indices)-1]))
@@ -505,7 +508,6 @@ class data:
         if not type(self.peak_indices) == list:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy().tolist(), self.peak_val.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
         else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy(), self.peak_val.copy(), self.beat_rng[0], self.beat_rng[1])
         (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f)
-        print(self.freq)
         # print(self.freq)
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
         self.beat_fit_param = self.beatfit.domain.tolist()
@@ -574,6 +576,8 @@ class data:
         plt.savefig(self.folder+r'\plots\scaledH.png')
         plt.clf()
 
+        self.isbeatfitted = True
+
     def set_transition(self, F1):
         #Can be used to verify i some fashion if need be of the coefficient
         # fine_structure = 0.00729735256
@@ -629,24 +633,23 @@ class data:
             m=2.2069484567911638
             kB=1.3806503
             k1 = np.sqrt(kB/m/c**2) * 10**(-7) #to be used for delta _wD = w *k1 *sqrt(T)
-
-
             if self.scan == '456':
                 peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
                 p0 = 0.37 #scaledT pwr at top
                 Gamma = 1/137.54/2/(2*pi)#half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
-
+                baseline = np.mean(self.scaledH[peaks[0]-250:peaks[0]+250])
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
                 peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
                 peaks[1] = int((properties['left_ips'][1]+properties['right_ips'][1])/2)
                 p0=0.2 #scaledT power at top
                 Gamma = 1/34.791/2/(2*pi) #half of lifetime in GHz from Stek
+                baseline = np.mean(self.scaledH[peaks[0]:peaks[1]])
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
             coeff = self.hyp_weights
             
             plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-            plotting_scaledT = self.scaledT[self.indices[self.beat_rng[0]]:self.indices[self.beat_rng[1]]]
+            plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]
             weights1 = plotting_freq.copy()
             weights1 = weights1.tolist()
             dist = 1000
@@ -674,29 +677,29 @@ class data:
             else:
                 # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-            if self.scan == '894':
-                if self.use_cur_bot:
-                    # ceiling = np.mean(self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]])
-                    # floor = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
-                    # baseline = floor/ceiling
-                    baseline = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
-                else:
-                    if os.path.exists(self.par_folder+'\\PwrWings894.csv'):
-                        hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
-                        baseline = hotcell[1]
-                    else:
-                        baseline = 0.05*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate power in wings for 894
-            else:
-                if os.path.exists(self.par_folder+'\\PwrWings456.csv'):
-                    hotcell= np.loadtxt(self.par_folder+'\\PwrWings456.csv', delimiter=',')
-                    bottom = hotcell[1]
-                    top = hotcell[0]
-                    baseline = (test3[2]*(self.beatfit(int(self.indices[peaks[0]]))-test3[1])**2+test3[0])*bottom/top
-                else:
-                    if self.F1 == 4:
-                        baseline = 0.15*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 15% power in wings for 456
-                    if self.F1 == 3:
-                        baseline = 0.008*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 0.8% power in wings for 456
+            # if self.scan == '894':
+            #     if self.use_cur_bot:
+            #         # ceiling = np.mean(self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]])
+            #         # floor = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
+            #         # baseline = floor/ceiling
+            #         baseline = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
+            #     else:
+            #         if os.path.exists(self.par_folder+'\\PwrWings894.csv'):
+            #             hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
+            #             baseline = hotcell[1]
+            #         else:
+            #             baseline = 0.05*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate power in wings for 894
+            # else:
+            #     if os.path.exists(self.par_folder+'\\PwrWings456.csv'):
+            #         hotcell= np.loadtxt(self.par_folder+'\\PwrWings456.csv', delimiter=',')
+            #         bottom = hotcell[1]
+            #         top = hotcell[0]
+            #         baseline = (test3[2]*(self.beatfit(int(self.indices[peaks[0]]))-test3[1])**2+test3[0])*bottom/top
+            #     else:
+            #         if self.F1 == 4:
+            #             baseline = 0.15*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 15% power in wings for 456
+            #         if self.F1 == 3:
+            #             baseline = 0.008*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 0.8% power in wings for 456
             # print(self.hotbody)
             if self.hotbody == 30:
                 low = 20

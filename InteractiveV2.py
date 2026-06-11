@@ -192,10 +192,11 @@ class analysisV2:
                     self.wind.update_image(s,pic)
 
     def calculateTFit(self,scan):
-        if scan == '456':
-            pass
-        else:
-            pass
+        if self.analysis[int(scan!='456')].isbeatfitted:
+            self.analysis[int(scan!='456')].set_fitting_function()
+            self.wind.update_image(scan,'FittedScan')
+            self.wind.update_image(scan,'FittedScanResid')
+        else:print("Fit "+ scan +" beatnote first!")
 
     def calculateBeatFit(self,scan):
         temp = float(self.wind.window_manager[scan]['entries']['beat_min']['val'][0].get())
@@ -222,8 +223,11 @@ class analysisV2:
 
 
     def show_plot(self,scan):
-        print(';g')
         plt.plot(self.analysis[int(scan!='456')].indices,self.analysis[int(scan!='456')].scaledT)
+        plt.plot([self.analysis[int(scan!='456')].indices[0],self.analysis[int(scan!='456')].indices[-1]],[0,0],'-r')
+        plt.show()
+        plt.plot(self.analysis[int(scan!='456')].indices,self.analysis[int(scan!='456')].scaledH)
+        plt.plot([self.analysis[int(scan!='456')].indices[0],self.analysis[int(scan!='456')].indices[-1]],[0,0],'-r')
         plt.show()
 
     def open_file_dialog(self):
