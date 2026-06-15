@@ -610,8 +610,8 @@ class data:
                 self.abs_freq = list(map(lambda x:  x*29.9792458,abs_wavenum))#29.9..... = c decimals for scaling to convert to GHz
                 self.center = np.mean(self.abs_freq)
                 self.hypsplit = list(map(lambda x: x-self.abs_freq[0],self.abs_freq)) 
-                self.hyp_weights = [5/12,7/26,5/16]
-                # self.hyp_weights = [5/6,7/8,5/8]
+                self.hyp_weights = [5/12,7/16,5/16]
+                # self.hyp_weights = [5/14,3/8,15/56]
                 #Higher frequency because its closer ie. F=3->F=2,3,4
             else:
                 #F1 == 4
@@ -687,12 +687,12 @@ class data:
                 #this is 456 scan
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
                 test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-                test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+                test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
 
-                gauss1 = lambda x,peak,cen,s: peak * np.exp(-((x-cen)/s)**2/2) + 1
-                weights1 = gauss1(plotting_freq,4,self.beatfit(peaks[0]),0.3)
-                plt.plot(plotting_freq,weights1)
-                plt.show()
+                # gauss1 = lambda x,peak,cen,s: peak * np.exp(-((x-cen)/s)**2/2) + 1
+                # weights1 = gauss1(plotting_freq,4,self.beatfit(peaks[0]),0.7)
+                # plt.plot(plotting_freq,weights1)
+                # plt.show()
             else:
                 # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
@@ -752,13 +752,13 @@ class data:
                 
                 # params.add_many( #using Test 3
                     ('a', 6, True, 0, None, None, None),
-                    ('p0', test3[0]-baseline, False, 0.7*(test3[0]-baseline), 1.3*(test3[0]-baseline), None, None),
+                    ('p0', test3[0], False, 0.7*(test3[0]-baseline), 1.3*(test3[0]-baseline), None, None),
                     ('h1', test3[1], False, test3[1]-abs(test3[1])*0.2, test3[1]+abs(test3[1])*0.2, None, None),
                     ('h2', test3[2], False, test3[2]-abs(test3[2])*0.2, test3[2]+abs(test3[2])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
-                    ('T', self.hotbody, True, low, high, None, None),
-                    ('gamma', Gamma*1.3, True, Gamma, Gamma*3, None, None),
-                    ('base', baseline, False, baseline*0.7, baseline*1.3, None, None))
+                    ('T', self.hotbody, True, None, None, None, None),
+                    ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None))#,
+                    #('base', baseline, False, baseline*0.7, baseline*1.3, None, None))
                 
                 # params2.add_many(('a', 6, True, 0, None, None, None),
                 #     ('mv', guess, True, 0, 4, None, None),
@@ -772,12 +772,12 @@ class data:
                     ('h1', test[0], True, test[1]-abs(test[1])*0.2, test[0]+abs(test[0])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
-                    ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
+                    ('gamma', Gamma*1.3, True, Gamma, Gamma*3, None, None),
                     ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
             if self.scan == '456':
                 params['a'].set(value=0.35)
                 # params['gamma'].set(vary=False)
-                params['base'].set(vary=False)
+                #params['base'].set(vary=False)
                 # fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                 #                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                 #                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
@@ -791,15 +791,15 @@ class data:
                 # result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='shgo')
                 
                 #Redone quadratic fitting
-                fun1 = lambda w,a,p0,h1,h2,mv,T,gamma,base: (h2*(w-h1)**2+p0)*(np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                fun1 = lambda w,a,p0,h1,h2,mv,T,gamma: (h2*(w-h1)**2+p0)*(np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
-                                                                            voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base)
+                                                                            voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))))# + base)
                 # fun2 = lambda w,a,mv,T,gamma: np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                 #                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                 #                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma)))
-                mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma','base'])
+                mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma'])#,'base'])
                 # mod2 = lm.Model(fun2,['w'],['a','mv','T','gamma'])
-                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo',weights=weights1)
+                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')#,weights=weights1)
                 # temp = np.array(self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
                 # temp2 = test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2]
                 # new  = temp/temp2
@@ -828,14 +828,15 @@ class data:
                 np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
             except:
                 self.pcov = np.zeros(len(self.fitted_param)).tolist()
-            plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
+            plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]]-baseline)
             # plt.scatter(plotting_freq,new)
             # plt.plot(plotting_freq,result.best_fit, '-r',linewidth=0.2,marker='.')#, mew='0.05')
             plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_param[0]) + r', err='+ str(self.alph_err))
             plt.xlabel('Freq [GHz]')
             # plt.show()
+            # lambda x,p0,shift,k:k*(x-shift)**2+p0
             if self.scan == '456':
-                plt.plot(plotting_freq,test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2],'-g')
+                plt.plot(plotting_freq,test3[2]*(plotting_freq-test3[1])**2+test3[0],'-g')
                 plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
                 # plt.plot(plotting_freq,fun2(plotting_freq,*fitted_param2),'-r')
             else:
@@ -847,7 +848,7 @@ class data:
             k4 = self.beatfit(properties["right_ips"])
             plt.vlines(x=self.beatfit(peaks), ymin= self.scaledT[peaks], ymax = properties['prominences']+self.scaledT[peaks], color = "blue")
             plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
-            plt.plot(plotting_freq,weights1)
+            # plt.plot(plotting_freq,weights1)
             plt.savefig(self.folder+r'\plots\FittedScan.png')
             plt.show()
             plt.clf()
