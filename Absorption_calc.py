@@ -569,10 +569,12 @@ class data:
         plt.clf()
         # plt.show()
         temp = np.array(self.freq) - self.beatfit(np.array(self.cleared_indices))
-        plt.scatter(self.cleared_indices,temp)
+        plt.plot(self.beatfit(self.cleared_indices),temp,marker='.',color='red')
         plt.title(self.scan+' Beat Unscaled Residuals')
         plt.savefig(self.folder+r'\plots\unscaledresiduals.png')
         plt.clf()
+
+        np.savetxt(self.folder+r'\beatnote\processed\Residuals.csv', temp, delimiter=',')
 
         # plt.plot(self.beatfit(self.indices[self.beat_rng[0]:self.beat_rng[1]]),self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
         # plt.title(self.scan+' beat fit scaledT')
@@ -668,25 +670,15 @@ class data:
             coeff = self.hyp_weights
             
             plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-            plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]
-            weights1 = plotting_freq.copy()
-            weights1 = weights1.tolist()
+            plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
+            # weights1 = plotting_freq.copy()
+            # weights1 = weights1.tolist()
             dist = 1000
-            # for i in range(len(weights1)):
-            #     if i < dist:
-            #         weights1[i] = np.std(plotting_scaledT[0:dist])
-            #     elif i > len(weights1) - dist-1:
-            #         weights1[i] = np.std(plotting_scaledT[len(weights1)-dist:len(weights1)-1])
-            #     else:
-            #         weights1[i] = np.std(plotting_scaledT[i-int(dist/2):i+int(dist/2)])
-            # if self.etalon_ranges[0][1] != 0:
-            #     test = LinFit(self.etalon_ranges, self.beatfit(self.indices), self.scaledT)
-            # else:
             if self.scan == '456':
                 #fitting slope of background
                 #this is 456 scan
-                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-                test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+                # test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
+                # test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
                 test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
 
                 # gauss1 = lambda x,peak,cen,s: peak * np.exp(-((x-cen)/s)**2/2) + 1
@@ -695,123 +687,53 @@ class data:
                 # plt.show()
             else:
                 # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
-                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-            # if self.scan == '894':
-            #     if self.use_cur_bot:
-            #         # ceiling = np.mean(self.scaledT[self.back_rngs[0][0]:self.back_rngs[0][1]])
-            #         # floor = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
-            #         # baseline = floor/ceiling
-            #         baseline = np.mean(self.scaledT[self.back_rngs[1][0]:self.back_rngs[1][1]])
-            #     else:
-            #         if os.path.exists(self.par_folder+'\\PwrWings894.csv'):
-            #             hotcell= np.loadtxt(self.par_folder+'\\PwrWings894.csv', delimiter=',')
-            #             baseline = hotcell[1]
-            #         else:
-            #             baseline = 0.05*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate power in wings for 894
-            # else:
-            #     if os.path.exists(self.par_folder+'\\PwrWings456.csv'):
-            #         hotcell= np.loadtxt(self.par_folder+'\\PwrWings456.csv', delimiter=',')
-            #         bottom = hotcell[1]
-            #         top = hotcell[0]
-            #         baseline = (test3[2]*(self.beatfit(int(self.indices[peaks[0]]))-test3[1])**2+test3[0])*bottom/top
-            #     else:
-            #         if self.F1 == 4:
-            #             baseline = 0.15*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 15% power in wings for 456
-            #         if self.F1 == 3:
-            #             baseline = 0.008*np.mean(self.scaledT[self.beat_rng[0]:peaks[0]-int(properties['widths'][0]*1.5)]) #estimate 0.8% power in wings for 456
+                test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
             # print(self.hotbody)
             if self.hotbody == 30:
                 low = 20
                 high = None
             else:
-                low = self.hotbody-2
-                high = self.hotbody+2
+                low = self.hotbody-1
+                high = self.hotbody+1
             params = lm.Parameters()
             # params2 = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
             if self.scan == '456':
                 params.add_many(
-                    # ('a', 6, True, 0, None, None, None),
-                    # ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
-                    # ('h1', test[0], False, test[0]-abs(test[0])*0.2, test[0]+abs(test[0])*0.2, None, None),
-                    # ('mv', guess, True, 0, 4, None, None),
-                    # ('T', self.hotbody, True, low, high, None, None),
-                    # ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
-                    # ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
-
-
-                # params.add_many( #Uses test2
-                #     ('a', 6, True, 0, None, None, None),
-                #     ('p0', test2[2]-baseline, True, 0.7*(test2[2]-baseline), 1.3*(test2[2]-baseline), None, None),
-                #     ('h1', test2[1], True, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test2[1])*0.2, None, None),
-                #     ('h2', test2[0], True, test2[0]-abs(test2[0])*0.2, test2[0]+abs(test2[0])*0.2, None, None),
-                #     ('mv', guess, True, 0, 4, None, None),
-                #     ('T', self.hotbody, True, low, high, None, None),
-                #     ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None),
-                #     ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
-                
                 # params.add_many( #using Test 3
                     ('a', 6, True, 0, None, None, None),
-                    ('p0', test3[0], False, 0.7*(test3[0]-baseline), 1.3*(test3[0]-baseline), None, None),
+                    ('p0', test3[0], False, 0.7*(test3[0]), 1.3*(test3[0]), None, None),
                     ('h1', test3[1], False, test3[1]-abs(test3[1])*0.2, test3[1]+abs(test3[1])*0.2, None, None),
                     ('h2', test3[2], False, test3[2]-abs(test3[2])*0.2, test3[2]+abs(test3[2])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
-                    ('T', self.hotbody, True, None, None, None, None),
-                    ('gamma', Gamma*1.3, False, Gamma, Gamma*3, None, None))#,
-                    #('base', baseline, False, baseline*0.7, baseline*1.3, None, None))
-                
-                # params2.add_many(('a', 6, True, 0, None, None, None),
-                #     ('mv', guess, True, 0, 4, None, None),
-                #     ('T', self.hotbody, True, low, high, None, None),
-                #     ('gamma', Gamma*1.3, True, Gamma, Gamma*3, None, None))
+                    ('T', self.hotbody, True, low, high, None, None),
+                    ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
                     
             else:
                 params.add_many(
                     ('a', 6, True, 0, None, None, None),
-                    ('p0', test[1]-baseline, True, 0.7*(test[1]-baseline), 1.3*(test[1]-baseline), None, None),
+                    ('p0', test[1], True, 0.7*(test[1]), 1.3*(test[1]), None, None),
                     ('h1', test[0], True, test[1]-abs(test[1])*0.2, test[0]+abs(test[0])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
-                    ('gamma', Gamma*1.3, True, Gamma, Gamma*3, None, None),
-                    ('base', baseline, False, baseline*0.8, baseline*1.2, None, None))
+                    ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
             if self.scan == '456':
                 params['a'].set(value=0.35)
                 # params['gamma'].set(vary=False)
                 #params['base'].set(vary=False)
-                # fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
-                #                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
-                #                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
-                # mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
-                # result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
-
-                # fun1 = lambda w,a,p0,h1,h2,mv,T,gamma,base: p0*(1+h1*w+h2*w**2)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
-                #                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
-                #                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))) + base
-                # mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma','base'])
-                # result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='shgo')
                 
                 #Redone quadratic fitting
                 fun1 = lambda w,a,p0,h1,h2,mv,T,gamma: (h2*(w-h1)**2+p0)*(np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
-                                                                            voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))))# + base)
-                # fun2 = lambda w,a,mv,T,gamma: np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
-                #                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
-                #                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma)))
-                mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma'])#,'base'])
-                # mod2 = lm.Model(fun2,['w'],['a','mv','T','gamma'])
-                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')#,weights=weights1)
-                # temp = np.array(self.scaledT[self.beat_rng[0]:self.beat_rng[1]])
-                # temp2 = test2[0]*(plotting_freq**2)+test2[1]*(plotting_freq)+test2[2]
-                # new  = temp/temp2
-                # result2 = mod2.fit(new,params=params2,w=plotting_freq,method='ampgo',weights=weights1)
+                                                                            voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))))
+
+                mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma'])
+                result = mod.fit(plotting_scaledT,params=params,w=plotting_freq,method='ampgo')
             else:
-                # params['gamma'].set(vary=True)
-                params['gamma'].set(value=Gamma)
-                params['base'].set(vary=True)
-                fun1 = lambda w,a,p0,h1,mv,T,gamma,base: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
-                                                                                                            voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma))) + base
-                mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma','base'])
-                result = mod.fit(self.scaledT[self.beat_rng[0]:self.beat_rng[1]],params=params,w=plotting_freq,method='ampgo')
+                fun1 = lambda w,a,p0,h1,mv,T,gamma: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                                                                                                            voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)))
+                mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma'])
+                result = mod.fit(plotting_scaledT,params=params,w=plotting_freq,method='ampgo')
             
             print(result.fit_report())
             # print(result2.fit_report())
@@ -824,11 +746,12 @@ class data:
             self.alpha = self.fitted_param[0]
             self.alph_err=self.pcov[0]
             np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
+            np.savetxt(self.folder+r'\fitting\processed\Residuals.csv', resid, delimiter=',')
             try:
                 np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
             except:
                 self.pcov = np.zeros(len(self.fitted_param)).tolist()
-            plt.scatter(plotting_freq,self.scaledT[self.beat_rng[0]:self.beat_rng[1]]-baseline)
+            plt.scatter(plotting_freq,plotting_scaledT)
             # plt.scatter(plotting_freq,new)
             # plt.plot(plotting_freq,result.best_fit, '-r',linewidth=0.2,marker='.')#, mew='0.05')
             plt.title(self.scan+ 'Fitted plot, a='+str(self.fitted_param[0]) + r', err='+ str(self.alph_err))
