@@ -777,7 +777,7 @@ class data:
             plt.hlines(y=-properties["width_heights"], xmin=k3,xmax=k4, color = "blue")
             # plt.plot(plotting_freq,weights1)
             plt.savefig(self.folder+r'\plots\FittedScan.png')
-            plt.show()
+            # plt.show()
             plt.clf()
 
             plt.scatter(plotting_freq,resid)
