@@ -524,7 +524,7 @@ class data:
     def calculate_beat_fit(self):
         if not type(self.peak_indices) == list:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy().tolist(), self.peak_val.copy().tolist(), self.beat_rng[0], self.beat_rng[1])
         else:(self.cleared_indices, self.cleared_peaks) = cutoff_ends(self.peak_indices.copy(), self.peak_val.copy(), self.beat_rng[0], self.beat_rng[1])
-        (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f)
+        (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f) #cleared_indices is list
         # print(self.freq)
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
         self.beat_fit_param = self.beatfit.domain.tolist()
@@ -536,7 +536,8 @@ class data:
         self.resid = self.freq-self.beatfit(np.array(self.cleared_indices))
         self.scaled_residuals = self.resid**2
         self.scaled_residuals[1:] = self.scaled_residuals[1:]/self.freq[1:]
-        np.savetxt(self.folder+r'\beatnote\processed\scaled_residuals.csv', self.scaled_residuals, delimiter=',')
+        np.savetxt(self.folder+r'\beatnote\processed\Residuals.csv', self.resid, delimiter=',')
+        np.savetxt(self.folder+r'\beatnote\processed\Cleared_peal_ind.csv', self.cleared_indices, delimiter=',')
         print('Sacled Residial beatfit',self.scaled_residuals[1:].mean())
         # plt.scatter(self.cleared_indices[1:],self.scaled_residuals[1:])
         # plt.title(self.scan + 'Scaled Residuals, Mean='+str(np.mean(self.scaled_residuals[1:])))
@@ -746,6 +747,9 @@ class data:
             self.alpha = self.fitted_param[0]
             self.alph_err=self.pcov[0]
             np.savetxt(self.folder+r'\fitting\processed\fitting_param.csv', self.fitted_param, delimiter=',')
+            # print(type(resid))
+            # print(resid)
+            np.savetxt(self.folder+r'\fitting\processed\fit_indices.csv', np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]), delimiter=',')
             np.savetxt(self.folder+r'\fitting\processed\Residuals.csv', resid, delimiter=',')
             try:
                 np.savetxt(self.folder+r'\fitting\processed\pcov.csv',self.pcov,delimiter=',')
