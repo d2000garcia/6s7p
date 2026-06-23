@@ -266,7 +266,7 @@ def LinFit2(data_bounds, indices, data):
         new_indices.extend(indices[bound[0]:bound[1]])
     upper = np.mean(data[data_bounds[1][0]:data_bounds[1][1]])-np.mean(data[data_bounds[0][0]:data_bounds[0][1]])
     lower = np.mean(indices[data_bounds[1][0]:data_bounds[1][1]])-np.mean(indices[data_bounds[0][0]:data_bounds[0][1]])
-    fitted_param, pcov = opt.curve_fit(lambda x,k2,k,b:k2*x**2 + k*x+b, new_indices,new_data,[0.01,upper/lower,new_data[0]])
+    fitted_param, pcov = opt.curve_fit(lambda x,b,k,k2:k2*x**2 + k*x+b, new_indices,new_data,[0.01,upper/lower,new_data[0]])
     return fitted_param
 
 def LinFit3(data_bounds, indices, data):
@@ -350,20 +350,21 @@ class data:
     def make_init_plots(self):
         self.beat_height = np.savetxt(self.folder+'\\entries\\beat_peak_min.csv',[0],delimiter=',')
         pure_dat = np.loadtxt(self.par_folder+'\\'+self.scan+'ScanV2.csv', delimiter=',')
-        background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
-        fix = False
-        if type(background)==np.ndarray:
-            for i in background:
-                if i > 1:
-                    fix = True
-                    r".\Picture_template.png"
-        else:
-            fix = True
-        if fix:
-            p = os.getcwd()
-            p.find
-            background = np.loadtxt(p[:p.find('\\6s7p')]+'\\6s7p\\Background_default.csv',delimiter=',').mean(0)
+        # background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
+        # fix = False
+        # if type(background)==np.ndarray:
+        #     for i in background:
+        #         if i > 1:
+        #             fix = True
+        #             r".\Picture_template.png"
+        # else:
+        #     fix = True
+        # if fix:
+        #     p = os.getcwd()
+        #     p.find
+        #    background = np.loadtxt(p[:p.find('\\6s7p')]+'\\6s7p\\Background_default.csv',delimiter=',').mean(0)
         # print('background',background)
+        background = np.loadtxt(os.getcwd()[:os.getcwd().find('\\6s7p')]+'\\6s7p\\Background_default.csv',delimiter=',').mean(0)
         shape = pure_dat.shape[1]
         n = int((shape-2)/3)
         self.indices = pure_dat[:,shape-1]
@@ -679,8 +680,8 @@ class data:
                 #fitting slope of background
                 #this is 456 scan
                 # test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-                # test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
-                test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
+                test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
+                # test3 = LinFit3([[self.beat_rng[0],peaks[0]-int(properties['widths'][0]*1.5)],[peaks[0]+int(properties['widths'][0]*1.5),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
 
                 # gauss1 = lambda x,peak,cen,s: peak * np.exp(-((x-cen)/s)**2/2) + 1
                 # weights1 = gauss1(plotting_freq,4,self.beatfit(peaks[0]),0.7)
@@ -701,14 +702,21 @@ class data:
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
             if self.scan == '456':
                 params.add_many(
-                # params.add_many( #using Test 3
                     ('a', 6, True, 0, None, None, None),
-                    ('p0', test3[0], False, 0.7*(test3[0]), 1.3*(test3[0]), None, None),
-                    ('h1', test3[1], False, test3[1]-abs(test3[1])*0.2, test3[1]+abs(test3[1])*0.2, None, None),
-                    ('h2', test3[2], False, test3[2]-abs(test3[2])*0.2, test3[2]+abs(test3[2])*0.2, None, None),
+                    ('p0', test2[0], False, 0.7*(test2[0]), 1.3*(test2[0]), None, None),
+                    ('h1', test2[1], False, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test2[1])*0.2, None, None),
+                    ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
                     ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
+                # params.add_many( #using Test 3
+                    # ('a', 6, True, 0, None, None, None),
+                    # ('p0', test3[0], False, 0.7*(test3[0]), 1.3*(test3[0]), None, None),
+                    # ('h1', test3[1], False, test3[1]-abs(test3[1])*0.2, test3[1]+abs(test3[1])*0.2, None, None),
+                    # ('h2', test3[2], False, test3[2]-abs(test3[2])*0.2, test3[2]+abs(test3[2])*0.2, None, None),
+                    # ('mv', guess, True, 0, 4, None, None),
+                    # ('T', self.hotbody, True, low, high, None, None),
+                    # ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
                     
             else:
                 params.add_many(
@@ -724,7 +732,8 @@ class data:
                 #params['base'].set(vary=False)
                 
                 #Redone quadratic fitting
-                fun1 = lambda w,a,p0,h1,h2,mv,T,gamma: (h2*(w-h1)**2+p0)*(np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                # fun1 = lambda w,a,p0,h1,h2,mv,T,gamma: (h2*(w-h1)**2+p0)*(np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                fun1 = lambda w,a,p0,h1,h2,mv,T,gamma: (p0+h1*w+h2*w**2)*(np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)+
                                                                             voigt(w,coeff[2],mv+self.hypsplit[2],np.sqrt(T+273.15)*k1*self.abs_freq[2],gamma))))
 
@@ -763,7 +772,8 @@ class data:
             # plt.show()
             # lambda x,p0,shift,k:k*(x-shift)**2+p0
             if self.scan == '456':
-                plt.plot(plotting_freq,test3[2]*(plotting_freq-test3[1])**2+test3[0],'-g')
+                # plt.plot(plotting_freq,test3[2]*(plotting_freq-test3[1])**2+test3[0],'-g')
+                plt.plot(plotting_freq,test2[2]*plotting_freq**2+test2[1]*plotting_freq+test2[0],'-g')
                 plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
                 # plt.plot(plotting_freq,fun2(plotting_freq,*fitted_param2),'-r')
             else:
