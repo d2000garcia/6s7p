@@ -79,7 +79,7 @@ class window:
         self.window_manager['work_dir'] = {'path':'Pick Directory','tk_var':tk.StringVar()}
         self.window_manager['work_dir']['tk_var'].set('Pick Directory')
         self.window_manager['work_dir']['lab'] = ttk.Label(self.window, textvariable=self.window_manager['work_dir']['tk_var'])
-        self.window_manager['work_dir']['lab'].grid(column=3, row=11,columnspan=3, sticky="nsew")
+        self.window_manager['work_dir']['lab'].grid(column=3, row=11,columnspan=4, sticky="nsew")
 
     def update_work_dir(self,new_par_fold):
         self.window_manager['456']['dir']=new_par_fold+r'\Analysis\456\plots'
@@ -120,8 +120,15 @@ class analysisV2:
         self.wind = window(root, plot_w=int(500*img_scale),plot_h=int(300*img_scale))
         self.wind.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
         self.folderpath = ''
-        self.analysis = []
+        self.analysis = [0,0]
         self.beatmin = [0,0]
+        self.wind.window_manager['button']['456']['calcTFit'].configure(command=lambda:self.calculateTFit('456'))
+        self.wind.window_manager['button']['456']['calcBeatFit'].configure(command=lambda:self.calculateBeatFit('456'))
+        self.wind.window_manager['button']['456']['show'].configure(command=lambda:self.show_plot('456'))
+
+        self.wind.window_manager['button']['894']['calcTFit'].configure(command=lambda:self.calculateTFit('894'))
+        self.wind.window_manager['button']['894']['calcBeatFit'].configure(command=lambda:self.calculateBeatFit('894'))
+        self.wind.window_manager['button']['894']['show'].configure(command=lambda:self.show_plot('894'))
     
     def checkforanalysis(self):
         if not self.folderpath == '':
@@ -135,8 +142,8 @@ class analysisV2:
                 Fine = [0,0] 
             if 'Analysis' in contents:
                 print('Analysis exists, continue')
-                self.analysis.append(Absorption_calc.data(self.folderpath,exists=True))
-                self.analysis.append(Absorption_calc.data(self.folderpath,scan='894',exists=True))
+                self.analysis[0] = Absorption_calc.data(self.folderpath,exists=True)
+                self.analysis[1] = Absorption_calc.data(self.folderpath,scan='894',exists=True)
             else:
                 print('Analysis does not exist ')
                 os.mkdir(self.folderpath+r'\Analysis')
@@ -173,19 +180,11 @@ class analysisV2:
                 np.savetxt(self.folderpath+'\\Analysis\\894\\entries\\beat_peak_min.csv',[0],delimiter=',')
                 np.savetxt(self.folderpath+'\\Analysis\\456\\entries\\fit_rng.csv',[0,8000],delimiter=',',fmt='%i')
                 np.savetxt(self.folderpath+'\\Analysis\\894\\entries\\fit_rng.csv',[0,8000],delimiter=',',fmt='%i')
-                self.analysis.append(Absorption_calc.data(self.folderpath,exists=False))
-                self.analysis.append(Absorption_calc.data(self.folderpath,scan='894',exists=False))
+                self.analysis[0]=Absorption_calc.data(self.folderpath,exists=False)
+                self.analysis[1]=Absorption_calc.data(self.folderpath,scan='894',exists=False)
             self.wind.window_manager['work_dir']['tk_var'].set(self.folderpath)
             self.wind.window_manager['button']['both']['open_fold'].configure(command=self.open_file_dialog)
             self.wind.update_work_dir(self.folderpath)
-
-            self.wind.window_manager['button']['456']['calcTFit'].configure(command=lambda:self.calculateTFit('456'))
-            self.wind.window_manager['button']['456']['calcBeatFit'].configure(command=lambda:self.calculateBeatFit('456'))
-            self.wind.window_manager['button']['456']['show'].configure(command=lambda:self.show_plot('456'))
-
-            self.wind.window_manager['button']['894']['calcTFit'].configure(command=lambda:self.calculateTFit('894'))
-            self.wind.window_manager['button']['894']['calcBeatFit'].configure(command=lambda:self.calculateBeatFit('894'))
-            self.wind.window_manager['button']['894']['show'].configure(command=lambda:self.show_plot('894'))
 
             for s in ['456','894']:
                 temp = np.loadtxt(self.folderpath+'\\Analysis\\'+s+'\\entries\\beat_peak_min.csv',delimiter=',').tolist()
