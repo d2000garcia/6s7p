@@ -256,7 +256,7 @@ class analysisV2:
 first = True
 template_image = r".\Picture_template.png"
 if os.getlogin() == 'garci868':
-        scale = 1.2
+        scale = 1.4
 else:
     scale = 1.7
 if __name__ == '__main__':
