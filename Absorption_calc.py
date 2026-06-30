@@ -337,8 +337,10 @@ class data:
                 self.set_transition(F1=4)
                 self.F1 = 4
         else:
-            self.F1 = 3
-            self.set_transition(F1=3)
+            # self.F1 = 3
+            # self.set_transition(F1=3)
+            self.F1 = 4
+            self.set_transition(F1=4)
         temp = np.loadtxt(par_folder+'\\TemperatureV2.csv',delimiter=',').mean(0)
         if self.scan == '456':
             self.coldfinger = temp[0:2].mean()
