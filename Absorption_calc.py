@@ -799,14 +799,24 @@ class data:
             plt.savefig(self.folder+r'\plots\FittedScanResid.png')
             plt.clf()
             self.fitted = True
+            temp2 = self.par_folder.rfind('/')+1
+            if temp2 == 0:
+                temp2 = self.par_folder.rfind('\\')+1
+            date = self.par_folder[temp2:]
+
+            lines = {}
+            temp = list(map(str, self.fitted_param))
+            data = [date]
+            data.extend(temp)
+            day_path = self.par_folder[:temp2-1]
+            k=1
             if self.scan == '456':
-                lines = {}
-                date = self.par_folder[self.par_folder.rfind('/')+1:]
-                temp = list(map(str, self.fitted_param))
-                data = [date]
-                data.extend(temp)
-                day_path = self.par_folder[:self.par_folder.rfind('/')]
-                fits456 = day_path+'/456Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
+                # lines = {}
+                # temp = list(map(str, self.fitted_param))
+                # data = [date]
+                # data.extend(temp)
+                # day_path = self.par_folder[:self.par_folder.rfind('/')]
+                fits456 = day_path+'/456Fitparams'+date.split('+')[0]+'.tsv'
                 if not os.path.exists(fits456):
                     file = open(fits456,'w')
                     file.write('Date\tAlpha\tP0\th1\tmv\tT\tgamma\toffset\n')
@@ -835,13 +845,12 @@ class data:
                 file.close()
                 print('456 param saved')
             else:
-                lines = {}
-                date = self.par_folder[self.par_folder.rfind('/')+1:]
-                temp = list(map(str, self.fitted_param))
-                data = [date]
-                data.extend(temp)
-                day_path = self.par_folder[:self.par_folder.rfind('/')]
-                fits894 = day_path+'/894Fitparams'+day_path[day_path.rfind('/')+1:]+'.tsv'
+                # lines = {}
+                # temp = list(map(str, self.fitted_param))
+                # data = [date]
+                # data.extend(temp)
+                # day_path = self.par_folder[:self.par_folder.rfind('/')]
+                fits894 = day_path+'/894Fitparams'+date.split('+')[0]+'.tsv'
                 if not os.path.exists(fits894):
                     file = open(fits894,'w')
                     file.write('Date\tAlpha\tP0\th1\tmv\tT\tgamma\toffset\n')
