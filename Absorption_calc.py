@@ -485,9 +485,13 @@ class data:
         self.scaledT = np.loadtxt(self.folder+r'\fitting\processed\scaledT.csv', delimiter=',')
         self.scaledH = np.loadtxt(self.folder+r'\fitting\processed\scaledH.csv', delimiter=',')
         self.filteredBeat = np.loadtxt(self.folder+r'\beatnote\processed\filteredBeat.csv', delimiter=',')
-        self.peak_indices = np.loadtxt(self.folder+r'\beatnote\processed\peak_indices.csv', dtype=int, delimiter=',').tolist()
         self.peak_val = np.loadtxt(self.folder+r'\beatnote\processed\peak_val.csv', delimiter=',').tolist()
         self.beat_rng = np.loadtxt(self.folder+'\\entries\\fit_rng.csv',delimiter=',',dtype=int)
+        try:
+            self.peak_indices = np.loadtxt(self.folder+r'\beatnote\processed\peak_indices.csv', dtype=int, delimiter=',').tolist()
+        except:
+            self.filter_beatnote()
+            self.calculate_beat_fit()
 
         if os.path.exists(self.folder+r'\beatnote\processed\beat_fit_param.csv'):
             self.beat_fit_param = np.loadtxt(self.folder+r'\beatnote\processed\beat_fit_param.csv', delimiter=',').tolist()

@@ -117,28 +117,40 @@ class analysisV2:
             print(f"Selected folder: {self.folderpath}")
             self.checkforanalysis()
 
-def check_for_analysis(folder,F1):
-    if 'Analysis' in os.listdir(path = folder):
-        redo_analysis(folder,F1)
+def check_for_analysis(folder,F1,check_against=[]):
+    temp = os.listdir(path = folder)
+    if 'Analysis' in temp:
+        if not (True in list(map(lambda y: y in folder, check_against))):
+            redo_analysis(folder,F1)
     else:
+        check_against = []
+        try:
+            fits_ind = list(map(lambda y:'456Fitparams' in y,temp)).index(True)
+            file = open(folder+'\\'+temp[fits_ind],'r')
+            file.readline()
+            for line in file:
+                check_against.append(line.split('\t')[0])
+        except:
+            print('here')
+        
         x = list(os.scandir(folder))
         for val in x:
             if val.is_dir():
-                check_for_analysis(val.path,F1)
+                check_for_analysis(val.path,F1,check_against)
     
 def redo_analysis(par_folder,F1):
     #we know that the analysis exists so we need to check if they've been previously fitted
     if os.path.exists(par_folder+r'\Analysis\456\fitting\processed\fitting_param.csv') and os.path.exists(par_folder+r'\Analysis\894\fitting\processed\fitting_param.csv'):
-        if not os.path.exists(par_folder+'\\redone.txt'):
+        # if not os.path.exists(par_folder+'\\redone.txt'):
             #we've fit before
-            did = True
-            print(par_folder)
-            file = open(par_folder+'\\redone.txt','w+')
-            file.close()
-            scan = Absorption_calc.data(par_folder,exists=True)
-            scan.F1=F1
-            scan.set_transition(F1=F1)
-            scan.set_fitting_function()
+            
+        print(par_folder)
+        file = open(par_folder+'\\redone.txt','w+')
+        file.close()
+        scan = Absorption_calc.data(par_folder,exists=True)
+        scan.F1=F1
+        scan.set_transition(F1=F1)
+        scan.set_fitting_function()
     
 
 
