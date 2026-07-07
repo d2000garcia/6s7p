@@ -156,7 +156,7 @@ def redo_analysis(par_folder,F1):
 
 base_dir = os.getcwd()
 
-base_folder = base_dir+ r'\BeatnotePostHotCell\Half1'
-F1 = 4
+base_folder = base_dir+ r'\BeatnotePostHotCellF1=4\Jun25,2026'
+F1 = 3
 if __name__ == '__main__':
     check_for_analysis(base_folder,F1)
