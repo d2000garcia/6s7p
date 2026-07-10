@@ -31,7 +31,7 @@ def load_file(file):
     err456 = list(map(lambda x: err456,dat456))
     return dat894, err894, dat456, err456
 
-fine_line = 3
+fine_line = 4
 base_dir = os.getcwd()
 folder = base_dir + r'\Fit Results\F1=' + str(fine_line)
 dat894 = []
@@ -76,14 +76,14 @@ delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot89
 a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
 a1_err_est = np.sqrt(np.sum(1/variance)/delta)
 
-# print(lm.fit_report(result))
+print(lm.fit_report(result))
 xs = np.linspace(0,19,1000)
 ys = a0+a1*xs
 num = len(mainplot456[0])
 reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-3)
 print('Reduced Chi Sqrd =', reduced_chi_sqrd)
 plt.errorbar(mainplot894_dat,mainplot456_dat,yerr=mainplot456_err,xerr=mainplot894_err,fmt='.')
-# plt.plot(dat894,dat456,'.')
+plt.plot(dat894,dat456,'k.')
 # text = r'Best Fit: $ \alpha_{456} = %.4f \pm %.6f \alpha_{894} + %.4f \pm %0.6$' % (a1,a1_err_est,a0,a0_err_est)
 # print(text)
 plt.plot(xs,ys,label=r'Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(%.3f\%%)$' % (a1,100*a1_err_est/a1,a0,100*a0_err_est/a0),color='red')
