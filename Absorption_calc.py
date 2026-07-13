@@ -3,7 +3,7 @@ from numpy.polynomial import Polynomial as poly
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 from scipy.special import wofz as wofz
-from scipy.integrate import quad
+import scipy.interpolate as inter
 import scipy as sci
 from scipy import optimize as opt
 from matplotlib import lines as lines
@@ -337,10 +337,10 @@ class data:
                 self.set_transition(F1=4)
                 self.F1 = 4
         else:
-            # self.F1 = 3
-            # self.set_transition(F1=3)
-            self.F1 = 4
-            self.set_transition(F1=4)
+            self.F1 = 3
+            self.set_transition(F1=3)
+            # self.F1 = 4
+            # self.set_transition(F1=4)
         temp = np.loadtxt(par_folder+'\\TemperatureV2.csv',delimiter=',').mean(0)
         if self.scan == '456':
             self.coldfinger = temp[0:2].mean()
@@ -534,6 +534,10 @@ class data:
         (self.freq, freq_diff,bad,bad_peak_type) = get_frequency_steps(self.cleared_indices,self.beatnote_det_f) #cleared_indices is list
         # print(self.freq)
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
+
+        # if self.scan == '456':
+        self.cubic_spline = inter.CubicSpline(self.cleared_indices,self.freq,extrapolate=True)
+        # print('here')
         self.beat_fit_param = self.beatfit.domain.tolist()
         self.beat_fit_param.extend(self.beatfit.window.tolist())
         self.beat_fit_param.extend(self.beatfit.coef.tolist())
@@ -571,13 +575,20 @@ class data:
         plt.clf()
         # plt.show()
         plt.title(self.scan+' Beatnote Fitting')
-        plt.plot(self.beatfit.linspace(1000)[0],self.beatfit.linspace(1000)[1],'-r')
+        if self.scan == '894':
+            plt.plot(self.beatfit.linspace(1000)[0],self.beatfit.linspace(1000)[1],'-r')
+        else:
+            plt.plot(np.linspace(self.beat_rng[0],self.beat_rng[1],1000),self.cubic_spline(np.linspace(self.beat_rng[0],self.beat_rng[1],1000)))
         plt.scatter(self.cleared_indices,self.freq)
         plt.savefig(self.folder+r'\plots\fitted_beat.png')
         plt.clf()
         # plt.show()
-        temp = np.array(self.freq) - self.beatfit(np.array(self.cleared_indices))
-        plt.plot(self.beatfit(self.cleared_indices),temp,marker='.',color='red')
+        if self.scan == '894':
+            temp = np.array(self.freq) - self.beatfit(np.array(self.cleared_indices))
+            plt.plot(self.beatfit(self.cleared_indices),temp,marker='.',color='red')
+        else:
+            temp = np.array(self.freq) - self.cubic_spline(self.cleared_indices)
+            plt.plot(self.cubic_spline(self.cleared_indices),temp,marker='.',color='red')
         plt.title(self.scan+' Beat Unscaled Residuals')
         plt.savefig(self.folder+r'\plots\unscaledresiduals.png')
         plt.clf()
@@ -677,7 +688,10 @@ class data:
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
             coeff = self.hyp_weights
             
-            plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+            # if self.scan == '894':
+            #     plotting_freq = self.beatfit(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
+            # else:
+            plotting_freq = self.cubic_spline(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
             plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
             # weights1 = plotting_freq.copy()
             # weights1 = weights1.tolist()
@@ -714,7 +728,7 @@ class data:
                     ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
-                    ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
+                    ('gamma', Gamma*1.3, False, Gamma, Gamma*2, None, None))
                 # params.add_many( #using Test 3
                     # ('a', 6, True, 0, None, None, None),
                     # ('p0', test3[0], False, 0.7*(test3[0]), 1.3*(test3[0]), None, None),
@@ -727,11 +741,11 @@ class data:
             else:
                 params.add_many(
                     ('a', 6, True, 0, None, None, None),
-                    ('p0', test[1], True, 0.7*(test[1]), 1.3*(test[1]), None, None),
-                    ('h1', test[0], True, test[1]-abs(test[1])*0.2, test[0]+abs(test[0])*0.2, None, None),
+                    ('p0', test[1], False, 0.7*(test[1]), 1.3*(test[1]), None, None),
+                    ('h1', test[0], False, test[1]-abs(test[1])*0.2, test[0]+abs(test[0])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
-                    ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
+                    ('gamma', Gamma*1.3, False, Gamma, Gamma*2, None, None))
             if self.scan == '456':
                 params['a'].set(value=0.35)
                 # params['gamma'].set(vary=False)
