@@ -1,7 +1,11 @@
 import os as os
 
 def check_for_analysis(folder):
+<<<<<<< Updated upstream
     name_change = '_nonfixed_gamma'
+=======
+    name_change = '_fixed_gamma'
+>>>>>>> Stashed changes
     dir_lst = os.listdir(folder)
     x = list(os.scandir(folder))
     temp = list(map(lambda y:'456Fitparams' in y,dir_lst))
@@ -21,5 +25,9 @@ def check_for_analysis(folder):
                 check_for_analysis(val.path)
 if __name__ == '__main__':
     base_dir = os.getcwd()
+<<<<<<< Updated upstream
     start_folder = base_dir+r'\BeatnotePostHotCell'
+=======
+    start_folder = base_dir+r'\BeatnotePostHotCellF1=4'
+>>>>>>> Stashed changes
     check_for_analysis(start_folder)
