@@ -728,7 +728,7 @@ class data:
                     ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
-                    ('gamma', Gamma*1.3, False, Gamma, Gamma*2, None, None))
+                    ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
                 # params.add_many( #using Test 3
                     # ('a', 6, True, 0, None, None, None),
                     # ('p0', test3[0], False, 0.7*(test3[0]), 1.3*(test3[0]), None, None),
@@ -745,7 +745,7 @@ class data:
                     ('h1', test[0], False, test[1]-abs(test[1])*0.2, test[0]+abs(test[0])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
-                    ('gamma', Gamma*1.3, False, Gamma, Gamma*2, None, None))
+                    ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
             if self.scan == '456':
                 params['a'].set(value=0.35)
                 # params['gamma'].set(vary=False)
