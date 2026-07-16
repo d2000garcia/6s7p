@@ -575,20 +575,20 @@ class data:
         plt.clf()
         # plt.show()
         plt.title(self.scan+' Beatnote Fitting')
-        if self.scan == '894':
-            plt.plot(self.beatfit.linspace(1000)[0],self.beatfit.linspace(1000)[1],'-r')
-        else:
-            plt.plot(np.linspace(self.beat_rng[0],self.beat_rng[1],1000),self.cubic_spline(np.linspace(self.beat_rng[0],self.beat_rng[1],1000)))
+        # if self.scan == '894':
+        #     plt.plot(self.beatfit.linspace(1000)[0],self.beatfit.linspace(1000)[1],'-r')
+        # else:
+        plt.plot(np.linspace(self.beat_rng[0],self.beat_rng[1],1000),self.cubic_spline(np.linspace(self.beat_rng[0],self.beat_rng[1],1000)))
         plt.scatter(self.cleared_indices,self.freq)
         plt.savefig(self.folder+r'\plots\fitted_beat.png')
         plt.clf()
         # plt.show()
-        if self.scan == '894':
-            temp = np.array(self.freq) - self.beatfit(np.array(self.cleared_indices))
-            plt.plot(self.beatfit(self.cleared_indices),temp,marker='.',color='red')
-        else:
-            temp = np.array(self.freq) - self.cubic_spline(self.cleared_indices)
-            plt.plot(self.cubic_spline(self.cleared_indices),temp,marker='.',color='red')
+        # if self.scan == '894':
+        #     temp = np.array(self.freq) - self.beatfit(np.array(self.cleared_indices))
+        #     plt.plot(self.beatfit(self.cleared_indices),temp,marker='.',color='red')
+        # else:
+        temp = np.array(self.freq) - self.cubic_spline(self.cleared_indices)
+        plt.plot(self.cubic_spline(self.cleared_indices),temp,marker='.',color='red')
         plt.title(self.scan+' Beat Unscaled Residuals')
         plt.savefig(self.folder+r'\plots\unscaledresiduals.png')
         plt.clf()
