@@ -34,7 +34,7 @@ def load_file(file):
     err456 = list(map(lambda x: err456,dat456))
     return dat894, err894, dat456, err456
 
-fine_line = 3
+fine_line = 4
 base_dir = os.getcwd()
 folder = base_dir + r'\Fit Results\F1=' + str(fine_line)
 set_zero_inter = False
@@ -66,7 +66,7 @@ mainplot456_err = np.array(mainplot456[1])
 if not set_zero_inter:
     params = lm.Parameters()
     params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
-                    ('a0', 0, False, None, None, None, None),
+                    ('a0', 0, True, None, None, None, None),
                     ('a1', 0.0162, True, None, None, None, None))
     result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
     a0 = result.params['a0'].value
