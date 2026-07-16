@@ -536,7 +536,7 @@ class data:
         self.beatfit = poly.fit(self.cleared_indices, self.freq,[0,1,2,3])
 
         # if self.scan == '456':
-        self.cubic_spline = inter.CubicSpline(self.cleared_indices,self.freq,extrapolate=True)
+        self.cubic_spline = inter.CubicSpline(self.cleared_indices,self.freq,extrapolate=True,bc_type='natural')
         # print('here')
         self.beat_fit_param = self.beatfit.domain.tolist()
         self.beat_fit_param.extend(self.beatfit.window.tolist())
