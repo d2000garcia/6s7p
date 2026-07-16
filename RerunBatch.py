@@ -67,10 +67,7 @@ def redo_analysis(par_folder,F1):
             scan.set_fitting_function()
     
 base_dir = os.getcwd()
-
-base_folder = base_dir+ r'\BeatnotePostHotCell\Jun16,2026'
-F1 = 3
-folders = [r'\BeatnotePostHotCellF1=4\Jul13,2026',r'\BeatnotePostHotCellF1=4\Jul14,2026']
+folders = [r'\BeatnotePostHotCellF1=4\Jul15,2026',r'\BeatnotePostHotCellF1=4\Jul16,2026']
 F1s = [3,4]
 
 # if os.getlogin() == 'garci868':
