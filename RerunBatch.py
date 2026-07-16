@@ -81,6 +81,6 @@ F1s = [3,4]
 #     F1 = 4
 if __name__ == '__main__':
     if os.getlogin() == 'garci868':
-        check_for_analysis(base_dir+folders[0],F1s[0])
+        check_for_analysis(base_dir+folders[0],F1s[1])
     else:
-        check_for_analysis(base_dir+folders[1],F1s[0])
+        check_for_analysis(base_dir+folders[1],F1s[1])
