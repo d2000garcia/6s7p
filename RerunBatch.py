@@ -55,7 +55,7 @@ def redo_analysis(par_folder,F1):
         #     laser = '456'
         # file = open(par_folder+'\\redone2.txt','w+')
         # file.close()
-        to_do = ['456','894']
+        to_do = ['456']
         for laser in to_do:
             if laser == '456':
                 scan = Absorption_calc.data(par_folder,exists=True)
@@ -70,7 +70,7 @@ base_dir = os.getcwd()
 
 base_folder = base_dir+ r'\BeatnotePostHotCell\Jun16,2026'
 F1 = 3
-folders = [r'\BeatnotePostHotCell',r'\BeatnotePostHotCellF1=4']
+folders = [r'\BeatnotePostHotCellF1=4\Jul13,2026',r'\BeatnotePostHotCellF1=4\Jul14,2026']
 F1s = [3,4]
 
 # if os.getlogin() == 'garci868':
@@ -80,5 +80,7 @@ F1s = [3,4]
 #     base_folder = base_dir+ r'\BeatnotePostHotCellF1=4'
 #     F1 = 4
 if __name__ == '__main__':
-    check_for_analysis(base_dir+folders[0],F1s[0])
-    check_for_analysis(base_dir+folders[1],F1s[1])
+    if os.getlogin() == 'garci868':
+        check_for_analysis(base_dir+folders[0],F1s[1])
+    else:
+        check_for_analysis(base_dir+folders[1],F1s[1])
