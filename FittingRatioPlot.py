@@ -45,9 +45,9 @@ def sort_list_groups(a,b,c,d):
 fine_line = 4
 base_dir = os.getcwd()
 folder = base_dir + r'\Fit Results\F1=' + str(fine_line)
-# folder = base_dir + r'\Fit Results\NewLowTMeasF1=4'
+folder = base_dir + r'\Fit Results\NewLowTMeasF1=4'
 set_zero_inter = False
-incremental = True
+incremental = False
 dat894 = []
 err894 = []
 dat456 = []
