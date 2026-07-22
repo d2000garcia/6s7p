@@ -45,9 +45,9 @@ def sort_list_groups(a,b,c,d):
 fine_line = 4
 base_dir = os.getcwd()
 folder = base_dir + r'\Fit Results\F1=' + str(fine_line)
-folder = base_dir + r'\Fit Results\NewLowTMeasF1=4'
+# folder = base_dir + r'\Fit Results\NewLowTMeasF1=4'
 set_zero_inter = False
-incremental = False
+incremental = True
 dat894 = []
 err894 = []
 dat456 = []
@@ -80,6 +80,8 @@ if not incremental:
         params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
                         ('a0', 0, True, None, None, None, None),
                         ('a1', 0.0162, True, None, None, None, None))
+        if set_zero_inter:
+            params['a0'].set(vary=False)
         result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
         a0 = result.params['a0'].value
         a1 = result.params['a1'].value
@@ -117,6 +119,8 @@ if not incremental:
         params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
                         ('a0', 0, False, None, None, None, None),
                         ('a1', 0.0162, True, None, None, None, None))
+        if set_zero_inter:
+            params['a0'].set(vary=False)
         result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
         a0 = result.params['a0'].value
         a1 = result.params['a1'].value

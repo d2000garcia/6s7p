@@ -710,6 +710,7 @@ class data:
             else:
                 # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
                 test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
+                test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
             # print(self.hotbody)
             if self.hotbody == 30:
                 low = 20
@@ -743,6 +744,7 @@ class data:
                     ('a', 6, True, 0, None, None, None),
                     ('p0', test[1], False, 0.7*(test[1]), 1.3*(test[1]), None, None),
                     ('h1', test[0], False, test[1]-abs(test[1])*0.2, test[0]+abs(test[0])*0.2, None, None),
+                    ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
                     ('mv', guess, True, 0, 4, None, None),
                     ('T', self.hotbody, True, low, high, None, None),
                     ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
@@ -760,7 +762,9 @@ class data:
                 mod = lm.Model(fun1,['w'],['a','p0','h1','h2','mv','T','gamma'])
                 result = mod.fit(plotting_scaledT,params=params,w=plotting_freq,method='ampgo')
             else:
-                fun1 = lambda w,a,p0,h1,mv,T,gamma: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                # fun1 = lambda w,a,p0,h1,mv,T,gamma: (p0+h1*w)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                #                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)))
+                fun1 = lambda w,a,p0,h1,h2,mv,T,gamma: (p0+h1*w+h2*w**2)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)))
                 mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma'])
                 result = mod.fit(plotting_scaledT,params=params,w=plotting_freq,method='ampgo')
