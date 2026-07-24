@@ -33,20 +33,20 @@ base_dir = os.getcwd()
 folders = [r'\BeatnotePostHotCell',r'\BeatnotePostHotCellF1=4']
 F1s = [3,4]
 
-start_folder = base_dir + r'\BeatnotePostHotCell'
+start_folder = base_dir + r'\BeatnotePostHotCellF1=4'
 if __name__ == '__main__':
     global dat456
     global dat894
     dat456 = []
     dat894 = []
     check_for_analysis(start_folder)
-    filename = base_dir + r'\Fit Results\Fits456F1=3_NonfixedGamma.tsv'
-    file = open(filename,'w')
-    for line in dat456:
-        file.write(line)
-    file.close()
+    # filename = base_dir + r'\Fit Results\Fits456F1=3_NonfixedGamma.tsv'
+    # file = open(filename,'w')
+    # for line in dat456:
+    #     file.write(line)
+    # file.close()
 
-    filename = base_dir + r'\Fit Results\Fits894F1=3_NonfixedGamma.tsv'
+    filename = base_dir + r'\Fit Results\Fits894F1=4_Quadratic.tsv'
     file = open(filename,'w')
     for line in dat894:
         file.write(line)
