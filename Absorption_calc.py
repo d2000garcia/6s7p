@@ -795,15 +795,17 @@ class data:
             plt.xlabel('Freq [GHz]')
             # plt.show()
             # lambda x,p0,shift,k:k*(x-shift)**2+p0
-            if self.scan == '456':
-                # plt.plot(plotting_freq,test3[2]*(plotting_freq-test3[1])**2+test3[0],'-g')
-                plt.plot(plotting_freq,test2[2]*plotting_freq**2+test2[1]*plotting_freq+test2[0],'-g')
-                plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
-                # plt.plot(plotting_freq,fun2(plotting_freq,*fitted_param2),'-r')
-            else:
-                plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
-                plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
-                # print(self.fitted_param)
+            # if self.scan == '456':
+            #     # plt.plot(plotting_freq,test3[2]*(plotting_freq-test3[1])**2+test3[0],'-g')
+            #     plt.plot(plotting_freq,test2[2]*plotting_freq**2+test2[1]*plotting_freq+test2[0],'-g')
+            #     plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
+            #     # plt.plot(plotting_freq,fun2(plotting_freq,*fitted_param2),'-r')
+            # else:
+            #     plt.plot(plotting_freq,test[0]*(plotting_freq)+test[1],'-g')
+            #     plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
+            #     # print(self.fitted_param)
+            plt.plot(plotting_freq,test2[2]*plotting_freq**2+test2[1]*plotting_freq+test2[0],'-g')
+            plt.plot(plotting_freq,fun1(plotting_freq,*self.fitted_param),'-r')
 
             k3 =self.beatfit(properties["left_ips"])
             k4 = self.beatfit(properties["right_ips"])
