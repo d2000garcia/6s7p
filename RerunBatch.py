@@ -79,7 +79,7 @@ F1s = [3,4]
 #     F1 = 4
 if __name__ == '__main__':
     if os.getlogin() == 'garci868':
-        for sub in subfolders[0]:
+        for sub in subfolders[1]:
             check_for_analysis(base_dir+folders[0]+'\\'+sub,F1s[1])
     else:
         for sub in subfolders[1]:
