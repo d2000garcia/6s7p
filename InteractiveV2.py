@@ -258,7 +258,11 @@ template_image = r".\Picture_template.png"
 if os.getlogin() == 'garci868':
         scale = 1.4
 else:
+<<<<<<< Updated upstream
     scale = 1.7
+=======
+    scale = 2
+>>>>>>> Stashed changes
     # scale = 1.4
 if __name__ == '__main__':
     if first:
