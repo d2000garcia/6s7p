@@ -40,13 +40,13 @@ if __name__ == '__main__':
     dat456 = []
     dat894 = []
     check_for_analysis(start_folder)
-    # filename = base_dir + r'\Fit Results\Fits456F1=3_NonfixedGamma.tsv'
-    # file = open(filename,'w')
-    # for line in dat456:
-    #     file.write(line)
-    # file.close()
+    filename = base_dir + r'\Fit Results2\Fits456F1=4.tsv'
+    file = open(filename,'w')
+    for line in dat456:
+        file.write(line)
+    file.close()
 
-    filename = base_dir + r'\Fit Results\Fits894F1=4_Quadratic.tsv'
+    filename = base_dir + r'\Fit Results2\Fits894F1=4_Quadratic.tsv'
     file = open(filename,'w')
     for line in dat894:
         file.write(line)
