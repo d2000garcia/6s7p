@@ -26,20 +26,33 @@ def check_for_analysis(folder):
         dates456 = dat456.keys()
         dates894 = dat894.keys()
 
-        date = folder[folder.rfind('\\')+1:]
-        file = open(os.getcwd()+'\\Fit Results2\\F1=4\\'+date+'.tsv','w')
-        first = True
-        for key in dates456:
-            if key in dates894:
-                if not first:
+        if compile_matched_abs_coef:
+            file = open(os.getcwd()+'\\Fit Results2\\F1=4_MatchedAbsCoef.tsv','a')
+            for key in dates456:
+                if key in dates894:
+                    file.write(key)
+                    file.write('\t')
+                    file.write(dat894[key])
+                    file.write('\t')
+                    file.write(dat456[key])
                     file.write('\n')
-                else:
-                    first = False
-                file.write(key)
-                file.write('\t')
-                file.write(dat894[key])
-                file.write('\t')
-                file.write(dat456[key])
+            file.close()
+        else:
+            date = folder[folder.rfind('\\')+1:]
+            file = open(os.getcwd()+'\\Fit Results2\\F1=4\\'+date+'.tsv','w')
+            first = True
+            for key in dates456:
+                if key in dates894:
+                    if not first:
+                        file.write('\n')
+                    else:
+                        first = False
+                    file.write(key)
+                    file.write('\t')
+                    file.write(dat894[key])
+                    file.write('\t')
+                    file.write(dat456[key])
+            file.close()
                 
     else:
         for val in x:
@@ -50,9 +63,11 @@ def write_abs_coef():
     pass
 
 base_dir = os.getcwd()
-folders = [r'\BeatnotePostHotCell',r'\BeatnotePostHotCellF1=4']
-F1s = [3,4]
+compile_matched_abs_coef = True
 
 start_folder = base_dir + r'\BeatnotePostHotCellF1=4'
 if __name__ == '__main__':
+    if compile_matched_abs_coef:
+        file = open(base_dir+'\\Fit Results2\\F1=4_MatchedAbsCoef.tsv','w')
+        file.close()
     check_for_analysis(start_folder)
