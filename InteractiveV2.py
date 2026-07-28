@@ -258,8 +258,8 @@ template_image = r".\Picture_template.png"
 if os.getlogin() == 'garci868':
         scale = 1.4
 else:
-    scale = 1.7
-    # scale = 1.4
+    # scale = 1.7
+    scale = 1.4
 if __name__ == '__main__':
     if first:
         root = tk.Tk()
