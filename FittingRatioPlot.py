@@ -46,10 +46,11 @@ fine_line = 4
 base_dir = os.getcwd()
 # folder = base_dir + r'\Fit Results\F1=' + str(fine_line)
 # folder = base_dir + r'\Fit Results\NewLowTMeasF1=4'
-folder = base_dir + r'\Fit Results2\F1=' + str(fine_line)
-# folder = base_dir + r'\Fit Results2\NewLowTMeasF1=4'
-set_zero_inter = False
+# folder = base_dir + r'\Fit Results2\F1=' + str(fine_line)
+folder = base_dir + r'\Fit Results2\NewLowTMeasF1=4'
+set_zero_inter = True
 incremental = False
+lowT = True
 dat894 = []
 err894 = []
 dat456 = []
@@ -99,7 +100,10 @@ if not incremental:
         a1_err_est = np.sqrt(np.sum(1/variance)/delta)
 
         print(lm.fit_report(result))
-        xs = np.linspace(0,19,1000)
+        if lowT:
+            xs = np.linspace(0,7,1000)
+        else:
+            xs = np.linspace(0,19,1000)
         ys = a0+a1*xs
         num = len(mainplot456[0])
         reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-2)
