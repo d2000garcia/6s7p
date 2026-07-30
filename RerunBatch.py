@@ -49,13 +49,7 @@ def redo_analysis(par_folder,F1):
         # if not os.path.exists(par_folder+'\\redone.txt'):
             #we've fit before
         print(par_folder)
-        # if os.getlogin() == 'garci868':
-        #     laser = '894'
-        # else:
-        #     laser = '456'
-        # file = open(par_folder+'\\redone2.txt','w+')
-        # file.close()
-        to_do = ['894']
+        to_do = ['456','894']
         for laser in to_do:
             if laser == '456':
                 scan = Absorption_calc.data(par_folder,exists=True)
@@ -67,25 +61,18 @@ def redo_analysis(par_folder,F1):
             scan.set_fitting_function()
     
 base_dir = os.getcwd()
-folders = [r'\BeatnotePostHotCellF1=4',r'\BeatnotePostHotCellF1=4']
+folders = [r'\BeatnotePostHotCell',r'\BeatnotePostHotCell']
 # subfolders = [['Jul07,2026','Jul08,2026', 'Jul09,2026', 'Jul13,2026', 'Jul14,2026', 'Jul15,2026', 'Jul16,2026', 'Jul17,2026'],['Jul20,2026', 'Jul21,2026', 'Jun25,2026', 'Jun26,2026', 'Jun29,2026','Jun30,2026', 'May22,2026', 'May28,2026', 'May29,2026']]
 
 
 F1s = [3,4]
 
-if os.getlogin() == 'garci868':
-    base_folder = base_dir+ r'\BeatnotePostHotCell'
-    F1 = 3
-    check_for_analysis(base_folder,F1,check_against=[])
-else:
-    base_folder = base_dir+ r'\BeatnotePostHotCellF1=4'
-    F1 = 4
-# if __name__ == '__main__':
-#     if os.getlogin() == 'garci868':
-#         pass
-#         for sub in subfolders[0]:
-#             check_for_analysis(base_dir+folders[0]+'\\'+sub,F1s[1])
-#     else:
-
-#         for sub in subfolders[1]:
-#             check_for_analysis(base_dir+folders[1]+'\\'+sub,F1s[1])
+if __name__ == '__main__':
+    if os.getlogin() == 'garci868':
+        check_for_analysis(base_dir+folders[0],F1s[0])
+        # for sub in subfolders[0]:
+        #     check_for_analysis(base_dir+folders[0]+'\\'+sub,F1s[1])
+    else:
+        check_for_analysis(base_dir+folders[0],F1s[1])
+        # for sub in subfolders[1]:
+        #     check_for_analysis(base_dir+folders[1]+'\\'+sub,F1s[1])

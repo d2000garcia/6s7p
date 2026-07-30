@@ -677,14 +677,22 @@ class data:
                 peaks, properties = find_peaks(-self.scaledT,width=500,prominence=0.02)
                 p0 = 0.37 #scaledT pwr at top
                 Gamma = 1/137.54/2/(2*pi)#half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
-                baseline = np.mean(self.scaledH[peaks[0]-250:peaks[0]+250])
+                baseline1 = np.mean(self.scaledH[peaks[0]-250:peaks[0]+250])
+                ratio = np.mean(self.scaledT[self.beat_rng[1]-100:self.beat_rng[1]])/np.mean(self.scaledH[self.beat_rng[1]-100:self.beat_rng[1]])
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
                 peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
                 peaks[1] = int((properties['left_ips'][1]+properties['right_ips'][1])/2)
                 p0=0.2 #scaledT power at top
                 Gamma = 1/34.791/2/(2*pi) #half of lifetime in GHz from Stek
-                baseline = np.mean(self.scaledH[peaks[0]:peaks[1]])
+                cen = (peaks[0]+peaks[1])/2
+                near = [cen-self.beat_rng[0],self.beat_rng[1]-cen]
+                if near[0] < near[1]:#closer to begining of scan so use end of scan for scaling
+                    ratio = np.mean(self.scaledT[self.beat_rng[1]-100:self.beat_rng[1]])/np.mean(self.scaledH[self.beat_rng[1]-100:self.beat_rng[1]])
+                else:
+                    ratio = np.mean(self.scaledT[self.beat_rng[0]:self.beat_rng[0]+100])/np.mean(self.scaledH[self.beat_rng[0]:self.beat_rng[0]+100])
+                baseline1 = np.mean(self.scaledH[peaks[0]:peaks[1]])
+            baseline = baseline1 * ratio
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
             coeff = self.hyp_weights
             
