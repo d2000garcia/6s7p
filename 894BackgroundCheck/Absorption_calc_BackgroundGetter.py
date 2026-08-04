@@ -915,6 +915,7 @@ class data:
     def Backgound_getter(self):
         #New function using lmfit
         #constants wihout powers
+        offset = int(self.beat_rng[0]-self.indices[0])
         peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
         peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
         peaks[1] = int((properties['left_ips'][1]+properties['right_ips'][1])/2)
@@ -927,12 +928,13 @@ class data:
         baseline1 = np.mean(self.scaledH[peaks[0]:peaks[1]])
         baseline = baseline1 * ratio
         plotting_freq = self.cubic_spline(np.array(self.indices[self.beat_rng[0]:self.beat_rng[1]]))
-        plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
+        plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]
         # print('left',peaks[0]-int(properties['widths'][0]),'right',peaks[1]+int(properties['widths'][1]))
         # test = LinFit([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
         test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
         #getting fit to estimate the background
-        top_est = np.mean(test2[self.beatfit(self.indices[int(peaks[1]-100):int(peaks[1]+100)])])
+        top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
+        top_est = np.mean(top_fit[self.indices[int(peaks[1]-offset-100)]:self.indices[int(peaks[1]-offset+100)]])
         bot_est = np.mean(self.scaledT[int(self.indices[int(peaks[1]-100)]):int(self.indices[int(peaks[1]+100)])])
 
 
@@ -940,12 +942,14 @@ class data:
         if temp2 == 0:
             temp2 = self.par_folder.rfind('\\')+1
         date = self.par_folder[temp2:]
-        lines = {}
-        temp = list(map(str, self.fitted_param))
-        data = [date]
-        data.extend(temp)
         day_path = self.par_folder[:temp2-1]
-        to_write = date+'\t'+str(bot_est)+'\t'+str(top_est)+'\t'+str(str(baseline1))+'\n'
-        fits894 = day_path+'/894Fitparams'+date.split('+')[0]+'.tsv'
+        to_write = date+'\t'+str(bot_est)+'\t'+str(top_est)+'\t'+str(baseline1)+'\t'+str(ratio)+'\t'+str(self.hotbody)+'\n'
 
+        day_filename = os.getcwd()+'\\894BackgroundCheck\\ByDay\\'+date.split('+')[0]+'.tsv'
+        file = open(day_filename,'a')
+        file.write(to_write)
+        file.close()
+        file = open(os.getcwd()+'\\894BackgroundCheck\\AllBackgrounds.tsv','a')
+        file.write(to_write)
+        file.close()
         
