@@ -46,7 +46,7 @@ if __name__ == '__main__':
         file.write(line)
     file.close()
 
-    filename = base_dir + r'\Fit Results2\Fits894F1=4_Quadratic.tsv'
+    filename = base_dir + r'\Fit Results2\Fits894F1=4.tsv'
     file = open(filename,'w')
     for line in dat894:
         file.write(line)

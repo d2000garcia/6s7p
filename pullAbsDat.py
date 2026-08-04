@@ -63,7 +63,7 @@ def write_abs_coef():
     pass
 
 base_dir = os.getcwd()
-compile_matched_abs_coef = True
+compile_matched_abs_coef = False
 
 start_folder = base_dir + r'\BeatnotePostHotCellF1=4'
 if __name__ == '__main__':
