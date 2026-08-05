@@ -49,7 +49,7 @@ def redo_analysis(par_folder,F1):
         # if not os.path.exists(par_folder+'\\redone.txt'):
             #we've fit before
         print(par_folder)
-        to_do = ['456','894']
+        to_do = ['894']
         for laser in to_do:
             if laser == '456':
                 scan = Absorption_calc.data(par_folder,exists=True)
@@ -61,7 +61,7 @@ def redo_analysis(par_folder,F1):
             scan.set_fitting_function()
     
 base_dir = os.getcwd()
-folders = [r'\BeatnotePostHotCell',r'\BeatnotePostHotCell']
+folders = [r'\BeatnotePostHotCellF1=4',r'\BeatnotePostHotCell']
 # subfolders = [['Jul07,2026','Jul08,2026', 'Jul09,2026', 'Jul13,2026', 'Jul14,2026', 'Jul15,2026', 'Jul16,2026', 'Jul17,2026'],['Jul20,2026', 'Jul21,2026', 'Jun25,2026', 'Jun26,2026', 'Jun29,2026','Jun30,2026', 'May22,2026', 'May28,2026', 'May29,2026']]
 
 

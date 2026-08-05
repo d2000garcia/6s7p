@@ -343,9 +343,11 @@ class data:
             # self.set_transition(F1=4)
         temp = np.loadtxt(par_folder+'\\TemperatureV2.csv',delimiter=',').mean(0)
         if self.scan == '456':
+            #Average first T and middle T measurments
             self.coldfinger = temp[0:2].mean()
             self.hotbody = temp[3:5].mean()
         else:
+            #Average middle and last T measurements
             self.coldfinger = temp[1:3].mean()
             self.hotbody = temp[4:6].mean()
 
@@ -934,16 +936,16 @@ class data:
         test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT)
         #getting fit to estimate the background
         top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
-        top_est = np.mean(top_fit[self.indices[int(peaks[1]-offset-100)]:self.indices[int(peaks[1]-offset+100)]])
-        bot_est = np.mean(self.scaledT[int(self.indices[int(peaks[1]-100)]):int(self.indices[int(peaks[1]+100)])])
+        top_est = np.mean(top_fit[self.indices[int(peaks[1]-offset-50)]:self.indices[int(peaks[1]-offset+50)]])
+        bot_est = np.mean(self.scaledT[int(self.indices[int(peaks[1]-50)]):int(self.indices[int(peaks[1]+50)])])
 
-
+        
         temp2 = self.par_folder.rfind('/')+1
         if temp2 == 0:
             temp2 = self.par_folder.rfind('\\')+1
         date = self.par_folder[temp2:]
         day_path = self.par_folder[:temp2-1]
-        to_write = date+'\t'+str(bot_est)+'\t'+str(top_est)+'\t'+str(baseline1)+'\t'+str(ratio)+'\t'+str(self.hotbody)+'\n'
+        to_write = date+'\t'+str(bot_est)+'\t'+str(top_est)+'\t'+str(baseline1)+'\t'+str(ratio)+'\t'+str(self.coldfinger)+'\n'
 
         day_filename = os.getcwd()+'\\894BackgroundCheck\\ByDay\\'+date.split('+')[0]+'.tsv'
         file = open(day_filename,'a')

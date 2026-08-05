@@ -43,7 +43,7 @@ def grab_background(par_folder):
 back_dir = os.getcwd() + '\\894BackgroundCheck'
 top_dir = back_dir[:back_dir.rfind('\\')]
 folders = ['BeatnotePostHotCell','BeatnotePostHotCellF1=4']
-subfolders = [['Jun16,2026','Jun17,2026', 'Jun11,2026', 'Jun12,2026', 'Jul02,2026', 'Jun15,2026', 'Jun16,2026', 'Jul06,2026'],['Jun26,2026','Jul07,2026', 'Jun30,2026', 'Jun29,2026', 'May28,2026']]
+subfolders = [['Jun16,2026','Jun17,2026', 'Jun12,2026', 'Jul02,2026', 'Jun15,2026', 'Jun16,2026', 'Jul06,2026'],['Jun26,2026','Jul07,2026', 'Jun30,2026', 'Jun29,2026']]
 #get power in the wings from high density regime
 if __name__ == '__main__':
     file = open(back_dir+'\\AllBackgrounds.tsv','w')

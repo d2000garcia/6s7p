@@ -679,6 +679,7 @@ class data:
                 Gamma = 1/137.54/2/(2*pi)#half of lifetime in GHz from "Measurement of the lifetimes of the 7p 2P3/2 and 7p 2P1/2 states of atomic cesium" -us
                 baseline1 = np.mean(self.scaledH[peaks[0]-250:peaks[0]+250])
                 ratio = np.mean(self.scaledT[self.beat_rng[1]-100:self.beat_rng[1]])/np.mean(self.scaledH[self.beat_rng[1]-100:self.beat_rng[1]])
+                baseline = baseline1 * ratio
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
                 peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
@@ -692,7 +693,8 @@ class data:
                 else:
                     ratio = np.mean(self.scaledT[self.beat_rng[0]:self.beat_rng[0]+100])/np.mean(self.scaledH[self.beat_rng[0]:self.beat_rng[0]+100])
                 baseline1 = np.mean(self.scaledH[peaks[0]:peaks[1]])
-            baseline = baseline1 * ratio
+                baseline=0
+
             guess = self.beatfit(peaks[0]) #guess of frequency location of first peak relative to begin of fit
             coeff = self.hyp_weights
             
@@ -726,6 +728,15 @@ class data:
             else:
                 low = self.hotbody-1
                 high = self.hotbody+1
+            if self.scan == '894':
+                #new baseline ratio based off high density data
+                default_ratio_est = 0.002793498
+                offset = int(self.beat_rng[0]-self.indices[0])
+                top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
+                top_est = np.mean(top_fit[self.indices[int(peaks[1]-offset-100)]:self.indices[int(peaks[1]-offset+100)]])
+                baseline = default_ratio_est*top_est
+                plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
+                test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
             params = lm.Parameters()
             # params2 = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
