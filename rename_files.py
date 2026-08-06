@@ -14,7 +14,7 @@ def check_for_analysis(folder):
 
         place894 = list(map(lambda y:'894Fitparams' in y,dir_lst)).index(True)
         # if 'nonfixed' in dir_lst[place894]:
-        name_894 = dir_lst[place894].replace('894Fitparams','894Old_BadCorrection_Background')
+        name_894 = dir_lst[place894].replace('894Fitparams','894Fit_FB_Low')
         # name_894 = name_894[:name_894.find('.tsv')] + name_change + name_894[name_894.find('.tsv'):]
         os.rename(folder+'\\'+dir_lst[place894],folder+'\\'+name_894)
     else:
@@ -23,5 +23,5 @@ def check_for_analysis(folder):
                 check_for_analysis(val.path)
 if __name__ == '__main__':
     base_dir = os.getcwd()
-    start_folder = base_dir+r'\BeatnotePostHotCell'
+    start_folder = base_dir+r'\BeatnotePostHotCellF1=4'
     check_for_analysis(start_folder)

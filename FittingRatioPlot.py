@@ -47,8 +47,9 @@ base_dir = os.getcwd()
 # folder = base_dir + r'\Fit Results\F1=' + str(fine_line)
 # folder = base_dir + r'\Fit Results\NewLowTMeasF1=4'
 # folder = base_dir + r'\Fit Results2\F1=' + str(fine_line)
-folder = base_dir + r'\Fit Results2\NewLowTMeasF1=4'
-set_zero_inter = True
+# folder = base_dir + r'\Fit Results2\NewLowTMeasF1=4'
+folder = base_dir + r'\Fit Results3_FixedBack\LowTF1=4High'
+set_zero_inter = False
 incremental = False
 lowT = True
 dat894 = []
