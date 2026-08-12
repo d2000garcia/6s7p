@@ -735,7 +735,7 @@ class data:
                 # default_ratio_est += back_std
                 offset = int(self.beat_rng[0]-self.indices[0])
                 top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
-                top_est = np.mean(top_fit[self.indices[int(peaks[1]-offset-100)]:self.indices[int(peaks[1]-offset+100)]])
+                top_est = np.mean(top_fit[int(self.indices[int(peaks[1]-offset-100)]):int(self.indices[int(peaks[1]-offset+100)])])
                 baseline = default_ratio_est*top_est
                 baseline_err  = back_std*top_est
                 # plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
