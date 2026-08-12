@@ -63,7 +63,7 @@ def check_for_analysis(folder):
 base_dir = os.getcwd()
 compile_matched_abs_coef = True
 fit_folder = 'Fit Results3_FixedBack'
-start_folder = base_dir + r'\BeatnotePostHotCellF1=4'
+start_folder = base_dir + r'\BeatnotePostHotCell'
 if __name__ == '__main__':
     if compile_matched_abs_coef:
         file = open(base_dir+'\\'+fit_folder+'\\F1=4_MatchedAbsCoef_FittedBase.tsv','w')
