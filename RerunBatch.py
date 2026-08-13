@@ -61,7 +61,7 @@ def redo_analysis(par_folder,F1):
             scan.set_fitting_function()
     
 base_dir = os.getcwd()
-folders = [r'\BeatnotePostHotCellF1=4',r'\BeatnotePostHotCell']
+folders = [r'\BeatnotePostHotCell',r'\BeatnotePostHotCellF1=4']
 # subfolders = [['Jul07,2026','Jul08,2026', 'Jul09,2026', 'Jul13,2026', 'Jul14,2026', 'Jul15,2026', 'Jul16,2026', 'Jul17,2026'],['Jul20,2026', 'Jul21,2026', 'Jun25,2026', 'Jun26,2026', 'Jun29,2026','Jun30,2026', 'May22,2026', 'May28,2026', 'May29,2026']]
 
 
