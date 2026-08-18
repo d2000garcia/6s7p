@@ -42,14 +42,17 @@ def sort_list_groups(a,b,c,d):
     d2 = list(map(lambda k: d[k],pointers))
     return a2, b2, c2, d2
 
-fine_line = 4
+fine_line = 3
 base_dir = os.getcwd()
 # folder = base_dir + r'\Fit Results\F1=' + str(fine_line)
 # folder = base_dir + r'\Fit Results\NewLowTMeasF1=4'
 # folder = base_dir + r'\Fit Results2\F1=' + str(fine_line)
 # folder = base_dir + r'\Fit Results2\NewLowTMeasF1=4'
 # folder = base_dir + r'\Fit Results3_FixedBack\LowTF1=4Med'
-folder = base_dir + r'\Fit Results3_FixedBack\LowTF1=4_fitted_base'
+# folder = base_dir + r'\Fit Results3_FixedBack\LowTF1=4_fitted_base'
+folder = base_dir + r'\Fit ResultsF1=3\LowT'
+# folder = base_dir + r'\Fit ResultsF1=3\AlldataLowT'
+
 set_zero_inter = False
 incremental = False
 lowT = True
@@ -103,7 +106,7 @@ if not incremental:
 
         print(lm.fit_report(result))
         if lowT:
-            xs = np.linspace(0,7,1000)
+            xs = np.linspace(0,8,1000)
         else:
             xs = np.linspace(0,19,1000)
         ys = a0+a1*xs
@@ -114,7 +117,7 @@ if not incremental:
         plt.plot(dat894,dat456,'k.')
         # text = r'Best Fit: $ \alpha_{456} = %.4f \pm %.6f \alpha_{894} + %.4f \pm %0.6$' % (a1,a1_err_est,a0,a0_err_est)
         # print(text)
-        plt.plot(xs,ys,label=r'Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(%.3f\%%)$' % (a1,100*a1_err_est/a1,a0,100*a0_err_est/a0),color='red')
+        plt.plot(xs,ys,label=r'Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(\pm %.6f)$' % (a1,100*a1_err_est/a1,a0,a0_err_est),color='red')
         plt.legend()
         plt.xlabel(r'$\alpha_{894}$')
         plt.ylabel(r'$\alpha_{456}$')

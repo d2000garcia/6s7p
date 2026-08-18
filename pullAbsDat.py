@@ -61,7 +61,7 @@ def check_for_analysis(folder):
 
 
 base_dir = os.getcwd()
-compile_matched_abs_coef = False
+compile_matched_abs_coef = True
 # fit_folder = 'Fit Results3_FixedBack'
 fit_folder = 'Fit ResultsF1=3'
 
