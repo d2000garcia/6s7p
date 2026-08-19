@@ -15,6 +15,12 @@ def residual(pars, dat894,dat456,err894,err456):
     a1 = parvals['a1']
     return (dat456-a0-a1*dat894)**2/((err894*a1)**2+err456**2)
 
+def residual_sum(pars, dat894,dat456,err894,err456):
+    parvals = pars.valuesdict()
+    a0 = parvals['a0']
+    a1 = parvals['a1']
+    return np.sum((dat456-a0-a1*dat894)**2/((err894*a1)**2+err456**2))
+
 def residual_zero(pars, dat894,dat456,err894,err456):
     parvals = pars.valuesdict()
     a1 = parvals['a1']
@@ -77,6 +83,13 @@ err894 = np.array(err894)
 dat456 = np.array(dat456)
 err456 = np.array(err456)
 (mainplot894[0], mainplot894[1],mainplot456[0],mainplot456[1]) = sort_list_groups(mainplot894[0], mainplot894[1],mainplot456[0],mainplot456[1])
+
+# #new zero
+# mainplot894[0].append(0)
+# mainplot894[1].append(float(np.mean(mainplot894[1])))
+# mainplot456[0].append(0)
+# mainplot456[1].append(float(np.mean(mainplot456[1])))
+
 mainplot894_dat = np.array(mainplot894[0])
 mainplot894_err = np.array(mainplot894[1])
 mainplot456_dat = np.array(mainplot456[0])
@@ -103,6 +116,9 @@ if not incremental:
         delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot894_dat/variance)**2
         a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
         a1_err_est = np.sqrt(np.sum(1/variance)/delta)
+        points_err = np.sqrt(variance)
+        print('Mean err:',np.mean(points_err))
+        print('Mean std:',np.std(points_err,ddof=1)/(len(points_err.tolist())**0.5))
 
         print(lm.fit_report(result))
         if lowT:
@@ -164,6 +180,7 @@ if not incremental:
         plt.show()
         # print(a1_err_est/a1)
         # print(a0_err_est/a0)
+    
 else:
     params = lm.Parameters()
     params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
