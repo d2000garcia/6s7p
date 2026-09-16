@@ -680,6 +680,11 @@ class data:
                 baseline1 = np.mean(self.scaledH[peaks[0]-250:peaks[0]+250])
                 ratio = np.mean(self.scaledT[self.beat_rng[1]-100:self.beat_rng[1]])/np.mean(self.scaledH[self.beat_rng[1]-100:self.beat_rng[1]])
                 baseline = baseline1 * ratio
+                # tosave = np.mean(self.scaledH[self.beat_rng[1]-100:self.beat_rng[1]])
+                # tosave = baseline1/tosave
+                # new_ratio = 0.001949227
+                # baseline = np.mean(self.scaledT[self.beat_rng[1]-100:self.beat_rng[1]])
+                # baseline = baseline * new_ratio
             else:
                 peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
                 peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
