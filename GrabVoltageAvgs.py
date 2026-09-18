@@ -12,6 +12,9 @@ def check_for_analysis(folder,Background):
         signals = np.loadtxt(folder+'\\456ScanV2.csv',delimiter=',',dtype=float)
         sig = [np.mean(signals[:,0:5])-Background[0],np.mean(signals[:,5:10])-Background[1],np.mean(signals[:,10:15])-Background[2]]
         sig.extend([np.std(signals[:,0:5],ddof=1),np.std(signals[:,5:10],ddof=1),np.std(signals[:,10:15],ddof=1)])
+        sig2 = [np.mean(signals[:,0:5],1)-Background[0],np.mean(signals[:,5:10],1)-Background[1],np.mean(signals[:,10:15],1)-Background[2]]
+        div_sig = [np.mean(sig2[0]/sig2[1]),np.mean(sig2[2]/sig2[1]),np.mean(sig2[0]/sig2[2])]
+        sig.extend(div_sig)
         if len(pulledDat) != 0:
             notdone = True
             for i, num in enumerate(pulledDat):
@@ -33,7 +36,7 @@ base_dir = os.getcwd()
 global pulledDat
 pulledDat = []
 
-start_folder = base_dir + '\\LinMeas\\Aug31,2026'
+start_folder = base_dir + '\\LinMeas\\Fiber'
 if __name__ == '__main__':
     loaded = np.loadtxt(start_folder+'\\Background.csv',delimiter=',',dtype=float)
     background = np.mean(loaded,0)

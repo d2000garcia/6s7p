@@ -56,8 +56,9 @@ base_dir = os.getcwd()
 # folder = base_dir + r'\Fit Results2\NewLowTMeasF1=4'
 # folder = base_dir + r'\Fit Results3_FixedBack\LowTF1=4Med'
 # folder = base_dir + r'\Fit Results3_FixedBack\LowTF1=4_fitted_base'
-folder = base_dir + r'\Fit ResultsF1=3\LowT'
+# folder = base_dir + r'\Fit ResultsF1=3\LowT'
 # folder = base_dir + r'\Fit ResultsF1=3\AlldataLowT'
+folder = base_dir + '\\PostFiberFitResults\\F3_v1\\Data'
 
 set_zero_inter = False
 incremental = False
@@ -133,7 +134,7 @@ if not incremental:
         plt.plot(dat894,dat456,'k.')
         # text = r'Best Fit: $ \alpha_{456} = %.4f \pm %.6f \alpha_{894} + %.4f \pm %0.6$' % (a1,a1_err_est,a0,a0_err_est)
         # print(text)
-        plt.plot(xs,ys,label=r'Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(\pm %.6f)$' % (a1,100*a1_err_est/a1,a0,a0_err_est),color='red')
+        plt.plot(xs,ys,label=r'9/16/26, Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(\pm %.6f)$' % (a1,100*a1_err_est/a1,a0,a0_err_est),color='red')
         plt.legend()
         plt.xlabel(r'$\alpha_{894}$')
         plt.ylabel(r'$\alpha_{456}$')

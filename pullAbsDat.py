@@ -27,7 +27,7 @@ def check_for_analysis(folder):
         dates894 = dat894.keys()
 
         if compile_matched_abs_coef:
-            file = open(os.getcwd()+'\\'+fit_folder+'\\F1=3_MatchedAbsCoef_FittedBase.tsv','a')
+            file = open(os.getcwd()+'\\'+fit_folder+'\\AbsF1=3.tsv','a')
             for key in dates456:
                 if key in dates894:
                     file.write(key)
@@ -39,7 +39,7 @@ def check_for_analysis(folder):
             file.close()
         else:
             date = folder[folder.rfind('\\')+1:]
-            file = open(os.getcwd()+'\\'+fit_folder+'\\F1=3_fitted_base\\'+date+'.tsv','w')
+            file = open(os.getcwd()+'\\'+fit_folder+'\\Data\\'+date+'.tsv','w')
             first = True
             for key in dates456:
                 if key in dates894:
@@ -62,12 +62,13 @@ def check_for_analysis(folder):
 
 base_dir = os.getcwd()
 compile_matched_abs_coef = True
+# compile_matched_abs_coef = False
 # fit_folder = 'Fit Results3_FixedBack'
-fit_folder = 'Fit ResultsF1=3'
+fit_folder = 'PostFiberFitResults\\F3_v1'
 
-start_folder = base_dir + r'\BeatnotePostHotCell'
+start_folder = base_dir + r'\BeatnotePostFiberF3'
 if __name__ == '__main__':
     if compile_matched_abs_coef:
-        file = open(base_dir+'\\'+fit_folder+'\\F1=3_MatchedAbsCoef_FittedBase.tsv','w')
+        file = open(base_dir+'\\'+fit_folder+'\\AbsF1=3.tsv','w')
         file.close()
     check_for_analysis(start_folder)
