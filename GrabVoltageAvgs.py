@@ -36,11 +36,11 @@ base_dir = os.getcwd()
 global pulledDat
 pulledDat = []
 
-start_folder = base_dir + '\\LinMeas\\Fiber'
+start_folder = base_dir + '\\LinMeas\\Fiber2'
 if __name__ == '__main__':
     loaded = np.loadtxt(start_folder+'\\Background.csv',delimiter=',',dtype=float)
     background = np.mean(loaded,0)
-    # file = open(start_folder+'\\PulledDat.csv','w')
-    # file.close()
+    file = open(start_folder+'\\PulledDat.csv','w')
+    file.close()
     check_for_analysis(start_folder,background)
     np.savetxt(start_folder+'\\PulledDat.csv',pulledDat,'%.5f',delimiter=',')
