@@ -352,21 +352,9 @@ class data:
     def make_init_plots(self):
         self.beat_height = np.savetxt(self.folder+'\\entries\\beat_peak_min.csv',[0],delimiter=',')
         pure_dat = np.loadtxt(self.par_folder+'\\'+self.scan+'ScanV2.csv', delimiter=',')
-        # background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
-        # fix = False
-        # if type(background)==np.ndarray:
-        #     for i in background:
-        #         if i > 1:
-        #             fix = True
-        #             r".\Picture_template.png"
-        # else:
-        #     fix = True
-        # if fix:
-        #     p = os.getcwd()
-        #     p.find
-        #    background = np.loadtxt(p[:p.find('\\6s7p')]+'\\6s7p\\Background_default.csv',delimiter=',').mean(0)
-        # print('background',background)
-        background = np.loadtxt(os.getcwd()[:os.getcwd().find('\\6s7p')]+'\\6s7p\\Background_default.csv',delimiter=',').mean(0)
+        background = np.loadtxt(self.par_folder+"\\Background.csv",delimiter=',').mean(0)
+        if background[0] > 0.05 or background[1] > 0.05 or background[2] > 0.05:
+            background = np.loadtxt(os.getcwd()[:os.getcwd().find('\\6s7p')]+'\\6s7p\\Background_default.csv',delimiter=',').mean(0)
         shape = pure_dat.shape[1]
         n = int((shape-2)/3)
         self.indices = pure_dat[:,shape-1]
