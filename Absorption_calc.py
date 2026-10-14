@@ -408,7 +408,7 @@ class data:
         plt.clf()
 
         plt.plot(self.indices, self.scaledH)
-        plt.plot([self.indices[0],self.indices[-1]],[background[2],background[2]],'-r')
+        plt.plot([self.indices[0],self.indices[-1]],[0,0],'-r')
         plt.title(r'Scaled Hot Cell')
         plt.savefig(self.folder+r'\plots\scaledH.png')
         plt.clf()
