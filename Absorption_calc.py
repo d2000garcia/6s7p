@@ -599,6 +599,7 @@ class data:
         plt.title(r'$\frac{Hot Cell}{Laser Power}$')
         plt.axvspan(0,self.beat_rng[0],alpha=0.2,color='grey')
         plt.axvspan(self.beat_rng[1],len(self.indices),alpha=0.2,color='grey')
+        plt.plot([self.indices[0],self.indices[-1]],[0,0],'-r')
         plt.savefig(self.folder+r'\plots\scaledH.png')
         plt.clf()
 
