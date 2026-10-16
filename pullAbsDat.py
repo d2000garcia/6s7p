@@ -61,12 +61,12 @@ def check_for_analysis(folder):
 
 
 base_dir = os.getcwd()
-compile_matched_abs_coef = True
+compile_matched_abs_coef = False
 # compile_matched_abs_coef = False
 # fit_folder = 'Fit Results3_FixedBack'
-fit_folder = 'PostFiberFitResults\\F3_v1'
+fit_folder = 'BeatnotePostFiber_and_PD\\Fits\\F1=3'
 
-start_folder = base_dir + r'\BeatnotePostFiberF3'
+start_folder = base_dir + '\\BeatnotePostFiber_and_PD\\F1=3'
 if __name__ == '__main__':
     if compile_matched_abs_coef:
         file = open(base_dir+'\\'+fit_folder+'\\AbsF1=3.tsv','w')

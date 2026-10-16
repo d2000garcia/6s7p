@@ -732,6 +732,7 @@ class data:
                 top_est = np.mean(top_fit[int(self.indices[int(peaks[1]-offset-100)]):int(self.indices[int(peaks[1]-offset+100)])])
                 baseline = default_ratio_est*top_est
                 baseline_err  = back_std*top_est
+                baseline = 0
                 # plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
                 # test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
             params = lm.Parameters()
@@ -766,7 +767,7 @@ class data:
                 #                     ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
                 params.add_many(
                                     ('a', 6, True, 0, None, None, None),
-                                    ('base', baseline, True, baseline-baseline_err, baseline+baseline_err, None, None),
+                                    ('base', baseline, False, baseline-baseline_err, baseline+baseline_err, None, None),
                                     ('h1', test2[1], False, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test[0])*0.2, None, None),
                                     ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
                                     ('mv', guess, True, 0, 4, None, None),

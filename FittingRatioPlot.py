@@ -58,7 +58,8 @@ base_dir = os.getcwd()
 # folder = base_dir + r'\Fit Results3_FixedBack\LowTF1=4_fitted_base'
 # folder = base_dir + r'\Fit ResultsF1=3\LowT'
 # folder = base_dir + r'\Fit ResultsF1=3\AlldataLowT'
-folder = base_dir + '\\PostFiberFitResults\\F3_v1\\Data'
+# folder = base_dir + '\\PostFiberFitResults\\F3_v1\\Data'
+folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3\\Data'
 
 set_zero_inter = False
 incremental = False
