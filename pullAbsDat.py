@@ -64,7 +64,7 @@ base_dir = os.getcwd()
 compile_matched_abs_coef = False
 # compile_matched_abs_coef = False
 # fit_folder = 'Fit Results3_FixedBack'
-fit_folder = 'BeatnotePostFiber_and_PD\\Fits\\F1=3'
+fit_folder = 'BeatnotePostFiber_and_PD\\Fits\\F1=3_0back'
 
 start_folder = base_dir + '\\BeatnotePostFiber_and_PD\\F1=3'
 if __name__ == '__main__':
