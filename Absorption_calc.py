@@ -748,23 +748,6 @@ class data:
                     ('T', self.hotbody, True, low, high, None, None),
                     ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
             else:
-                # # params.add_many(
-                # #     ('a', 6, True, 0, None, None, None),
-                # #     ('p0', test[1], False, 0.7*(test[1]), 1.3*(test[1]), None, None),
-                # #     ('h1', test[0], False, test[1]-abs(test[1])*0.2, test[0]+abs(test[0])*0.2, None, None),
-                # #     ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
-                # #     ('mv', guess, True, 0, 4, None, None),
-                # #     ('T', self.hotbody, True, low, high, None, None),
-                # #     ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
-                # old
-                # params.add_many(
-                #                     ('a', 6, True, 0, None, None, None),
-                #                     ('p0', test2[0], False, 0.7*(test2[0]), 1.3*(test2[0]), None, None),
-                #                     ('h1', test2[1], False, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test[0])*0.2, None, None),
-                #                     ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
-                #                     ('mv', guess, True, 0, 4, None, None),
-                #                     ('T', self.hotbody, True, low, high, None, None),
-                #                     ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
                 params.add_many(
                                     ('a', 6, True, 0, None, None, None),
                                     ('base', baseline, False, baseline-baseline_err, baseline+baseline_err, None, None),
