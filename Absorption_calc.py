@@ -325,7 +325,7 @@ class data:
             self.loaddat()
 
         if scan == '894':
-            peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+            peaks, properties = find_peaks(-self.scaledT,width=300, prominence=0.1)
             # print('peaks',peaks)
             # print(properties)
             if (properties['right_ips'][1] - properties['left_ips'][1]) > (properties['right_ips'][0] - properties['left_ips'][0]):
@@ -675,7 +675,7 @@ class data:
                 # baseline = np.mean(self.scaledT[self.beat_rng[1]-100:self.beat_rng[1]])
                 # baseline = baseline * new_ratio
             else:
-                peaks, properties = find_peaks(-self.scaledT,width=500, prominence=0.1)
+                peaks, properties = find_peaks(-self.scaledT,width=300, prominence=0.1)
                 peaks[0] = int((properties['left_ips'][0]+properties['right_ips'][0])/2)
                 peaks[1] = int((properties['left_ips'][1]+properties['right_ips'][1])/2)
                 p0=0.2 #scaledT power at top
