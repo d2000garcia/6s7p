@@ -62,7 +62,7 @@ def check_for_analysis(folder):
 
 base_dir = os.getcwd()
 compile_matched_abs_coef = False
-# compile_matched_abs_coef = False
+compile_matched_abs_coef = True
 # fit_folder = 'Fit Results3_FixedBack'
 fit_folder = 'BeatnotePostFiber_and_PD\\Fits\\F1=3_0back'
 
