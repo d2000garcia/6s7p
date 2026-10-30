@@ -199,5 +199,5 @@ else:
         a1_err_est = np.sqrt(np.sum(1/variance)/delta)
         num = len(mainplot456[0][:i])
         reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))/(num-1)
-        results.append([i,mainplot894_dat[i-1],mainplot894_err[i-1],mainplot456_dat[i-1],mainplot456_err[i-1],a0,100*a0_err_est/a0,a1,100*a1_err_est/a1,reduced_chi_sqrd])
-    np.savetxt(base_dir+r'\Fit Results\Progressive_fit_nonzero_F1=4.csv',results,delimiter=',',fmt='%.5f')
+        results.append([i,mainplot894_dat[i-1],mainplot894_err[i-1],mainplot456_dat[i-1],mainplot456_err[i-1],a0,a0_err_est,a1,100*a1_err_est/a1,reduced_chi_sqrd])
+    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_0back\\Progressive_fit_nonzero_F1=4.csv',results,delimiter=',',fmt='%.5f')
