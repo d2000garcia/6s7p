@@ -725,7 +725,8 @@ class data:
             if self.scan == '894':
                 #new baseline ratio based off high density data
                 back_std = 0.001175828
-                default_ratio_est = 0.002793498
+                # default_ratio_est = 0.002793498
+                default_ratio_est = 0.00239577
                 # default_ratio_est += back_std
                 offset = int(self.beat_rng[0]-self.indices[0])
                 top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
@@ -735,6 +736,9 @@ class data:
                 baseline = 0
                 # plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
                 # test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
+            """
+            
+            """
             params = lm.Parameters()
             # params2 = lm.Parameters()
             # add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
