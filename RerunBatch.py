@@ -62,14 +62,15 @@ def redo_analysis(par_folder,F1):
     
 base_dir = os.getcwd()
 folders = ['\\BeatnotePostFiber_and_PD\\F1=3','\\BeatnotePostFiber_and_PD\\F1=3']
-# subfolders = [['Jul07,2026','Jul08,2026', 'Jul09,2026', 'Jul13,2026', 'Jul14,2026', 'Jul15,2026', 'Jul16,2026', 'Jul17,2026'],['Jul20,2026', 'Jul21,2026', 'Jun25,2026', 'Jun26,2026', 'Jun29,2026','Jun30,2026', 'May22,2026', 'May28,2026', 'May29,2026']]
+# subfolders = [['Nov02,2026', 'Nov03,2026', 'Oct02,2026', 'Oct05,2026', 'Oct06,2026', 'Oct07,2026', 'Oct09,2026'],['Oct20,2026', 'Oct21,2026', 'Oct23,2026', 'Oct26,2026', 'Oct28,2026', 'Oct29,2026', 'Oct30,2026']]
+
 
 
 F1s = [3,3]
 
 if __name__ == '__main__':
     if os.getlogin() == 'garci868':
-        check_for_analysis(base_dir+folders[0],F1s[0],'894')
+        check_for_analysis(base_dir+folders[0],F1s[0],'456')
         # for sub in subfolders[0]:
         #     check_for_analysis(base_dir+folders[0]+'\\'+sub,F1s[1])
     else:

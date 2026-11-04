@@ -724,16 +724,16 @@ class data:
                 high = self.hotbody+1
             if self.scan == '894':
                 #new baseline ratio based off high density data
-                back_std = 0.001175828
+                back_std = 0.002
                 # default_ratio_est = 0.002793498
-                default_ratio_est = 0.00239577
+                default_ratio_est = 0.01
                 # default_ratio_est += back_std
-                offset = int(self.beat_rng[0]-self.indices[0])
+                # offset = int(self.beat_rng[0]-self.indices[0])
                 top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
-                top_est = np.mean(top_fit[int(self.indices[int(peaks[1]-offset-100)]):int(self.indices[int(peaks[1]-offset+100)])])
+                top_est = top_fit[peaks[1]]
                 baseline = default_ratio_est*top_est
                 baseline_err  = back_std*top_est
-                baseline = 0
+                # baseline = 0
                 # plotting_scaledT = self.scaledT[int(self.indices[self.beat_rng[0]]):int(self.indices[self.beat_rng[1]])]-baseline
                 # test2 = LinFit2([[self.beat_rng[0],peaks[0]-int(properties['widths'][0])],[peaks[1]+int(properties['widths'][1]),self.beat_rng[1]]], self.beatfit(self.indices), self.scaledT-baseline)
             """
@@ -754,13 +754,13 @@ class data:
             else:
                 params.add_many(
                                     ('a', 6, True, 0, None, None, None),
-                                    ('base', baseline, False, baseline-baseline_err, baseline+baseline_err, None, None),
+                                    ('base', baseline, True, 0, baseline+baseline_err, None, None),
                                     ('h1', test2[1], False, test2[1]-abs(test2[1])*0.2, test2[1]+abs(test[0])*0.2, None, None),
                                     ('h2', test2[2], False, test2[2]-abs(test2[2])*0.2, test2[2]+abs(test2[2])*0.2, None, None),
                                     ('mv', guess, True, 0, 4, None, None),
                                     ('T', self.hotbody, True, low, high, None, None),
                                     ('gamma', Gamma*1.3, True, Gamma, Gamma*2, None, None))
-                params.add('p0', expr=str(test2[0])+'-base')
+                params.add('p0',expr=str(test2[0])+'-base')
             if self.scan == '456':
                 params['a'].set(value=0.35)
                 # params['gamma'].set(vary=False)
@@ -780,7 +780,7 @@ class data:
                 # #                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)))
                 # fun1 = lambda w,a,p0,h1,h2,mv,T,gamma: (p0+h1*w+h2*w**2)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                 #                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)))
-                fun1 = lambda w,a,base,h1,h2,mv,T,gamma,p0: (p0-base+h1*w+h2*w**2)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
+                fun1 = lambda w,a,base,h1,h2,mv,T,gamma,p0: (p0+h1*w+h2*w**2)*np.exp(-a*((w-mv+self.abs_freq[0])/10**6)*(voigt(w,coeff[0],mv,np.sqrt(T+273.15)*k1*self.abs_freq[0],gamma)+
                                                                                                                             voigt(w,coeff[1],mv+self.hypsplit[1],np.sqrt(T+273.15)*k1*self.abs_freq[1],gamma)))+base
                 # mod = lm.Model(fun1,['w'],['a','p0','h1','mv','T','gamma'])
                 mod = lm.Model(fun1,['w'],['a','base','h1','h2','mv','T','gamma','p0'])
