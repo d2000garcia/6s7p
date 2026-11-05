@@ -41,7 +41,7 @@ def check_for_analysis(folder,F1,check_against=[],laser='894'):
         x = list(os.scandir(folder))
         for val in x:
             if val.is_dir():
-                check_for_analysis(val.path,F1,check_against)
+                check_for_analysis(val.path,F1,check_against,laser)
     
 def redo_analysis(par_folder,F1,laser):
     #we know that the analysis exists so we need to check if they've been previously fitted
@@ -57,8 +57,8 @@ def redo_analysis(par_folder,F1,laser):
             scan.set_transition(F1=F1)
         else:
             scan = Absorption_calc.data(par_folder,scan='894',exists=True)
-            scan.calculate_beat_fit()
-            scan.set_fitting_function()
+        scan.calculate_beat_fit()
+        scan.set_fitting_function()
     
 base_dir = os.getcwd()
 folders = ['\\BeatnotePostFiber_and_PD\\F1=3','\\BeatnotePostFiber_and_PD\\F1=3']
@@ -74,6 +74,6 @@ if __name__ == '__main__':
         # for sub in subfolders[0]:
         #     check_for_analysis(base_dir+folders[0]+'\\'+sub,F1s[1])
     else:
-        check_for_analysis(base_dir+folders[1],F1s[1],laser='894')
+        check_for_analysis(base_dir+folders[1],F1s[1],laser='456')
         # for sub in subfolders[1]:
         #     check_for_analysis(base_dir+folders[1]+'\\'+sub,F1s[1])
