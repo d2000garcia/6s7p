@@ -22,7 +22,7 @@ def check_for_analysis(folder,F1,check_against=[],laser='894'):
         if not (True in list(map(lambda y: y in folder, check_against))):
             #If analysis is in current dir
             #redo analysis if current measurement is not in 456Fitparams
-            redo_analysis(folder,F1)
+            redo_analysis(folder,F1,laser)
     else:
         check_against = []
         try:
@@ -43,20 +43,20 @@ def check_for_analysis(folder,F1,check_against=[],laser='894'):
             if val.is_dir():
                 check_for_analysis(val.path,F1,check_against)
     
-def redo_analysis(par_folder,F1):
+def redo_analysis(par_folder,F1,laser):
     #we know that the analysis exists so we need to check if they've been previously fitted
     if os.path.exists(par_folder+r'\Analysis\456\fitting\processed\fitting_param.csv') and os.path.exists(par_folder+r'\Analysis\894\fitting\processed\fitting_param.csv'):
         # if not os.path.exists(par_folder+'\\redone.txt'):
             #we've fit before
         print(par_folder)
-        to_do = ['894']
-        for laser in to_do:
-            if laser == '456':
-                scan = Absorption_calc.data(par_folder,exists=True)
-                scan.F1=F1
-                scan.set_transition(F1=F1)
-            else:
-                scan = Absorption_calc.data(par_folder,scan='894',exists=True)
+        # to_do = ['894']
+        # for laser in to_do:
+        if laser == '456':
+            scan = Absorption_calc.data(par_folder,exists=True)
+            scan.F1=F1
+            scan.set_transition(F1=F1)
+        else:
+            scan = Absorption_calc.data(par_folder,scan='894',exists=True)
             scan.calculate_beat_fit()
             scan.set_fitting_function()
     
