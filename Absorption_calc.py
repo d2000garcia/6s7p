@@ -730,7 +730,7 @@ class data:
                 # default_ratio_est += back_std
                 # offset = int(self.beat_rng[0]-self.indices[0])
                 top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
-                top_est = top_fit[peaks[1]]
+                top_est = test2[0]+test2[1]*self.cubic_spline(peaks[1])+test2[2]*self.cubic_spline(peaks[1])**2
                 baseline = default_ratio_est*top_est
                 baseline_err  = back_std*top_est
                 # baseline = 0

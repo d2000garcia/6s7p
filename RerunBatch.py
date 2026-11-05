@@ -70,10 +70,10 @@ F1s = [3,3]
 
 if __name__ == '__main__':
     if os.getlogin() == 'garci868':
-        check_for_analysis(base_dir+folders[0],F1s[0],'456')
+        check_for_analysis(base_dir+folders[0],F1s[0],laser='456')
         # for sub in subfolders[0]:
         #     check_for_analysis(base_dir+folders[0]+'\\'+sub,F1s[1])
     else:
-        check_for_analysis(base_dir+folders[1],F1s[1],'894')
+        check_for_analysis(base_dir+folders[1],F1s[1],laser='894')
         # for sub in subfolders[1]:
         #     check_for_analysis(base_dir+folders[1]+'\\'+sub,F1s[1])
