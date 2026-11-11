@@ -59,10 +59,11 @@ base_dir = os.getcwd()
 # folder = base_dir + r'\Fit ResultsF1=3\LowT'
 # folder = base_dir + r'\Fit ResultsF1=3\AlldataLowT'
 # folder = base_dir + '\\PostFiberFitResults\\F3_v1\\Data'
-folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_0back\\Data'
+# folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_0back\\Data'
+folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background1\\Data'
 
 set_zero_inter = False
-incremental = False
+incremental = True
 lowT = True
 dat894 = []
 err894 = []
@@ -200,4 +201,4 @@ else:
         num = len(mainplot456[0][:i])
         reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))/(num-1)
         results.append([i,mainplot894_dat[i-1],mainplot894_err[i-1],mainplot456_dat[i-1],mainplot456_err[i-1],a0,a0_err_est,a1,100*a1_err_est/a1,reduced_chi_sqrd])
-    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_0back\\Progressive_fit_nonzero_F1=4.csv',results,delimiter=',',fmt='%.5f')
+    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background1\\Progressive_fit_nonzero_F1=3_3.csv',results,delimiter=',',fmt='%.5f')

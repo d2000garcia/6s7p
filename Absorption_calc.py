@@ -724,9 +724,9 @@ class data:
                 high = self.hotbody+1
             if self.scan == '894':
                 #new baseline ratio based off high density data
-                back_std = 0.002
+                back_std = 0.0008
                 # default_ratio_est = 0.002793498
-                default_ratio_est = 0.01
+                default_ratio_est = 0.002431462
                 # default_ratio_est += back_std
                 # offset = int(self.beat_rng[0]-self.indices[0])
                 top_fit = list(map(lambda x:test2[0]+test2[1]*x+test2[2]*x**2,plotting_freq))
