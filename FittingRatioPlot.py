@@ -66,6 +66,7 @@ set_zero_inter = False
 incremental = True
 incremental = False
 lowT = True
+remove_points = 0
 dat894 = []
 err894 = []
 dat456 = []
@@ -99,107 +100,141 @@ mainplot894_err = np.array(mainplot894[1])
 mainplot456_dat = np.array(mainplot456[0])
 mainplot456_err = np.array(mainplot456[1])
 
-if not incremental:
-    if not set_zero_inter:
-        params = lm.Parameters()
-        params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
-                        ('a0', 0, True, None, None, None, None),
-                        ('a1', 0.0162, True, None, None, None, None))
-        if set_zero_inter:
-            params['a0'].set(vary=False)
-        result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
-        a0 = result.params['a0'].value
-        a1 = result.params['a1'].value
 
-        # variance = (err894*a1)**2+err456**2
-        # delta = np.sum(1/variance)*np.sum(dat894**2/variance)-np.sum(dat894/variance)**2
-        # a0_err_est = np.sqrt(np.sum(dat894**2/variance)/delta)
-        # a1_err_est = np.sqrt(np.sum(1/variance)/delta)
+if remove_points == 0:
+    if not incremental:
+        if not set_zero_inter:
+            params = lm.Parameters()
+            params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
+                            ('a0', 0, True, None, None, None, None),
+                            ('a1', 0.0162, True, None, None, None, None))
+            if set_zero_inter:
+                params['a0'].set(vary=False)
+            result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
+            a0 = result.params['a0'].value
+            a1 = result.params['a1'].value
 
-        variance = (mainplot894_err*a1)**2+mainplot456_err**2
-        delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot894_dat/variance)**2
-        a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
-        a1_err_est = np.sqrt(np.sum(1/variance)/delta)
-        points_err = np.sqrt(variance)
-        print('Mean err:',np.mean(points_err))
-        print('Mean std:',np.std(points_err,ddof=1)/(len(points_err.tolist())**0.5))
+            # variance = (err894*a1)**2+err456**2
+            # delta = np.sum(1/variance)*np.sum(dat894**2/variance)-np.sum(dat894/variance)**2
+            # a0_err_est = np.sqrt(np.sum(dat894**2/variance)/delta)
+            # a1_err_est = np.sqrt(np.sum(1/variance)/delta)
 
-        print(lm.fit_report(result))
-        if lowT:
-            xs = np.linspace(0,8,1000)
+            variance = (mainplot894_err*a1)**2+mainplot456_err**2
+            delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot894_dat/variance)**2
+            a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
+            a1_err_est = np.sqrt(np.sum(1/variance)/delta)
+            points_err = np.sqrt(variance)
+            print('Mean err:',np.mean(points_err))
+            print('Mean std:',np.std(points_err,ddof=1)/(len(points_err.tolist())**0.5))
+
+            print(lm.fit_report(result))
+            if lowT:
+                xs = np.linspace(0,8,1000)
+            else:
+                xs = np.linspace(0,19,1000)
+            ys = a0+a1*xs
+            num = len(mainplot456[0])
+            reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-1)
+            print('Reduced Chi Sqrd =', reduced_chi_sqrd)
+            plt.errorbar(mainplot894_dat,mainplot456_dat,yerr=mainplot456_err,xerr=mainplot894_err,fmt='.')
+            plt.plot(dat894,dat456,'k.')
+            # text = r'Best Fit: $ \alpha_{456} = %.4f \pm %.6f \alpha_{894} + %.4f \pm %0.6$' % (a1,a1_err_est,a0,a0_err_est)
+            # print(text)
+            plt.plot(xs,ys,label=r'9/16/26, Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(\pm %.6f)$' % (a1,100*a1_err_est/a1,a0,a0_err_est),color='red')
+            plt.legend()
+            plt.xlabel(r'$\alpha_{894}$')
+            plt.ylabel(r'$\alpha_{456}$')
+            plt.title('Absorption Coefficients of Cs 6s7p line, F1 =' + str(fine_line)+',  '+r'$\chi ^2=%0.3f$' %(reduced_chi_sqrd))
+            plt.show()
+            # print(a1_err_est/a1)
+            # print(a0_err_est/a0)
         else:
+            params = lm.Parameters()
+            params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
+                            ('a0', 0, False, None, None, None, None),
+                            ('a1', 0.0162, True, None, None, None, None))
+            if set_zero_inter:
+                params['a0'].set(vary=False)
+            result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
+            a0 = result.params['a0'].value
+            a1 = result.params['a1'].value
+
+            # variance = (err894*a1)**2+err456**2
+            # delta = np.sum(1/variance)*np.sum(dat894**2/variance)-np.sum(dat894/variance)**2
+            # a0_err_est = np.sqrt(np.sum(dat894**2/variance)/delta)
+            # a1_err_est = np.sqrt(np.sum(1/variance)/delta)
+
+            variance = (mainplot894_err*a1)**2+mainplot456_err**2
+            delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot894_dat/variance)**2
+            a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
+            a1_err_est = np.sqrt(np.sum(1/variance)/delta)
+
+            print(lm.fit_report(result))
             xs = np.linspace(0,19,1000)
-        ys = a0+a1*xs
-        num = len(mainplot456[0])
-        reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-1)
-        print('Reduced Chi Sqrd =', reduced_chi_sqrd)
-        plt.errorbar(mainplot894_dat,mainplot456_dat,yerr=mainplot456_err,xerr=mainplot894_err,fmt='.')
-        plt.plot(dat894,dat456,'k.')
-        # text = r'Best Fit: $ \alpha_{456} = %.4f \pm %.6f \alpha_{894} + %.4f \pm %0.6$' % (a1,a1_err_est,a0,a0_err_est)
-        # print(text)
-        plt.plot(xs,ys,label=r'9/16/26, Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(\pm %.6f)$' % (a1,100*a1_err_est/a1,a0,a0_err_est),color='red')
-        plt.legend()
-        plt.xlabel(r'$\alpha_{894}$')
-        plt.ylabel(r'$\alpha_{456}$')
-        plt.title('Absorption Coefficients of Cs 6s7p line, F1 =' + str(fine_line)+',  '+r'$\chi ^2=%0.3f$' %(reduced_chi_sqrd))
-        plt.show()
-        # print(a1_err_est/a1)
-        # print(a0_err_est/a0)
+            ys = a0+a1*xs
+            num = len(mainplot456[0])
+            reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-2)
+            print('Reduced Chi Sqrd =', reduced_chi_sqrd)
+            plt.errorbar(mainplot894_dat,mainplot456_dat,yerr=mainplot456_err,xerr=mainplot894_err,fmt='.')
+            plt.plot(dat894,dat456,'k.')
+            # text = r'Best Fit: $ \alpha_{456} = %.4f \pm %.6f \alpha_{894} + %.4f \pm %0.6$' % (a1,a1_err_est,a0,a0_err_est)
+            # print(text)
+            plt.plot(xs,ys,label=r'Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(%.3f\%%)$' % (a1,100*a1_err_est/a1,a0,100*a0_err_est/a0),color='red')
+            plt.legend()
+            plt.xlabel(r'$\alpha_{894}$')
+            plt.ylabel(r'$\alpha_{456}$')
+            plt.title('Absorption Coefficients of Cs 6s7p line, F1 =' + str(fine_line)+',  '+r'$\chi ^2=%0.3f$' %(reduced_chi_sqrd))
+            plt.show()
+            # print(a1_err_est/a1)
+            # print(a0_err_est/a0)
+        
     else:
         params = lm.Parameters()
         params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
-                        ('a0', 0, False, None, None, None, None),
-                        ('a1', 0.0162, True, None, None, None, None))
-        if set_zero_inter:
-            params['a0'].set(vary=False)
-        result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
-        a0 = result.params['a0'].value
-        a1 = result.params['a1'].value
+                        ('a0', 0, True, None, None, None, None),
+                        ('a1', 0.02, True, None, None, None, None))
+        results = [[1,mainplot894_dat[0],mainplot894_err[0],mainplot456_dat[0],mainplot456_err[0],0,0,0,0,0]]
+        for i in range(2,len(mainplot456[0])+1):
+            result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))
+            a0 = result.params['a0'].value
+            a1 = result.params['a1'].value
+            variance = (mainplot894_err[:i]*a1)**2+mainplot456_err[:i]**2
+            delta = np.sum(1/variance)*np.sum(mainplot894_dat[:i]**2/variance)-np.sum(mainplot894_dat[:i]/variance)**2
+            a0_err_est = np.sqrt(np.sum(mainplot894_dat[:i]**2/variance)/delta)
+            a1_err_est = np.sqrt(np.sum(1/variance)/delta)
+            num = len(mainplot456[0][:i])
+            reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))/(num-1)
+            results.append([i,mainplot894_dat[i-1],mainplot894_err[i-1],mainplot456_dat[i-1],mainplot456_err[i-1],a0,a0_err_est,a1,100*a1_err_est/a1,reduced_chi_sqrd])
+        np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Progressive_fit_nonzero_F1=3_3_new.csv',results,delimiter=',',fmt='%.5f')
 
-        # variance = (err894*a1)**2+err456**2
-        # delta = np.sum(1/variance)*np.sum(dat894**2/variance)-np.sum(dat894/variance)**2
-        # a0_err_est = np.sqrt(np.sum(dat894**2/variance)/delta)
-        # a1_err_est = np.sqrt(np.sum(1/variance)/delta)
-
-        variance = (mainplot894_err*a1)**2+mainplot456_err**2
-        delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot894_dat/variance)**2
-        a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
-        a1_err_est = np.sqrt(np.sum(1/variance)/delta)
-
-        print(lm.fit_report(result))
-        xs = np.linspace(0,19,1000)
-        ys = a0+a1*xs
-        num = len(mainplot456[0])
-        reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-2)
-        print('Reduced Chi Sqrd =', reduced_chi_sqrd)
-        plt.errorbar(mainplot894_dat,mainplot456_dat,yerr=mainplot456_err,xerr=mainplot894_err,fmt='.')
-        plt.plot(dat894,dat456,'k.')
-        # text = r'Best Fit: $ \alpha_{456} = %.4f \pm %.6f \alpha_{894} + %.4f \pm %0.6$' % (a1,a1_err_est,a0,a0_err_est)
-        # print(text)
-        plt.plot(xs,ys,label=r'Best Fit: $\alpha_{456} = \alpha_{894} * %.5f(%.3f\%%) + %.5f(%.3f\%%)$' % (a1,100*a1_err_est/a1,a0,100*a0_err_est/a0),color='red')
-        plt.legend()
-        plt.xlabel(r'$\alpha_{894}$')
-        plt.ylabel(r'$\alpha_{456}$')
-        plt.title('Absorption Coefficients of Cs 6s7p line, F1 =' + str(fine_line)+',  '+r'$\chi ^2=%0.3f$' %(reduced_chi_sqrd))
-        plt.show()
-        # print(a1_err_est/a1)
-        # print(a0_err_est/a0)
-    
 else:
     params = lm.Parameters()
     params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
                     ('a0', 0, True, None, None, None, None),
                     ('a1', 0.02, True, None, None, None, None))
-    results = [[1,mainplot894_dat[0],mainplot894_err[0],mainplot456_dat[0],mainplot456_err[0],0,0,0,0,0]]
-    for i in range(2,len(mainplot456[0])+1):
-        result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))
+    # results = [[1,mainplot894_dat[0],mainplot894_err[0],mainplot456_dat[0],mainplot456_err[0],0,0,0,0,0]]
+    results = []
+    for i in range(len(mainplot456[0])):
+        mainplot894_dat = mainplot894[0].copy()
+        mainplot894_dat.pop(i)
+        mainplot894_dat = np.array(mainplot894_dat)
+        mainplot894_err = mainplot894[1].copy()
+        mainplot894_err.pop(i)
+        mainplot894_err = np.array(mainplot894_err)
+        mainplot456_dat = mainplot456[0].copy()
+        mainplot456_dat.pop(i)
+        mainplot456_dat = np.array(mainplot456_dat)
+        mainplot456_err = mainplot456[1].copy()
+        mainplot456_err.pop(i)
+        mainplot456_err = np.array(mainplot456_err)
+        result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))
         a0 = result.params['a0'].value
         a1 = result.params['a1'].value
-        variance = (mainplot894_err[:i]*a1)**2+mainplot456_err[:i]**2
-        delta = np.sum(1/variance)*np.sum(mainplot894_dat[:i]**2/variance)-np.sum(mainplot894_dat[:i]/variance)**2
-        a0_err_est = np.sqrt(np.sum(mainplot894_dat[:i]**2/variance)/delta)
+        variance = (mainplot894_err*a1)**2+mainplot456_err**2
+        delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot894_dat/variance)**2
+        a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
         a1_err_est = np.sqrt(np.sum(1/variance)/delta)
-        num = len(mainplot456[0][:i])
-        reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))/(num-1)
-        results.append([i,mainplot894_dat[i-1],mainplot894_err[i-1],mainplot456_dat[i-1],mainplot456_err[i-1],a0,a0_err_est,a1,100*a1_err_est/a1,reduced_chi_sqrd])
-    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Progressive_fit_nonzero_F1=3_3_new.csv',results,delimiter=',',fmt='%.5f')
+        num = len(mainplot456[0]-1)
+        reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-1)
+        results.append([i,mainplot894[0][i],mainplot894[1][i],mainplot456[0][i],mainplot456[1][i],a0,a0_err_est,a1,100*a1_err_est/a1,reduced_chi_sqrd])
+    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Removing_single_points_F1=3_3_new.csv',results,delimiter=',',fmt='%.5f')
