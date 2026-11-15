@@ -60,10 +60,11 @@ base_dir = os.getcwd()
 # folder = base_dir + r'\Fit ResultsF1=3\AlldataLowT'
 # folder = base_dir + '\\PostFiberFitResults\\F3_v1\\Data'
 # folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_0back\\Data'
-folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background1\\Data'
-
+# folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background1\\Data'
+folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Data'
 set_zero_inter = False
 incremental = True
+incremental = False
 lowT = True
 dat894 = []
 err894 = []
@@ -130,7 +131,7 @@ if not incremental:
             xs = np.linspace(0,19,1000)
         ys = a0+a1*xs
         num = len(mainplot456[0])
-        reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-2)
+        reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-1)
         print('Reduced Chi Sqrd =', reduced_chi_sqrd)
         plt.errorbar(mainplot894_dat,mainplot456_dat,yerr=mainplot456_err,xerr=mainplot894_err,fmt='.')
         plt.plot(dat894,dat456,'k.')
@@ -188,7 +189,7 @@ else:
     params = lm.Parameters()
     params.add_many(# add with tuples: (NAME VALUE VARY MIN  MAX  EXPR  BRUTE_STEP)
                     ('a0', 0, True, None, None, None, None),
-                    ('a1', 0.0162, True, None, None, None, None))
+                    ('a1', 0.02, True, None, None, None, None))
     results = [[1,mainplot894_dat[0],mainplot894_err[0],mainplot456_dat[0],mainplot456_err[0],0,0,0,0,0]]
     for i in range(2,len(mainplot456[0])+1):
         result = lm.minimize(residual, params,method='leastsq',args=(mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))
@@ -201,4 +202,4 @@ else:
         num = len(mainplot456[0][:i])
         reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat[:i],mainplot456_dat[:i],mainplot894_err[:i],mainplot456_err[:i]))/(num-1)
         results.append([i,mainplot894_dat[i-1],mainplot894_err[i-1],mainplot456_dat[i-1],mainplot456_err[i-1],a0,a0_err_est,a1,100*a1_err_est/a1,reduced_chi_sqrd])
-    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background1\\Progressive_fit_nonzero_F1=3_3.csv',results,delimiter=',',fmt='%.5f')
+    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Progressive_fit_nonzero_F1=3_3_new.csv',results,delimiter=',',fmt='%.5f')
