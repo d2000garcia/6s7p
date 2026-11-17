@@ -66,7 +66,7 @@ set_zero_inter = False
 incremental = True
 incremental = False
 lowT = True
-remove_points = 0
+remove_points = 1
 dat894 = []
 err894 = []
 dat456 = []
@@ -234,7 +234,7 @@ else:
         delta = np.sum(1/variance)*np.sum(mainplot894_dat**2/variance)-np.sum(mainplot894_dat/variance)**2
         a0_err_est = np.sqrt(np.sum(mainplot894_dat**2/variance)/delta)
         a1_err_est = np.sqrt(np.sum(1/variance)/delta)
-        num = len(mainplot456[0]-1)
+        num = len(mainplot456[0])-1
         reduced_chi_sqrd = np.sum(residual(result.params, mainplot894_dat,mainplot456_dat,mainplot894_err,mainplot456_err))/(num-1)
         results.append([i,mainplot894[0][i],mainplot894[1][i],mainplot456[0][i],mainplot456[1][i],a0,a0_err_est,a1,100*a1_err_est/a1,reduced_chi_sqrd])
-    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Removing_single_points_F1=3_3_new.csv',results,delimiter=',',fmt='%.5f')
+    np.savetxt(base_dir+'\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Removing_single_points_F1=3.csv',results,delimiter=',',fmt='%.5f')
