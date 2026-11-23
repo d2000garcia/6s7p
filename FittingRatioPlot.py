@@ -61,7 +61,7 @@ base_dir = os.getcwd()
 # folder = base_dir + '\\PostFiberFitResults\\F3_v1\\Data'
 # folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_0back\\Data'
 # folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background1\\Data'
-folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid\\Data'
+folder = base_dir + '\\BeatnotePostFiber_and_PD\\Fits\\F1=3_background_resid_grouped\\Data'
 set_zero_inter = False
 incremental = True
 incremental = False
